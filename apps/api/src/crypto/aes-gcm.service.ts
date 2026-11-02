@@ -1,0 +1,113 @@
+/**
+ * Dhamrai Life — AES-256-GCM Token Encryption Service
+ * ====================================================
+ * Cryptographically secure authenticated encryption at rest for OAuth tokens,
+ * secrets, and sensitive credentials in PostgreSQL.
+ *
+ * Algorithm: AES-256-GCM (Galois/Counter Mode)
+ * - Key length: 32 bytes (256 bits)
+ * - IV length: 12 bytes (96 bits, standard recommended for GCM)
+ * - Auth Tag length: 16 bytes (128 bits)
+ * - Guarantees both confidentiality and ciphertext integrity.
+ */
+
+import { Injectable } from '@nestjs/common';
+import * as crypto from 'crypto';
+
+export interface EncryptedPayload {
+  ciphertextHex: string;
+  ivHex: string;
+  tagHex: string;
+}
+
+export class DecryptionFailedError extends Error {
+  constructor(message: string) {
+    super(`Decryption failed: ${message}`);
+    this.name = 'DecryptionFailedError';
+  }
+}
+
+@Injectable()
+export class AesGcmService {
+  private readonly _key: Buffer;
+
+  /**
+   * Initializes the encryption service with a 32-byte key.
+   * If a hex string is provided, it must be exactly 64 hex characters (32 bytes).
+   */
+  constructor(keyInput?: string | Buffer) {
+    if (!keyInput) {
+      // Default to environment variable or derive a deterministic default in dev/test
+      const envKey = process.env['TOKEN_ENCRYPTION_KEY_HEX'];
+      if (envKey) {
+        this._key = Buffer.from(envKey, 'hex');
+      } else {
+        // Fallback for development/testing: 32-byte deterministic seed
+        this._key = crypto.createHash('sha256').update('dhamrai_life_dev_encryption_seed').digest();
+      }
+    } else if (typeof keyInput === 'string') {
+      this._key = Buffer.from(keyInput, 'hex');
+    } else {
+      this._key = keyInput;
+    }
+
+    if (this._key.length !== 32) {
+      throw new Error(`AES-256-GCM requires a 32-byte (256-bit) key. Provided: ${this._key.length} bytes.`);
+    }
+  }
+
+  /**
+   * Encrypts plaintext string using AES-256-GCM with a fresh random 12-byte IV.
+   */
+  public encrypt(plaintext: string): EncryptedPayload {
+    if (typeof plaintext !== 'string') {
+      throw new TypeError('Plaintext to encrypt must be a string.');
+    }
+
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', this._key, iv);
+
+    const ciphertextBuffer = Buffer.concat([
+      cipher.update(plaintext, 'utf8'),
+      cipher.final(),
+    ]);
+
+    const tag = cipher.getAuthTag();
+
+    return {
+      ciphertextHex: ciphertextBuffer.toString('hex'),
+      ivHex: iv.toString('hex'),
+      tagHex: tag.toString('hex'),
+    };
+  }
+
+  /**
+   * Decrypts an encrypted payload using AES-256-GCM.
+   * Throws DecryptionFailedError if ciphertext, IV, or authentication tag has been tampered with.
+   */
+  public decrypt(payload: EncryptedPayload): string {
+    if (!payload || !payload.ciphertextHex || !payload.ivHex || !payload.tagHex) {
+      throw new DecryptionFailedError('Missing ciphertextHex, ivHex, or tagHex in payload.');
+    }
+
+    try {
+      const iv = Buffer.from(payload.ivHex, 'hex');
+      const tag = Buffer.from(payload.tagHex, 'hex');
+      const ciphertext = Buffer.from(payload.ciphertextHex, 'hex');
+
+      const decipher = crypto.createDecipheriv('aes-256-gcm', this._key, iv);
+      decipher.setAuthTag(tag);
+
+      const decrypted = Buffer.concat([
+        decipher.update(ciphertext),
+        decipher.final(),
+      ]);
+
+      return decrypted.toString('utf8');
+    } catch (err) {
+      throw new DecryptionFailedError(
+        `Authentication tag mismatch or corrupted ciphertext: ${(err as Error).message}`
+      );
+    }
+  }
+}
