@@ -11,8 +11,18 @@
  * - Guarantees both confidentiality and ciphertext integrity.
  */
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional, Inject } from '@nestjs/common';
 import * as crypto from 'crypto';
+
+export function validateProductionEncryptionKey(value?: string): void {
+  const legacyDefault = crypto.createHash('sha256').update('dhamrai_life_dev_encryption_seed').digest('hex');
+  if (!value || !/^[a-fA-F0-9]{64}$/.test(value) || Buffer.from(value, 'hex').length !== 32 ||
+      value.toLowerCase() === legacyDefault || value.toLowerCase() === '0123456789abcdef'.repeat(4) || /^(.)\1{63}$/.test(value)) {
+    throw new Error('Production TOKEN_ENCRYPTION_KEY_HEX must be exactly 64 hexadecimal characters (32 bytes), excluding development/example keys.');
+  }
+}
+
+export const TOKEN_ENCRYPTION_KEY_TOKEN = 'TOKEN_ENCRYPTION_KEY';
 
 export interface EncryptedPayload {
   ciphertextHex: string;
@@ -35,25 +45,25 @@ export class AesGcmService {
    * Initializes the encryption service with a 32-byte key.
    * If a hex string is provided, it must be exactly 64 hex characters (32 bytes).
    */
-  constructor(keyInput?: string | Buffer) {
-    if (!keyInput) {
-      // Default to environment variable or derive a deterministic default in dev/test
-      const envKey = process.env['TOKEN_ENCRYPTION_KEY_HEX'];
-      if (envKey) {
-        this._key = Buffer.from(envKey, 'hex');
-      } else {
-        // Fallback for development/testing: 32-byte deterministic seed
-        this._key = crypto.createHash('sha256').update('dhamrai_life_dev_encryption_seed').digest();
-      }
-    } else if (typeof keyInput === 'string') {
-      this._key = Buffer.from(keyInput, 'hex');
+  constructor(@Optional() @Inject('TOKEN_ENCRYPTION_KEY') keyInput?: string | Buffer) {
+    const isProduction = process.env['NODE_ENV'] === 'production';
+    const raw = keyInput ?? process.env['TOKEN_ENCRYPTION_KEY_HEX'];
+    if (isProduction && !process.env['TOKEN_ENCRYPTION_KEY_HEX']) {
+      throw new Error('Production requires TOKEN_ENCRYPTION_KEY_HEX.');
+    }
+    if (isProduction) validateProductionEncryptionKey(process.env['TOKEN_ENCRYPTION_KEY_HEX']);
+    if (raw === undefined) {
+      // Ephemeral local development key; no published deterministic default exists.
+      this._key = crypto.randomBytes(32);
+    } else if (typeof raw === 'string') {
+      if (!/^[0-9a-fA-F]{64}$/.test(raw)) throw new Error('AES-256-GCM requires a 32-byte key encoded as exactly 64 hexadecimal characters.');
+      this._key = Buffer.from(raw, 'hex');
     } else {
-      this._key = keyInput;
+      this._key = Buffer.from(raw);
     }
+    if (this._key.length !== 32) throw new Error('AES-256-GCM requires a 32-byte key.');
+    if (isProduction) validateProductionEncryptionKey(this._key.toString('hex'));
 
-    if (this._key.length !== 32) {
-      throw new Error(`AES-256-GCM requires a 32-byte (256-bit) key. Provided: ${this._key.length} bytes.`);
-    }
   }
 
   /**

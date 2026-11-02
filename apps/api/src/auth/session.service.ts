@@ -19,8 +19,9 @@ export class SessionService {
   private readonly _sessionSecret: string;
 
   constructor() {
-    this._sessionSecret =
-      process.env['SESSION_SECRET'] ?? 'dhamrai_life_session_signing_secret_key_32_bytes!';
+    const configured = process.env['SESSION_SECRET'];
+    if (process.env['NODE_ENV'] === 'production' && (!configured || configured.length < 32 || configured === 'dhamrai_life_session_signing_secret_key_32_bytes!')) throw new Error('Production session secret is missing or insecure.');
+    this._sessionSecret = configured ?? crypto.randomBytes(32).toString('hex');
   }
 
   /**
@@ -58,7 +59,9 @@ export class SessionService {
       .update(payloadBase64 as string)
       .digest('base64url');
 
-    if (signature !== expectedSignature) {
+    const sigBuf = Buffer.from(signature as string);
+    const expBuf = Buffer.from(expectedSignature);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
       throw new UnauthorizedException('Invalid session token signature.');
     }
 
@@ -69,7 +72,7 @@ export class SessionService {
       throw new UnauthorizedException('Failed to parse session token payload.');
     }
 
-    if (payload.exp < Math.floor(Date.now() / 1000)) {
+    if (!Number.isFinite(payload.exp) || payload.exp <= Math.floor(Date.now() / 1000) || typeof payload.userId !== 'string' || typeof payload.googleSub !== 'string') {
       throw new UnauthorizedException('Session token has expired. Please re-authenticate.');
     }
 

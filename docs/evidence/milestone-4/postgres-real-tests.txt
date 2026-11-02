@@ -1,0 +1,16 @@
+yarn run v1.22.22
+warning Skipping preferred cache folder "/Users/salim/Library/Caches/Yarn" because it is not writable.
+warning Selected the next writable cache folder in the list, will be "/var/folders/46/vm6092hn1sd95yrbn2byxzyr0000gn/T/.yarn-cache-501".
+$ /Volumes/Salim_EX/salim/Dhamrai_city_the_open_world/node_modules/.bin/vitest run apps/api/test/postgres.real.test.ts
+warning Cannot find a suitable global folder. Tried these: "/usr/local, /Users/salim/.yarn"
+
+ RUN  v3.2.7 /Volumes/Salim_EX/salim/Dhamrai_city_the_open_world
+
+ ↓ apps/api/test/postgres.real.test.ts (4 tests | 4 skipped)
+
+ Test Files  1 skipped (1)
+      Tests  4 skipped (4)
+   Start at  18:18:45
+   Duration  231ms (transform 28ms, setup 0ms, collect 71ms, tests 0ms, environment 0ms, prepare 28ms)
+
+Done in 0.72s.

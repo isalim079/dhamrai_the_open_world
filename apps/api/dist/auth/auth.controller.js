@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Post, Body, BadRequestException, Inject, } from '@nestjs/common';
+import { Controller, Get, Res, Req, Post, Body, BadRequestException, Inject, } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { GoogleAuthService } from './google-auth.service.js';
 import { SessionService } from './session.service.js';
@@ -27,17 +27,27 @@ let AuthController = class AuthController {
         this._aesGcmService = _aesGcmService;
         this._userRepository = _userRepository;
     }
-    async authenticateGoogle(body) {
+    async beginGoogle(res) {
+        const started = await this._googleAuthService.beginOAuth();
+        res.cookie('dhamrai_oauth', started.cookie, { httpOnly: true, secure: process.env['NODE_ENV'] === 'production',
+            sameSite: 'lax', path: '/api/auth', maxAge: 600_000 });
+        return { authorizationUrl: started.authorizationUrl };
+    }
+    async authenticateGoogle(body, req) {
         if (!body || (!body.idToken && !body.code)) {
             throw new BadRequestException('Request body must contain either "idToken" or "code".');
         }
+        const cookies = req?.headers.cookie?.split(';').map(c => c.trim()) ?? [];
+        const cookie = cookies.find(c => c.startsWith('dhamrai_oauth='))?.slice('dhamrai_oauth='.length);
+        if (body.idToken && body.code)
+            throw new BadRequestException('Supply exactly one authentication credential.');
         let sub;
         let email;
         let name;
         let refreshToken;
         if (body.code) {
             // Exchange code for tokens
-            const exchangeResult = await this._googleAuthService.exchangeAuthorizationCode(body.code, body.redirectUri);
+            const exchangeResult = await this._googleAuthService.exchangeAuthorizationCode(body.code, body.redirectUri, body.state, cookie);
             refreshToken = exchangeResult.refreshToken;
             // Extract identity from returned ID token or verify explicitly
             if (exchangeResult.idToken) {
@@ -47,13 +57,12 @@ let AuthController = class AuthController {
                 name = payload.name;
             }
             else {
-                // Fallback: derive from mock code
-                sub = body.code.replace('mock_code_', '');
-                email = `user_${sub}@gmail.com`;
+                throw new BadRequestException('Google did not provide a verified identity.');
             }
         }
         else if (body.idToken) {
-            const payload = await this._googleAuthService.verifyIdToken(body.idToken);
+            const tx = await this._googleAuthService.consumeOAuth(body.state, cookie, body.redirectUri);
+            const payload = await this._googleAuthService.verifyIdToken(body.idToken, tx.nonce);
             sub = payload.sub;
             email = payload.email;
             name = payload.name;
@@ -115,10 +124,18 @@ let AuthController = class AuthController {
     }
 };
 __decorate([
-    Post('google'),
-    __param(0, Body()),
+    Get('google/start'),
+    __param(0, Res({ passthrough: true })),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "beginGoogle", null);
+__decorate([
+    Post('google'),
+    __param(0, Body()),
+    __param(1, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "authenticateGoogle", null);
 AuthController = __decorate([

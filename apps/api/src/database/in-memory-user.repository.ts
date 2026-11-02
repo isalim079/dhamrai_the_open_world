@@ -19,7 +19,9 @@ export class InMemoryUserRepository implements IUserRepository {
   }
 
   public async save(user: UserRecord): Promise<UserRecord> {
-    const cloned = { ...user };
+    const existingId = this._idByGoogleSub.get(user.googleSub);
+    const existing = existingId ? this._usersById.get(existingId) : undefined;
+    const cloned = { ...user, id: existing?.id ?? user.id, createdAtIso: existing?.createdAtIso ?? user.createdAtIso };
     this._usersById.set(cloned.id, cloned);
     this._idByGoogleSub.set(cloned.googleSub, cloned.id);
     return { ...cloned };

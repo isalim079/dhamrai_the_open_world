@@ -62,15 +62,15 @@ let PostgresUserRepository = class PostgresUserRepository {
         if (!this._client) {
             throw new Error('PostgreSQL client pool not configured. Use InMemoryUserRepository for offline testing.');
         }
-        await this._client.query(`INSERT INTO users (id, google_sub, email, name, encrypted_refresh_token, encryption_iv, encryption_tag, created_at_iso, updated_at_iso)
+        const result = await this._client.query(`INSERT INTO users (id, google_sub, email, name, encrypted_refresh_token, encryption_iv, encryption_tag, created_at_iso, updated_at_iso)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       ON CONFLICT (id) DO UPDATE SET
+       ON CONFLICT (google_sub) DO UPDATE SET
          email = EXCLUDED.email,
          name = EXCLUDED.name,
-         encrypted_refresh_token = EXCLUDED.encrypted_refresh_token,
-         encryption_iv = EXCLUDED.encryption_iv,
-         encryption_tag = EXCLUDED.encryption_tag,
-         updated_at_iso = EXCLUDED.updated_at_iso;`, [
+         encrypted_refresh_token = CASE WHEN EXCLUDED.encrypted_refresh_token = 'no_refresh_token_provided' THEN users.encrypted_refresh_token ELSE EXCLUDED.encrypted_refresh_token END,
+         encryption_iv = CASE WHEN EXCLUDED.encrypted_refresh_token = 'no_refresh_token_provided' THEN users.encryption_iv ELSE EXCLUDED.encryption_iv END,
+         encryption_tag = CASE WHEN EXCLUDED.encrypted_refresh_token = 'no_refresh_token_provided' THEN users.encryption_tag ELSE EXCLUDED.encryption_tag END,
+         updated_at_iso = EXCLUDED.updated_at_iso RETURNING *;`, [
             user.id,
             user.googleSub,
             user.email,
@@ -81,7 +81,9 @@ let PostgresUserRepository = class PostgresUserRepository {
             user.createdAtIso,
             user.updatedAtIso,
         ]);
-        return { ...user };
+        if (!result.rows[0])
+            throw new Error('User upsert returned no identity.');
+        return this.mapRowToRecord(result.rows[0]);
     }
     async update(id, partial) {
         const existing = await this.findById(id);
@@ -93,8 +95,7 @@ let PostgresUserRepository = class PostgresUserRepository {
             id: existing.id,
             updatedAtIso: new Date().toISOString(),
         };
-        await this.save(merged);
-        return merged;
+        return this.save(merged);
     }
     async delete(id) {
         if (!this._client) {

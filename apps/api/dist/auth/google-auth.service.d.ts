@@ -1,9 +1,4 @@
-/**
- * Dhamrai Life — Google OAuth & ID Token Verification Service
- * ============================================================
- * Handles Google ID token signature verification, stable subject (sub) resolution,
- * and OAuth authorization code exchange for the `drive.appdata` scope.
- */
+import { IPgClient } from '../database/postgres-user.repository.js';
 export interface GoogleIdTokenPayload {
     sub: string;
     email: string;
@@ -21,24 +16,30 @@ export interface GoogleTokenExchangeResult {
     scope: string;
     idToken?: string;
 }
-export declare class GoogleAuthService {
-    private readonly _clientId;
-    private readonly _clientSecret;
-    private readonly _mockUsers;
-    constructor();
-    /**
-     * Registers a mock user for testing/offline environments.
-     */
-    registerMockUser(sub: string, payload: Partial<GoogleIdTokenPayload>): void;
-    /**
-     * Verifies a Google ID token.
-     * In production, verifies Google RSA-SHA256 signatures against Google public keys (certs).
-     * Supports base64url-encoded JWT inspection and deterministic mock test tokens.
-     */
-    verifyIdToken(idTokenString: string): Promise<GoogleIdTokenPayload>;
-    /**
-     * Exchanges an OAuth authorization code for Google access and refresh tokens.
-     */
-    exchangeAuthorizationCode(code: string, redirectUri?: string): Promise<GoogleTokenExchangeResult>;
+interface OAuthTransaction {
+    state: string;
+    verifier: string;
+    nonce: string;
+    redirectUri: string;
+    expires: number;
 }
+export declare const OAUTH_STATE_SCHEMA_SQL = "CREATE TABLE IF NOT EXISTS oauth_used_states (\n  state_hash TEXT PRIMARY KEY, expires_at_ms BIGINT NOT NULL\n);";
+export declare class GoogleAuthService {
+    private readonly db?;
+    private readonly aes;
+    private readonly usedStates;
+    private keys;
+    private keysExpireAt;
+    constructor(db?: IPgClient | undefined);
+    private redirect;
+    beginOAuth(redirectUri?: string): Promise<{
+        authorizationUrl: string;
+        cookie: string;
+    }>;
+    consumeOAuth(state?: string, cookie?: string, redirectUri?: string): Promise<OAuthTransaction>;
+    verifyIdToken(token: string, expectedNonce?: string): Promise<GoogleIdTokenPayload>;
+    exchangeAuthorizationCode(code: string, redirectUri?: string, state?: string, cookie?: string): Promise<GoogleTokenExchangeResult>;
+    refreshAccessToken(refreshToken: string): Promise<string>;
+}
+export {};
 //# sourceMappingURL=google-auth.service.d.ts.map

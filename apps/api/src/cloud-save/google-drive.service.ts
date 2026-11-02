@@ -5,12 +5,11 @@
  * using standard HTTPS REST endpoints.
  */
 
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IGoogleDriveClient, DriveUploadResult } from './google-drive.interface.js';
 
 @Injectable()
 export class GoogleDriveService implements IGoogleDriveClient {
-  private readonly _logger = new Logger(GoogleDriveService.name);
 
   public async getAppDataFile(accessToken: string, fileName: string): Promise<string | null> {
     const fileId = await this.findFileIdByName(accessToken, fileName);
@@ -31,8 +30,7 @@ export class GoogleDriveService implements IGoogleDriveClient {
     }
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Drive download failed (${response.status}): ${err}`);
+      throw new Error('Drive download failed.');
     }
 
     return response.text();
@@ -58,8 +56,7 @@ export class GoogleDriveService implements IGoogleDriveClient {
       });
 
       if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Drive file update failed (${response.status}): ${err}`);
+        throw new Error('Drive upload failed.');
       }
 
       const data = (await response.json()) as Record<string, unknown>;
@@ -101,8 +98,7 @@ export class GoogleDriveService implements IGoogleDriveClient {
       });
 
       if (!response.ok) {
-        const err = await response.text();
-        throw new Error(`Drive file create failed (${response.status}): ${err}`);
+        throw new Error('Drive upload failed.');
       }
 
       const data = (await response.json()) as Record<string, unknown>;
@@ -133,7 +129,7 @@ export class GoogleDriveService implements IGoogleDriveClient {
   }
 
   private async findFileIdByName(accessToken: string, fileName: string): Promise<string | null> {
-    const query = encodeURIComponent(`name = '${fileName}' and 'appDataFolder' in parents and trashed = false`);
+    const query = encodeURIComponent(`name = '${fileName.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}' and 'appDataFolder' in parents and trashed = false`);
     const searchUrl = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`;
 
     const response = await fetch(searchUrl, {
@@ -143,11 +139,7 @@ export class GoogleDriveService implements IGoogleDriveClient {
       },
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      this._logger.warn(`Failed searching Drive files: ${err}`);
-      return null;
-    }
+    if (!response.ok) throw new Error('Drive search failed.');
 
     const data = (await response.json()) as { files?: Array<{ id: string; name: string }> };
     const files = data.files ?? [];

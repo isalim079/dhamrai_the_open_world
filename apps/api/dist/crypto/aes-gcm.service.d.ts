@@ -10,6 +10,8 @@
  * - Auth Tag length: 16 bytes (128 bits)
  * - Guarantees both confidentiality and ciphertext integrity.
  */
+export declare function validateProductionEncryptionKey(value?: string): void;
+export declare const TOKEN_ENCRYPTION_KEY_TOKEN = "TOKEN_ENCRYPTION_KEY";
 export interface EncryptedPayload {
     ciphertextHex: string;
     ivHex: string;

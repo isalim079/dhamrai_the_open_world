@@ -10,10 +10,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var GoogleDriveService_1;
-import { Injectable, Logger } from '@nestjs/common';
-let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
-    _logger = new Logger(GoogleDriveService_1.name);
+import { Injectable } from '@nestjs/common';
+let GoogleDriveService = class GoogleDriveService {
     async getAppDataFile(accessToken, fileName) {
         const fileId = await this.findFileIdByName(accessToken, fileName);
         if (!fileId) {
@@ -30,8 +28,7 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
             return null;
         }
         if (!response.ok) {
-            const err = await response.text();
-            throw new Error(`Drive download failed (${response.status}): ${err}`);
+            throw new Error('Drive download failed.');
         }
         return response.text();
     }
@@ -49,8 +46,7 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
                 body: contentJson,
             });
             if (!response.ok) {
-                const err = await response.text();
-                throw new Error(`Drive file update failed (${response.status}): ${err}`);
+                throw new Error('Drive upload failed.');
             }
             const data = (await response.json());
             return {
@@ -87,8 +83,7 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
                 body: multipartBody,
             });
             if (!response.ok) {
-                const err = await response.text();
-                throw new Error(`Drive file create failed (${response.status}): ${err}`);
+                throw new Error('Drive upload failed.');
             }
             const data = (await response.json());
             return {
@@ -114,7 +109,7 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
         return response.ok;
     }
     async findFileIdByName(accessToken, fileName) {
-        const query = encodeURIComponent(`name = '${fileName}' and 'appDataFolder' in parents and trashed = false`);
+        const query = encodeURIComponent(`name = '${fileName.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}' and 'appDataFolder' in parents and trashed = false`);
         const searchUrl = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`;
         const response = await fetch(searchUrl, {
             method: 'GET',
@@ -122,17 +117,14 @@ let GoogleDriveService = GoogleDriveService_1 = class GoogleDriveService {
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-        if (!response.ok) {
-            const err = await response.text();
-            this._logger.warn(`Failed searching Drive files: ${err}`);
-            return null;
-        }
+        if (!response.ok)
+            throw new Error('Drive search failed.');
         const data = (await response.json());
         const files = data.files ?? [];
         return files[0]?.id ?? null;
     }
 };
-GoogleDriveService = GoogleDriveService_1 = __decorate([
+GoogleDriveService = __decorate([
     Injectable()
 ], GoogleDriveService);
 export { GoogleDriveService };

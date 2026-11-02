@@ -1,0 +1,28 @@
+test_boundary_only_touches_are_counted_explicitly (test_chunk_grid.TestChunkGrid) ... ok
+test_hole_produces_outside_cell (test_chunk_grid.TestChunkGrid) ... ok
+test_small_polygon_is_one_partial_cell (test_chunk_grid.TestChunkGrid) ... ok
+test_crs_definition_validity (test_coordinate_transform.TestCoordinateTransform)
+Verify BUTM2010 WKT matches ESRI:102954 parameters. ... ok
+test_crs_reference_consistency_points (test_coordinate_transform.TestCoordinateTransform)
+Verify mathematical projection consistency across documented regional reference points. ... ok
+test_crs_regression_epsg_9358 (test_coordinate_transform.TestCoordinateTransform)
+Verify that EPSG:9358 is NOT BUTM 2010 (KSA-GRF17 guard). ... ok
+test_mission_routes_continuity_and_ordering (test_coordinate_transform.TestCoordinateTransform)
+Verify machine-readable mission fixture data/world/mission_routes.json: ... ok
+test_origin_constants_full_precision (test_coordinate_transform.TestCoordinateTransform)
+Verify that authoritative origin constants match pyproj 3.6.1 projection to floating-point exactness. ... ok
+test_origin_is_zero (test_coordinate_transform.TestCoordinateTransform)
+World origin must project to exactly (0, 0, 0) in game coordinates. ... ok
+test_phase1_bounding_envelope_4_corners (test_coordinate_transform.TestCoordinateTransform)
+Verify that the geographic query envelope [min_lon, min_lat, max_lon, max_lat] ... ok
+test_phase1_mission_coordinates_threejs_axes (test_coordinate_transform.TestCoordinateTransform)
+Verify exact 3D coordinates for Phase 1 missions: ... ok
+test_round_trip_accuracy (test_coordinate_transform.TestCoordinateTransform)
+Verify round-trip WGS84 -> Game -> WGS84 preserves millimeter accuracy. ... ok
+test_scale_factor_distortion (test_coordinate_transform.TestCoordinateTransform)
+Verify that BUTM2010 scale factor in Dhamrai produces ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.072s
+
+OK

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConflictException, BadRequestException } from '@nestjs/common';
 import {
   CloudSaveController,
@@ -147,6 +147,7 @@ describe('API Cloud Save — Google Drive Sync Service & Concurrency Control', (
 
     const putResult = await controller.putCloudSave(mockUserRequest, {
       save: validWithChecksum,
+      leaseToken: (await leaseLockService.acquireLease(mockUserRequest.user.userId, 'QuickSave')).leaseToken,
     });
 
     expect(putResult.success).toBe(true);
@@ -202,6 +203,13 @@ describe('API Cloud Save — Google Drive Sync Service & Concurrency Control', (
       })
     ).rejects.toThrowError(ConflictException);
 
+    // Client Worker B also attempts to write with NO lease token at all (lease bypass attempt)
+    await expect(
+      controller.putCloudSave(mockUserRequest, {
+        save: validWithChecksum,
+      })
+    ).rejects.toThrowError(ConflictException);
+
     // Client Worker A completes write with the valid lease token
     const successResult = await controller.putCloudSave(mockUserRequest, {
       save: validWithChecksum,
@@ -212,7 +220,8 @@ describe('API Cloud Save — Google Drive Sync Service & Concurrency Control', (
 
   it('detects mid-air collision when expectedVersion is stale', async () => {
     const envelopeV1 = await attachChecksum(createValidSaveEnvelopeV2('Slot_Beta'));
-    await controller.putCloudSave(mockUserRequest, { save: envelopeV1 });
+    const firstLease = await leaseLockService.acquireLease(mockUserRequest.user.userId, 'Slot_Beta');
+    await controller.putCloudSave(mockUserRequest, { save: envelopeV1, leaseToken: firstLease.leaseToken });
 
     // Client B attempts to save expecting an obsolete version
     const envelopeV2 = await attachChecksum({
@@ -227,4 +236,27 @@ describe('API Cloud Save — Google Drive Sync Service & Concurrency Control', (
       })
     ).rejects.toThrowError(ConflictException);
   });
+  it('stale uploader cannot publish or overwrite the canonical save after lease expires', async () => {
+    vi.useFakeTimers();
+    try {
+      const save = await attachChecksum(createValidSaveEnvelopeV2('QuickSave'));
+      const old = await leaseLockService.acquireLease(mockUserRequest.user.userId, 'QuickSave', undefined, undefined, 10);
+      const upload = mockDriveClient.uploadAppDataFile.bind(mockDriveClient);
+      let newLease: Awaited<ReturnType<LeaseLockService['acquireLease']>>;
+      vi.spyOn(mockDriveClient, 'uploadAppDataFile').mockImplementation(async (token,name,content) => {
+        vi.advanceTimersByTime(11);
+        newLease = await leaseLockService.acquireLease(mockUserRequest.user.userId, 'QuickSave');
+        return upload(token,name,content);
+      });
+      await expect(controller.putCloudSave(mockUserRequest, {save,leaseToken:old.leaseToken})).rejects.toThrow(ConflictException);
+      expect((await controller.getCloudSave(mockUserRequest)).found).toBe(false);
+      expect(await leaseLockService.verifyLease(mockUserRequest.user.userId, 'QuickSave', newLease!.leaseToken)).toBe(true);
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('requires a lease even when no other writer has acquired one', async () => {
+    const save=await attachChecksum(createValidSaveEnvelopeV2());
+    await expect(controller.putCloudSave(mockUserRequest,{save})).rejects.toThrow(ConflictException);
+  });
+
 });

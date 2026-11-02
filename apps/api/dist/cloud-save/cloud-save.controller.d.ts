@@ -4,6 +4,7 @@
  * Handles cloud save retrieval, optimistic concurrency lease locking,
  * Zod validation against SaveEnvelopeV2, and Google Drive `appDataFolder` persistence.
  */
+import { GoogleAuthService } from '../auth/google-auth.service.js';
 import { AuthenticatedRequest } from '../auth/auth.guard.js';
 import { IGoogleDriveClient } from './google-drive.interface.js';
 import { LeaseLockService } from './lease-lock.service.js';
@@ -26,11 +27,12 @@ export declare class CloudSaveController {
     private readonly _leaseLockService;
     private readonly _userRepository;
     private readonly _aesGcmService;
-    constructor(_driveClient: IGoogleDriveClient, _leaseLockService: LeaseLockService, _userRepository: IUserRepository, _aesGcmService: AesGcmService);
+    private readonly _googleAuthService;
+    constructor(_driveClient: IGoogleDriveClient, _leaseLockService: LeaseLockService, _userRepository: IUserRepository, _aesGcmService: AesGcmService, _googleAuthService?: GoogleAuthService);
     /**
      * Retrieves player save envelope from Google Drive hidden appDataFolder.
      */
-    getCloudSave(req: AuthenticatedRequest, customFileName?: string): Promise<{
+    getCloudSave(req: AuthenticatedRequest, customFileName?: string, slotName?: string): Promise<{
         found: boolean;
         fileName: string;
         save: null;
@@ -62,7 +64,7 @@ export declare class CloudSaveController {
         fileName: string;
         modifiedTime: string;
         sizeBytes: number;
-        version: string;
+        version: `${string}-${string}-${string}-${string}-${string}`;
         checksumSha256: string;
     }>;
     private resolveUserAccessToken;

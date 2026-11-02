@@ -18,7 +18,11 @@ import {
   BadRequestException,
   ConflictException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { randomUUID, createHash } from 'node:crypto';
+import { GoogleAuthService } from '../auth/google-auth.service.js';
+import { MockGoogleDriveClient } from './mock-google-drive.client.js';
 import { AuthGuard, AuthenticatedRequest } from '../auth/auth.guard.js';
 import {
   IGoogleDriveClient,
@@ -55,7 +59,8 @@ export class CloudSaveController {
     @Inject(GOOGLE_DRIVE_CLIENT_TOKEN) private readonly _driveClient: IGoogleDriveClient,
     private readonly _leaseLockService: LeaseLockService,
     @Inject(USER_REPOSITORY_TOKEN) private readonly _userRepository: IUserRepository,
-    private readonly _aesGcmService: AesGcmService
+    private readonly _aesGcmService: AesGcmService,
+    private readonly _googleAuthService: GoogleAuthService = new GoogleAuthService()
   ) {}
 
   /**
@@ -64,12 +69,16 @@ export class CloudSaveController {
   @Get()
   public async getCloudSave(
     @Req() req: AuthenticatedRequest,
-    @Query('fileName') customFileName?: string
+    @Query('fileName') customFileName?: string,
+    @Query('slotName') slotName: string = 'QuickSave'
   ) {
     const fileName = customFileName || DEFAULT_SAVE_FILENAME;
+    const committed = await this._leaseLockService.getCommittedSave(req.user.userId, slotName);
+    const committedFile = committed?.fileName;
+    if (!committedFile) return { found: false, fileName, save: null };
     const accessToken = await this.resolveUserAccessToken(req.user.userId);
 
-    const rawJson = await this._driveClient.getAppDataFile(accessToken, fileName);
+    const rawJson = await this._driveClient.getAppDataFile(accessToken, committedFile);
     if (!rawJson) {
       return {
         found: false,
@@ -91,14 +100,13 @@ export class CloudSaveController {
     // Verify SHA-256 payload integrity
     await verifySaveIntegrity(validatedSave as unknown as Record<string, unknown>);
 
-    // Update known version in lease manager
-    this._leaseLockService.setKnownVersion(req.user.userId, validatedSave.slotName, validatedSave.updatedAtIso);
+    if (validatedSave.slotName !== slotName) throw new BadRequestException('Remote save slot mismatch.');
 
     return {
       found: true,
       fileName,
       save: validatedSave,
-      version: validatedSave.updatedAtIso,
+      version: committed.version,
       checksumSha256: validatedSave.checksumSha256,
     };
   }
@@ -115,7 +123,7 @@ export class CloudSaveController {
       throw new BadRequestException('slotName is required to acquire a save lease.');
     }
 
-    const lease = this._leaseLockService.acquireLease(
+    const lease = await this._leaseLockService.acquireLease(
       req.user.userId,
       body.slotName,
       undefined,
@@ -151,22 +159,21 @@ export class CloudSaveController {
     await verifySaveIntegrity(validatedSave as unknown as Record<string, unknown>);
 
     const slotName = validatedSave.slotName;
-    const fileName = body.fileName || DEFAULT_SAVE_FILENAME;
 
     // 3. Optimistic concurrency check: verify lease and prevent mid-air collisions
-    if (body.leaseToken) {
-      const isValidLease = this._leaseLockService.verifyLease(
-        req.user.userId,
-        slotName,
-        body.leaseToken
+    const isValidLease = await this._leaseLockService.verifyLease(
+      req.user.userId,
+      slotName,
+      body.leaseToken
+    );
+    if (!isValidLease) {
+      throw new ConflictException(
+        `Cloud save slot "${slotName}" is currently locked by another active session, or lease token is invalid/expired.`
       );
-      if (!isValidLease) {
-        throw new ConflictException(
-          `Invalid or expired lease token for slot "${slotName}". Another device or tab may have saved first.`
-        );
-      }
-    } else if (body.expectedVersion) {
-      const knownVersion = this._leaseLockService.getKnownVersion(req.user.userId, slotName);
+    }
+
+    if (body.expectedVersion) {
+      const knownVersion = await this._leaseLockService.getKnownVersion(req.user.userId, slotName);
       if (knownVersion && knownVersion !== body.expectedVersion) {
         throw new ConflictException(
           `Concurrent save collision on slot "${slotName}". Remote version is "${knownVersion}", but client expected "${body.expectedVersion}".`
@@ -177,20 +184,25 @@ export class CloudSaveController {
     // 4. Resolve Drive access token
     const accessToken = await this.resolveUserAccessToken(req.user.userId);
 
-    // 5. Upload to Google Drive hidden appDataFolder
+    // 5. Stage immutable content. A stale worker can leave an orphan, but it
+    // cannot overwrite the canonical file or publish a superseded version.
+    const version = randomUUID();
+    const stagedFileName = `save_${req.user.userId}_${createHash('sha256').update(slotName).digest('hex').slice(0, 16)}_${version}.json`;
+    // Upload to Google Drive hidden appDataFolder
     const serializedSave = JSON.stringify(validatedSave, null, 2);
     const result = await this._driveClient.uploadAppDataFile(
       accessToken,
-      fileName,
+      stagedFileName,
       serializedSave
     );
 
     // 6. Commit version and release lease
-    this._leaseLockService.commitVersionAndRelease(
+    await this._leaseLockService.commitVersionAndRelease(
       req.user.userId,
       slotName,
       body.leaseToken,
-      validatedSave.updatedAtIso
+      version,
+      stagedFileName
     );
 
     return {
@@ -199,7 +211,7 @@ export class CloudSaveController {
       fileName: result.name,
       modifiedTime: result.modifiedTime,
       sizeBytes: result.sizeBytes,
-      version: validatedSave.updatedAtIso,
+      version,
       checksumSha256: validatedSave.checksumSha256,
     };
   }
@@ -210,23 +222,15 @@ export class CloudSaveController {
       throw new NotFoundException(`User record not found: ${userId}`);
     }
 
-    // In simulated/mock mode or if mock token is saved
-    if (user.googleSub.startsWith('mock_') || user.encryptedRefreshToken === 'no_refresh_token_provided') {
-      return `ya29.mock_token_for_${user.googleSub}`;
+    if (this._driveClient instanceof MockGoogleDriveClient && process.env['NODE_ENV'] !== 'production') {
+      return `test_drive_${user.id}`;
     }
-
+    if (user.encryptedRefreshToken === 'no_refresh_token_provided') throw new UnauthorizedException('Drive authorization required.');
+    let refreshToken: string;
     try {
-      const decryptedRefreshToken = this._aesGcmService.decrypt({
-        ciphertextHex: user.encryptedRefreshToken,
-        ivHex: user.encryptionIv,
-        tagHex: user.encryptionTag,
-      });
-
-      // Returns token (or mock token in dev)
-      return `ya29.live_token_from_${decryptedRefreshToken.slice(0, 10)}`;
-    } catch {
-      // Fallback
-      return `ya29.fallback_token_for_${user.googleSub}`;
-    }
+      refreshToken = this._aesGcmService.decrypt({ ciphertextHex: user.encryptedRefreshToken,
+        ivHex: user.encryptionIv, tagHex: user.encryptionTag });
+    } catch { throw new UnauthorizedException('Stored Drive authorization is invalid.'); }
+    return this._googleAuthService.refreshAccessToken(refreshToken);
   }
 }

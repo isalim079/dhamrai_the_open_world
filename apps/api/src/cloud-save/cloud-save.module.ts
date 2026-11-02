@@ -19,7 +19,7 @@ import { CryptoModule } from '../crypto/crypto.module.js';
       provide: GOOGLE_DRIVE_CLIENT_TOKEN,
       // Default to MockGoogleDriveClient in test/dev environments or when GOOGLE_CLIENT_ID is not configured
       useFactory: (mockClient: MockGoogleDriveClient, realService: GoogleDriveService) => {
-        if (process.env['USE_REAL_GOOGLE_DRIVE'] === 'true') {
+        if (process.env['NODE_ENV'] === 'production' || process.env['USE_REAL_GOOGLE_DRIVE'] === 'true') {
           return realService;
         }
         return mockClient;

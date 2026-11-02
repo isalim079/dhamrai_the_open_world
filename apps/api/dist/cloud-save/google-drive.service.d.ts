@@ -6,7 +6,6 @@
  */
 import { IGoogleDriveClient, DriveUploadResult } from './google-drive.interface.js';
 export declare class GoogleDriveService implements IGoogleDriveClient {
-    private readonly _logger;
     getAppDataFile(accessToken: string, fileName: string): Promise<string | null>;
     uploadAppDataFile(accessToken: string, fileName: string, contentJson: string): Promise<DriveUploadResult>;
     deleteAppDataFile(accessToken: string, fileName: string): Promise<boolean>;

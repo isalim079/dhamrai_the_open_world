@@ -1,0 +1,65 @@
+{
+  "outcome": "BLOCKED",
+  "runs": [
+    {
+      "command": [
+        "yarn",
+        "--version"
+      ],
+      "exit_code": 0,
+      "output_file": "docs/evidence/milestone-4/yarn-version.txt"
+    },
+    {
+      "command": [
+        "yarn",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "output_file": "docs/evidence/milestone-4/typecheck.txt"
+    },
+    {
+      "command": [
+        "yarn",
+        "test"
+      ],
+      "exit_code": 0,
+      "output_file": "docs/evidence/milestone-4/typescript-tests.txt"
+    },
+    {
+      "command": [
+        "yarn",
+        "vitest",
+        "run",
+        "apps/api/test/postgres.real.test.ts"
+      ],
+      "exit_code": 0,
+      "output_file": "docs/evidence/milestone-4/postgres-real-tests.txt"
+    },
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/geo-pipeline",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "output_file": "docs/evidence/milestone-4/python-tests.txt"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output_file": "docs/evidence/milestone-4/diff-check.txt"
+    }
+  ],
+  "real_postgresql": "NOT VERIFIED; four tests skipped; initdb failed with shared-memory permission denied",
+  "dependency_install": "BLOCKED: pg@8.16.3 absent from cache; registry DNS unavailable; yarn.lock not regenerated"
+}

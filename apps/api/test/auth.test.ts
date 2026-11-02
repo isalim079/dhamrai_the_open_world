@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import {
   GoogleAuthService,
@@ -9,7 +9,7 @@ import {
   InMemoryUserRepository,
 } from '../src/index.js';
 
-describe('API Auth — Google OAuth & Session Gateway', () => {
+describe('API Auth — mocked provider/controller and session unit tests', () => {
   let googleAuthService: GoogleAuthService;
   let sessionService: SessionService;
   let aesGcmService: AesGcmService;
@@ -19,6 +19,18 @@ describe('API Auth — Google OAuth & Session Gateway', () => {
 
   beforeEach(() => {
     googleAuthService = new GoogleAuthService();
+    // Controller/session unit tests explicitly stub the identity provider. Actual
+    // cryptographic verification is exercised separately in security.test.ts.
+    vi.spyOn(googleAuthService, 'consumeOAuth').mockResolvedValue({nonce:'test',state:'test',verifier:'test',redirectUri:'https://test/callback',expires:Date.now()+60000});
+    vi.spyOn(googleAuthService, 'verifyIdToken').mockImplementation(async token => {
+      if (!token.startsWith('mock_token_')) throw new UnauthorizedException();
+      const sub=token.slice('mock_token_'.length);
+      return {sub,email:sub+'@example.com',emailVerified:true,aud:'test',iss:'https://accounts.google.com',exp:Date.now()/1000+3600};
+    });
+    vi.spyOn(googleAuthService, 'exchangeAuthorizationCode').mockImplementation(async code => ({
+      accessToken:'mock_access', refreshToken:'mock_refresh_token_'+code.slice('mock_code_'.length),
+      expiresInSeconds:3600,scope:'drive.appdata',idToken:'mock_token_'+code.slice('mock_code_'.length)
+    }));
     sessionService = new SessionService();
     aesGcmService = new AesGcmService();
     userRepository = new InMemoryUserRepository();
@@ -48,7 +60,7 @@ describe('API Auth — Google OAuth & Session Gateway', () => {
       );
     });
 
-    it('exchanges OAuth authorization code for tokens with drive.appdata scope', async () => {
+    it('passes through mocked OAuth authorization code for tokens with drive.appdata scope', async () => {
       const code = 'mock_code_sub_556677';
       const result = await googleAuthService.exchangeAuthorizationCode(code);
 

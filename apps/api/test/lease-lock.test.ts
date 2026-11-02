@@ -1,112 +1,73 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { ConflictException } from '@nestjs/common';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { LeaseLockService } from '../src/index.js';
+import { ConflictException } from '@nestjs/common';
+import { createPostgresClient } from '../src/database/database.module.js';
 
-describe('API Cloud Save — Optimistic Concurrency Lease Lock Manager', () => {
-  let leaseLockService: LeaseLockService;
-
-  beforeEach(() => {
-    leaseLockService = new LeaseLockService();
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
+describe('Lease unit tests (process-local; no distributed correctness claim)', () => {
+  it('requires matching owner, active expiry and a current version at commit', async () => {
+    const s = new LeaseLockService();
+    const l = await s.acquireLease('u','slot');
+    expect(await s.verifyLease('u','slot')).toBe(false);
+    await expect(s.commitVersionAndRelease('u','slot',undefined,'v1')).rejects.toThrow(ConflictException);
+    await expect(s.commitVersionAndRelease('u','slot','wrong','v1')).rejects.toThrow(ConflictException);
+    await s.commitVersionAndRelease('u','slot',l.leaseToken,'v1','file1');
+    await expect(s.acquireLease('u','slot')).rejects.toThrow(ConflictException);
+    await expect(s.acquireLease('u','slot',undefined,'stale')).rejects.toThrow(ConflictException);
+    const next=await s.acquireLease('u','slot',undefined,'v1');
+    await expect(s.commitVersionAndRelease('u','slot',l.leaseToken,'v2')).rejects.toThrow(ConflictException);
+    expect(await s.verifyLease('u','slot',next.leaseToken)).toBe(true);
+    expect(await s.getCommittedSave('u','slot')).toEqual({fileName:'file1',version:'v1'});
   });
-
-  it('successfully acquires a lease lock for a user and slot', () => {
-    const lease = leaseLockService.acquireLease('usr_001', 'Slot_1', undefined, undefined, 5000);
-
-    expect(lease.leaseToken).toBeDefined();
-    expect(lease.userId).toBe('usr_001');
-    expect(lease.slotName).toBe('Slot_1');
-    expect(lease.expiresAtMs).toBeGreaterThan(Date.now());
+  it('reclaims expired leases with a fresh server token and fences the old owner', async () => {
+    vi.useFakeTimers();
+    const s=new LeaseLockService(); const a=await s.acquireLease('u','s',undefined,undefined,10);
+    vi.advanceTimersByTime(11);
+    expect(await s.verifyLease('u','s',a.leaseToken)).toBe(false);
+    await expect(s.commitVersionAndRelease('u','s',a.leaseToken,'v')).rejects.toThrow(ConflictException);
+    const b=await s.acquireLease('u','s',a.leaseToken);
+    expect(b.leaseToken).not.toBe(a.leaseToken);
+    await s.releaseLease('u','s',a.leaseToken);
+    expect(await s.verifyLease('u','s',b.leaseToken)).toBe(true);
   });
-
-  it('allows the same lease holder to renew an active lease', () => {
-    const lease1 = leaseLockService.acquireLease('usr_001', 'Slot_1', undefined, undefined, 5000);
-    const lease2 = leaseLockService.acquireLease('usr_001', 'Slot_1', lease1.leaseToken, undefined, 10000);
-
-    expect(lease2.leaseToken).toBe(lease1.leaseToken);
-    expect(lease2.expiresAtMs).toBeGreaterThan(lease1.expiresAtMs);
+  it('renews only a matching active owner and rejects invalid TTLs', async () => {
+    const s=new LeaseLockService(); const a=await s.acquireLease('u','s');
+    const b=await s.acquireLease('u','s',a.leaseToken,undefined,60000);
+    expect(b.leaseToken).toBe(a.leaseToken);
+    await expect(s.acquireLease('u','s','wrong')).rejects.toThrow(ConflictException);
+    for(const ttl of [-1,0,Infinity,120001]) await expect(s.acquireLease('u','t',undefined,undefined,ttl)).rejects.toThrow();
   });
-
-  it('rejects concurrent lease acquisition by a different worker while lease is active', () => {
-    leaseLockService.acquireLease('usr_001', 'Slot_1', 'client_worker_A', undefined, 10000);
-
-    // Worker B attempts to lock the same slot
-    expect(() =>
-      leaseLockService.acquireLease('usr_001', 'Slot_1', 'client_worker_B', undefined, 10000)
-    ).toThrowError(ConflictException);
+  it('production without PostgreSQL refuses local locking or repository fallback', async () => {
+    vi.stubEnv('NODE_ENV','production'); vi.stubEnv('DATABASE_URL','');
+    expect(() => new LeaseLockService()).toThrow('PostgreSQL');
+    await expect(createPostgresClient()).rejects.toThrow('PostgreSQL');
   });
-
-  it('permits a new lease once the previous lease has expired', () => {
-    // Acquire lease that expires immediately (ttlMs = -1)
-    leaseLockService.acquireLease('usr_001', 'Slot_1', 'client_worker_A', undefined, -100);
-
-    // Worker B can now acquire the lease cleanly
-    const leaseB = leaseLockService.acquireLease('usr_001', 'Slot_1', 'client_worker_B', undefined, 5000);
-    expect(leaseB.leaseToken).toBe('client_worker_B');
+  it('database errors propagate; no process-local fallback is used', async () => {
+    vi.stubEnv('NODE_ENV','production');
+    const query=vi.fn().mockRejectedValue(new Error('database offline'));
+    const s=new LeaseLockService({query});
+    await expect(s.acquireLease('u','s')).rejects.toThrow('database offline');
+    await expect(s.commitVersionAndRelease('u','s','token','v')).rejects.toThrow('database offline');
+    await expect(s.verifyLease('u','s','token')).rejects.toThrow('database offline');
+    await expect(s.getCommittedSave('u','s')).rejects.toThrow('database offline');
   });
-
-  it('detects version collision when expectedVersion does not match remote version', () => {
-    leaseLockService.setKnownVersion('usr_001', 'Slot_1', '2026-11-02T12:00:00.000Z');
-
-    // Client expects version "2026-11-01T10:00:00.000Z" (stale/older)
-    expect(() =>
-      leaseLockService.acquireLease('usr_001', 'Slot_1', undefined, '2026-11-01T10:00:00.000Z')
-    ).toThrowError(ConflictException);
+});
+describe('SQL contract unit tests (query mocks; NOT real PostgreSQL)', () => {
+  it('acquisition uses conditional ON CONFLICT and DB time, with no read-before-write', async () => {
+    const query=vi.fn().mockResolvedValue({rows:[],rowCount:0});
+    await expect(new LeaseLockService({query}).acquireLease('u','s')).rejects.toThrow(ConflictException);
+    const sql=query.mock.calls[0]![0] as string;
+    expect(sql).toContain('ON CONFLICT (key) DO UPDATE');
+    expect(sql).toContain('clock_timestamp()');
+    expect(sql).toContain('IS NOT DISTINCT FROM');
+    expect(query).toHaveBeenCalledTimes(1);
   });
-
-  it('updates known version and clears lease upon commitVersionAndRelease', () => {
-    const lease = leaseLockService.acquireLease('usr_001', 'Slot_1', undefined, undefined, 5000);
-
-    leaseLockService.commitVersionAndRelease('usr_001', 'Slot_1', lease.leaseToken, '2026-11-02T12:05:00.000Z');
-
-    expect(leaseLockService.getKnownVersion('usr_001', 'Slot_1')).toBe('2026-11-02T12:05:00.000Z');
-
-    // Another client can immediately acquire a fresh lease
-    const nextLease = leaseLockService.acquireLease('usr_001', 'Slot_1', 'client_B', '2026-11-02T12:05:00.000Z');
-    expect(nextLease.leaseToken).toBe('client_B');
-  });
-
-  it('rejects commit when lease token does not match active lease (lease ownership validation)', () => {
-    const lease = leaseLockService.acquireLease('usr_001', 'Slot_1', 'authorized_holder', undefined, 10000);
-
-    expect(() =>
-      leaseLockService.commitVersionAndRelease('usr_001', 'Slot_1', 'impostor_token', '2026-11-02T12:10:00.000Z')
-    ).toThrowError(ConflictException);
-  });
-
-  describe('Multi-Instance & Production Concurrency Limitations (Audit Proof)', () => {
-    it('demonstrates that process-local in-memory lease locks fail to coordinate across separate API instances', () => {
-      // Simulate two independent service instances (e.g. running behind a load balancer or across containers)
-      const apiInstanceA = new LeaseLockService();
-      const apiInstanceB = new LeaseLockService();
-
-      // Instance A acquires a lease lock for user_001
-      const leaseA = apiInstanceA.acquireLease('usr_001', 'Slot_1', 'worker_node_A', undefined, 10000);
-      expect(leaseA.leaseToken).toBe('worker_node_A');
-
-      // Instance B receives a concurrent write lease acquisition for the same user and slot.
-      // Because state is in-memory and process-local, Instance B has no knowledge of Instance A's lease!
-      // In a true distributed lease system, this call on Instance B MUST throw ConflictException.
-      // However, because it is process-local, Instance B mistakenly succeeds:
-      const leaseB = apiInstanceB.acquireLease('usr_001', 'Slot_1', 'worker_node_B', undefined, 10000);
-      expect(leaseB.leaseToken).toBe('worker_node_B');
-
-      // Consequence: Both worker A and worker B now hold conflicting leases simultaneously!
-      expect(apiInstanceA.verifyLease('usr_001', 'Slot_1', 'worker_node_A')).toBe(true);
-      expect(apiInstanceB.verifyLease('usr_001', 'Slot_1', 'worker_node_B')).toBe(true);
-
-      // This test proves that in-memory lease locking is process-local and is a production blocker for multi-instance deployments.
-    });
-
-    it('demonstrates that application restart clears active leases', () => {
-      let serviceInstance: LeaseLockService | null = new LeaseLockService();
-      serviceInstance.acquireLease('usr_001', 'Slot_1', 'worker_A', undefined, 60000);
-
-      // Simulate container or process restart
-      serviceInstance = new LeaseLockService();
-
-      // State is lost on restart; another worker can acquire immediately without waiting for TTL
-      const leaseAfterRestart = serviceInstance.acquireLease('usr_001', 'Slot_1', 'worker_B', undefined, 60000);
-      expect(leaseAfterRestart.leaseToken).toBe('worker_B');
-    });
+  it('commit tests owner, expiry and expected version in the same UPDATE', async () => {
+    const query=vi.fn().mockResolvedValue({rows:[],rowCount:0});
+    await expect(new LeaseLockService({query}).commitVersionAndRelease('u','s','t','v')).rejects.toThrow(ConflictException);
+    const sql=query.mock.calls[0]![0] as string;
+    expect(sql).toContain('lease_token=$2'); expect(sql).toContain('expires_at_ms >');
+    expect(sql).toContain('known_version IS NOT DISTINCT FROM expected_version');
+    expect(query).toHaveBeenCalledTimes(1);
   });
 });

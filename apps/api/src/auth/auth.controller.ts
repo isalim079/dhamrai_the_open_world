@@ -1,11 +1,15 @@
 import {
   Controller,
+  Get,
+  Res,
+  Req,
   Post,
   Body,
   BadRequestException,
   Inject,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
+import type { Request, Response } from 'express';
 import { GoogleAuthService } from './google-auth.service.js';
 import { SessionService } from './session.service.js';
 import { AesGcmService } from '../crypto/aes-gcm.service.js';
@@ -19,6 +23,7 @@ export interface GoogleAuthDto {
   idToken?: string;
   code?: string;
   redirectUri?: string;
+  state?: string;
 }
 
 export interface AuthResponseDto {
@@ -40,12 +45,23 @@ export class AuthController {
     @Inject(USER_REPOSITORY_TOKEN) private readonly _userRepository: IUserRepository
   ) {}
 
+  @Get('google/start')
+  public async beginGoogle(@Res({ passthrough: true }) res: Response) {
+    const started = await this._googleAuthService.beginOAuth();
+    res.cookie('dhamrai_oauth', started.cookie, { httpOnly: true, secure: process.env['NODE_ENV'] === 'production',
+      sameSite: 'lax', path: '/api/auth', maxAge: 600_000 });
+    return { authorizationUrl: started.authorizationUrl };
+  }
+
   @Post('google')
-  public async authenticateGoogle(@Body() body: GoogleAuthDto): Promise<AuthResponseDto> {
+  public async authenticateGoogle(@Body() body: GoogleAuthDto, @Req() req?: Request): Promise<AuthResponseDto> {
     if (!body || (!body.idToken && !body.code)) {
       throw new BadRequestException('Request body must contain either "idToken" or "code".');
     }
 
+    const cookies = req?.headers.cookie?.split(';').map(c => c.trim()) ?? [];
+    const cookie = cookies.find(c => c.startsWith('dhamrai_oauth='))?.slice('dhamrai_oauth='.length);
+    if (body.idToken && body.code) throw new BadRequestException('Supply exactly one authentication credential.');
     let sub: string;
     let email: string;
     let name: string | undefined;
@@ -55,7 +71,7 @@ export class AuthController {
       // Exchange code for tokens
       const exchangeResult = await this._googleAuthService.exchangeAuthorizationCode(
         body.code,
-        body.redirectUri
+        body.redirectUri, body.state, cookie
       );
       refreshToken = exchangeResult.refreshToken;
 
@@ -66,12 +82,11 @@ export class AuthController {
         email = payload.email;
         name = payload.name;
       } else {
-        // Fallback: derive from mock code
-        sub = body.code.replace('mock_code_', '');
-        email = `user_${sub}@gmail.com`;
+        throw new BadRequestException('Google did not provide a verified identity.');
       }
     } else if (body.idToken) {
-      const payload = await this._googleAuthService.verifyIdToken(body.idToken);
+      const tx = await this._googleAuthService.consumeOAuth(body.state, cookie, body.redirectUri);
+      const payload = await this._googleAuthService.verifyIdToken(body.idToken, tx.nonce);
       sub = payload.sub;
       email = payload.email;
       name = payload.name;
