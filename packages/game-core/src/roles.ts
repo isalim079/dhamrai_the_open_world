@@ -9,8 +9,10 @@ import { PHASE_1_ANCHORS, WorldPosition } from '@dhamrai/shared-contracts';
 import { InventoryItem } from './inventory.js';
 
 export const RICKSHAW_STARTING_CASH_TAKAS = 250;
-export const RICKSHAW_STARTING_CASH_POISHA = 25000; // ৳250.00
-export const RICKSHAW_DAILY_RENT_POISHA = 5000; // ৳50.00
+export const RICKSHAW_STARTING_CASH_MINOR_UNITS = 25000; // ৳250.00 BDT
+export const RICKSHAW_STARTING_CASH_POISHA = RICKSHAW_STARTING_CASH_MINOR_UNITS; // Alias
+export const RICKSHAW_DAILY_RENT_MINOR_UNITS = 5000; // ৳50.00 BDT
+export const RICKSHAW_DAILY_RENT_POISHA = RICKSHAW_DAILY_RENT_MINOR_UNITS; // Alias
 
 export const RICKSHAW_LICENSE_SLIP_ITEM: InventoryItem = {
   id: 'rickshaw_license_slip',
@@ -45,7 +47,8 @@ export interface RickshawDriverArchetype {
     id: string;
     model: string;
     isRented: boolean;
-    dailyRentPoisha: number;
+    dailyRentMinorUnits: number;
+    dailyRentPoisha?: number; // Backwards-compatible alias
     conditionPercent: number;
     speedMps: number;
     steeringAngleRad: number;
@@ -64,7 +67,8 @@ export function createInitialRickshawDriverState(): RickshawDriverArchetype {
       id: 'rickshaw_rented_01',
       model: 'basic_pedal_rickshaw',
       isRented: true,
-      dailyRentPoisha: RICKSHAW_DAILY_RENT_POISHA,
+      dailyRentMinorUnits: RICKSHAW_DAILY_RENT_MINOR_UNITS,
+      dailyRentPoisha: RICKSHAW_DAILY_RENT_MINOR_UNITS,
       conditionPercent: 100,
       speedMps: 0,
       steeringAngleRad: 0,

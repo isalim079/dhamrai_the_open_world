@@ -1,0 +1,1 @@
+{"version":3,"file":"v1-to-v2.step.d.ts","sourceRoot":"","sources":["../../src/migrations/v1-to-v2.step.ts"],"names":[],"mappings":"AAAA;;;;;;;;;;;;GAYG;AAEH,OAAO,EACL,cAAc,EACd,cAAc,EACd,aAAa,EAEd,MAAM,2BAA2B,CAAC;AACnC,OAAO,EAAE,aAAa,EAAE,MAAM,yBAAyB,CAAC;AAIxD,eAAO,MAAM,8BAA8B,EAAE,aAAa,EAiBzD,CAAC;AAEF,eAAO,MAAM,mBAAmB,EAAE,aAAa,CAAC,cAAc,EAAE,cAAc,CAgE7E,CAAC"}

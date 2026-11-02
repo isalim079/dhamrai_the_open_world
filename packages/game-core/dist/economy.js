@@ -2,16 +2,17 @@
  * Dhamrai Life — Economy Domain & Append-Only Cash Ledger
  * ========================================================
  * Strict integer-based currency domain operating in minor units (Poisha).
- * 1 Taka (৳) = 100 Poisha.
+ * 1 Bangladeshi Taka (BDT) = 100 Poisha.
  *
  * Guarantees:
  * 1. Strict integer arithmetic (no floating-point rounding errors).
- * 2. Immutable, append-only transaction ledger.
- * 3. Invariant: Current balance must strictly equal the algebraic sum of all ledger events.
+ * 2. Immutable, append-only transaction ledger with explicit BDT currency code.
+ * 3. Invariant: Current balance must strictly equal the algebraic sum of all ledger deltaMinorUnits.
  * 4. Insufficient fund guards (prevents illegal overdrafts).
  */
+import { CURRENCY_CODE_BDT, } from '@dhamrai/shared-contracts';
 /**
- * Converts whole Bangladeshi Taka (৳) to Poisha (integer pence/cents).
+ * Converts whole Bangladeshi Taka (৳) to Poisha (integer minor units).
  */
 export function takaToPoisha(taka) {
     if (!Number.isFinite(taka)) {
@@ -48,55 +49,68 @@ export function generateDeterministicTxId(category, timestampMs) {
     return `tx_${timestampMs}_${category.toLowerCase()}_${txSequenceCounter}`;
 }
 export class EconomyDomain {
-    _balancePence = 0;
+    _balanceMinorUnits = 0;
     _ledger = [];
     _txIdSet = new Set();
-    constructor(initialLedger = [], startingCashPence = 0) {
+    constructor(initialLedger = [], startingCashMinorUnits = 0) {
         if (initialLedger.length > 0) {
             // Hydrate from existing ledger
             let runningSum = 0;
             for (const tx of initialLedger) {
-                assertSafeInteger(tx.deltaPence, 'transaction deltaPence');
+                assertSafeInteger(tx.deltaMinorUnits, 'transaction deltaMinorUnits');
                 assertSafeInteger(tx.timestampMs, 'transaction timestampMs');
                 if (this._txIdSet.has(tx.id)) {
                     throw new Error(`Duplicate transaction ID detected in ledger: ${tx.id}`);
                 }
-                runningSum += tx.deltaPence;
-                if (tx.runningBalancePence !== runningSum) {
-                    throw new Error(`Ledger integrity check failed for transaction ${tx.id}. Expected running balance ${runningSum}, found ${tx.runningBalancePence}.`);
+                runningSum += tx.deltaMinorUnits;
+                if (tx.runningBalanceMinorUnits !== runningSum) {
+                    throw new Error(`Ledger integrity check failed for transaction ${tx.id}. Expected running balance ${runningSum}, found ${tx.runningBalanceMinorUnits}.`);
                 }
-                this._ledger.push(Object.freeze({ ...tx }));
+                this._ledger.push(Object.freeze({ ...tx, currency: CURRENCY_CODE_BDT }));
                 this._txIdSet.add(tx.id);
             }
-            this._balancePence = runningSum;
+            this._balanceMinorUnits = runningSum;
         }
-        else if (startingCashPence > 0) {
-            assertSafeInteger(startingCashPence, 'startingCashPence');
+        else if (startingCashMinorUnits > 0) {
+            assertSafeInteger(startingCashMinorUnits, 'startingCashMinorUnits');
             const now = Date.now();
             const initTx = {
                 id: `tx_init_${now}`,
                 timestampMs: now,
                 category: 'INITIAL_BALANCE',
-                deltaPence: startingCashPence,
+                deltaMinorUnits: startingCashMinorUnits,
+                currency: CURRENCY_CODE_BDT,
                 description: 'Starting cash balance',
-                runningBalancePence: startingCashPence,
+                runningBalanceMinorUnits: startingCashMinorUnits,
             };
-            this._balancePence = startingCashPence;
+            this._balanceMinorUnits = startingCashMinorUnits;
             this._ledger.push(Object.freeze(initTx));
             this._txIdSet.add(initTx.id);
         }
     }
     /**
-     * Current liquid cash balance in Poisha.
+     * Current liquid cash balance in Poisha (integer minor units).
      */
-    get balancePence() {
-        return this._balancePence;
+    get balanceMinorUnits() {
+        return this._balanceMinorUnits;
     }
     /**
-     * Current balance in Taka.
+     * Alias for balanceMinorUnits in Poisha.
+     */
+    get balancePoisha() {
+        return this._balanceMinorUnits;
+    }
+    /**
+     * Backwards-compatible alias for balanceMinorUnits.
+     */
+    get balancePence() {
+        return this._balanceMinorUnits;
+    }
+    /**
+     * Current balance in whole and fractional Taka.
      */
     get balanceTaka() {
-        return poishaToTaka(this._balancePence);
+        return poishaToTaka(this._balanceMinorUnits);
     }
     /**
      * Returns an immutable read-only view of the transaction ledger.
@@ -111,35 +125,36 @@ export class EconomyDomain {
         return this._txIdSet.has(id);
     }
     /**
-     * Checks whether the player can afford a given expense in Poisha.
+     * Checks whether the player can afford a given expense in minor currency units (Poisha).
      */
-    hasSufficientFunds(amountPence) {
-        assertSafeInteger(amountPence, 'amountPence');
-        if (amountPence < 0) {
-            throw new RangeError(`Amount to check cannot be negative: ${amountPence}`);
+    hasSufficientFunds(amountMinorUnits) {
+        assertSafeInteger(amountMinorUnits, 'amountMinorUnits');
+        if (amountMinorUnits < 0) {
+            throw new RangeError(`Amount to check cannot be negative: ${amountMinorUnits}`);
         }
-        return this._balancePence >= amountPence;
+        return this._balanceMinorUnits >= amountMinorUnits;
     }
     /**
-     * Credits the player's account with a positive amount.
+     * Credits the player's account with a positive minor unit amount.
      */
-    credit(amountPence, category, description, timestampMs = Date.now(), customId) {
-        assertSafeInteger(amountPence, 'amountPence');
-        if (amountPence < 0) {
-            throw new RangeError(`Credit amount must be non-negative: ${amountPence}. Use debit() for expenses.`);
+    credit(amountMinorUnits, category, description, timestampMs = Date.now(), customId) {
+        assertSafeInteger(amountMinorUnits, 'amountMinorUnits');
+        if (amountMinorUnits < 0) {
+            throw new RangeError(`Credit amount must be non-negative: ${amountMinorUnits}. Use debit() for expenses.`);
         }
         const txId = customId ?? generateDeterministicTxId(category, timestampMs);
         if (this._txIdSet.has(txId)) {
             throw new Error(`Transaction with ID "${txId}" already exists. Payouts must be idempotent.`);
         }
-        this._balancePence += amountPence;
+        this._balanceMinorUnits += amountMinorUnits;
         const tx = Object.freeze({
             id: txId,
             timestampMs,
             category,
-            deltaPence: amountPence,
+            deltaMinorUnits: amountMinorUnits,
+            currency: CURRENCY_CODE_BDT,
             description,
-            runningBalancePence: this._balancePence,
+            runningBalanceMinorUnits: this._balanceMinorUnits,
         });
         this._ledger.push(tx);
         this._txIdSet.add(tx.id);
@@ -149,26 +164,27 @@ export class EconomyDomain {
      * Debits the player's account with a negative delta.
      * Throws RangeError if balance is insufficient unless allowOverdraft is explicitly enabled.
      */
-    debit(amountPence, category, description, timestampMs = Date.now(), customId, allowOverdraft = false) {
-        assertSafeInteger(amountPence, 'amountPence');
-        if (amountPence < 0) {
-            throw new RangeError(`Debit amount must be non-negative: ${amountPence}. Passed amount is subtracted.`);
+    debit(amountMinorUnits, category, description, timestampMs = Date.now(), customId, allowOverdraft = false) {
+        assertSafeInteger(amountMinorUnits, 'amountMinorUnits');
+        if (amountMinorUnits < 0) {
+            throw new RangeError(`Debit amount must be non-negative: ${amountMinorUnits}. Passed amount is subtracted.`);
         }
-        if (!allowOverdraft && this._balancePence < amountPence) {
-            throw new RangeError(`Insufficient funds: Attempted to debit ${amountPence} Poisha (${formatPoishaAsTaka(amountPence)}), but current balance is only ${this._balancePence} Poisha (${formatPoishaAsTaka(this._balancePence)}).`);
+        if (!allowOverdraft && this._balanceMinorUnits < amountMinorUnits) {
+            throw new RangeError(`Insufficient funds: Attempted to debit ${amountMinorUnits} Poisha (${formatPoishaAsTaka(amountMinorUnits)}), but current balance is only ${this._balanceMinorUnits} Poisha (${formatPoishaAsTaka(this._balanceMinorUnits)}).`);
         }
         const txId = customId ?? generateDeterministicTxId(category, timestampMs);
         if (this._txIdSet.has(txId)) {
             throw new Error(`Transaction with ID "${txId}" already exists.`);
         }
-        this._balancePence -= amountPence;
+        this._balanceMinorUnits -= amountMinorUnits;
         const tx = Object.freeze({
             id: txId,
             timestampMs,
             category,
-            deltaPence: -amountPence,
+            deltaMinorUnits: -amountMinorUnits,
+            currency: CURRENCY_CODE_BDT,
             description,
-            runningBalancePence: this._balancePence,
+            runningBalanceMinorUnits: this._balanceMinorUnits,
         });
         this._ledger.push(tx);
         this._txIdSet.add(tx.id);
@@ -176,17 +192,17 @@ export class EconomyDomain {
     }
     /**
      * Evaluates the fundamental ledger invariant:
-     * Current Balance == Sum of all Delta Events in the Ledger.
+     * Current Balance == Sum of all deltaMinorUnits in the Ledger.
      */
     verifyIntegrity() {
         let calculated = 0;
         for (const tx of this._ledger) {
-            calculated += tx.deltaPence;
-            if (tx.runningBalancePence !== calculated) {
+            calculated += tx.deltaMinorUnits;
+            if (tx.runningBalanceMinorUnits !== calculated) {
                 return false;
             }
         }
-        return calculated === this._balancePence;
+        return calculated === this._balanceMinorUnits;
     }
 }
 //# sourceMappingURL=economy.js.map

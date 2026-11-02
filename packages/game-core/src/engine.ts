@@ -8,8 +8,9 @@
 import {
   EconomyTransaction,
   PlayerState,
-  SaveEnvelopeV1,
+  SaveEnvelopeV2,
   WorldPosition,
+  CURRENCY_CODE_BDT,
 } from '@dhamrai/shared-contracts';
 import { EconomyDomain } from './economy.js';
 import { InventoryDomain } from './inventory.js';
@@ -18,7 +19,7 @@ import {
   createInitialRickshawDriverState,
   RickshawDriverArchetype,
   RICKSHAW_LICENSE_SLIP_ITEM,
-  RICKSHAW_STARTING_CASH_POISHA,
+  RICKSHAW_STARTING_CASH_MINOR_UNITS,
 } from './roles.js';
 
 export class GameCoreEngine {
@@ -54,7 +55,7 @@ export class GameCoreEngine {
    * Initializes a brand new game session for the Rickshaw Driver role.
    */
   public static createNewGame(timestampMs: number = Date.now()): GameCoreEngine {
-    const economy = new EconomyDomain([], RICKSHAW_STARTING_CASH_POISHA);
+    const economy = new EconomyDomain([], RICKSHAW_STARTING_CASH_MINOR_UNITS);
     const inventory = new InventoryDomain(20, [{ ...RICKSHAW_LICENSE_SLIP_ITEM }]);
     const missions = new MissionDomain();
     const player = createInitialRickshawDriverState();
@@ -66,15 +67,15 @@ export class GameCoreEngine {
   }
 
   /**
-   * Hydrates the game engine from an existing SaveEnvelopeV1 payload.
+   * Hydrates the game engine from an existing SaveEnvelopeV2 payload.
    */
-  public static fromSaveEnvelope(save: SaveEnvelopeV1): GameCoreEngine {
-    if (save.saveSchemaVersion !== 1) {
-      throw new Error(`Unsupported save schema version: ${save.saveSchemaVersion}`);
+  public static fromSaveEnvelope(save: SaveEnvelopeV2): GameCoreEngine {
+    if (save.saveSchemaVersion !== 2) {
+      throw new Error(`Unsupported save schema version: ${save.saveSchemaVersion}. Expected version 2.`);
     }
 
     const economy = new EconomyDomain(save.ledger);
-    const inventory = new InventoryDomain(20); // Hydrate inventory if present in custom worldFlags or pass empty
+    const inventory = new InventoryDomain(20, save.inventory ?? []);
 
     const missionInstances: Record<string, Partial<MissionInstance>> = {};
     for (const [id, m] of Object.entries(save.missions)) {
@@ -98,6 +99,7 @@ export class GameCoreEngine {
         id: save.player.vehicleState?.id ?? 'rickshaw_01',
         model: 'basic_pedal_rickshaw',
         isRented: true,
+        dailyRentMinorUnits: 5000,
         dailyRentPoisha: 5000,
         conditionPercent: 100 - (save.player.vehicleState?.damagePercent ?? 0),
         speedMps: save.player.vehicleState?.speedMps ?? 0,
@@ -159,13 +161,13 @@ export class GameCoreEngine {
   }
 
   /**
-   * Processes the daily rental fee for the rented pedal rickshaw (৳50 = 5,000 Poisha).
+   * Processes the daily rental fee for the rented pedal rickshaw (৳50 = 5,000 Poisha BDT).
    */
   public processDailyVehicleRent(timestampMs: number = Date.now()): EconomyTransaction {
     if (!this._player.vehicleState.isRented) {
       throw new Error('Vehicle is owned; no rental fee applicable.');
     }
-    const rentAmount = this._player.vehicleState.dailyRentPoisha;
+    const rentAmount = this._player.vehicleState.dailyRentMinorUnits;
     return this._economy.debit(
       rentAmount,
       'VEHICLE_RENTAL',
@@ -195,12 +197,12 @@ export class GameCoreEngine {
   }
 
   /**
-   * Exports the complete engine state into a standard SaveEnvelopeV1 structure.
+   * Exports the complete engine state into a standard SaveEnvelopeV2 structure.
    */
-  public toSaveEnvelope(saveId: string = 'primary', slotName: string = 'Autosave'): SaveEnvelopeV1 {
+  public toSaveEnvelope(saveId: string = 'primary', slotName: string = 'Autosave'): SaveEnvelopeV2 {
     const nowIso = new Date().toISOString();
     const missionInstances = this._missions.getAllInstances();
-    const missionsData: SaveEnvelopeV1['missions'] = {};
+    const missionsData: SaveEnvelopeV2['missions'] = {};
 
     for (const [id, inst] of Object.entries(missionInstances)) {
       missionsData[id] = {
@@ -222,17 +224,30 @@ export class GameCoreEngine {
         steeringAngleRad: this._player.vehicleState.steeringAngleRad,
         damagePercent: this._player.vehicleState.damagePercent,
       },
-      cashPence: this._economy.balancePence,
+      cashMinorUnits: this._economy.balanceMinorUnits,
+      currency: CURRENCY_CODE_BDT,
       reputation: this._player.reputations.transportReputation,
     };
 
     return {
-      saveSchemaVersion: 1,
+      saveSchemaVersion: 2,
       saveId,
       slotName,
       createdAtIso: (this.getWorldFlag<string>('createdAtIso') as string) ?? nowIso,
       updatedAtIso: nowIso,
       player: playerState,
+      inventory: this._inventory.items.map((it) => ({
+        id: it.id,
+        nameBn: it.nameBn,
+        nameEn: it.nameEn,
+        category: it.category,
+        quantity: it.quantity,
+        isStackable: it.isStackable,
+        maxStackSize: it.maxStackSize,
+        descriptionBn: it.descriptionBn,
+        descriptionEn: it.descriptionEn,
+        metadata: it.metadata ? { ...it.metadata } : undefined,
+      })),
       missions: missionsData,
       ledger: [...this._economy.ledger],
       worldFlags: this.worldFlags,

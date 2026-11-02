@@ -73,6 +73,14 @@ export const PHASE_1_ANCHORS = {
 } as const;
 
 /**
+ * Currency Standard: Bangladeshi Taka (BDT).
+ * All monetary calculations use integer minor units (Poisha: 1 BDT = 100 Poisha)
+ * to eliminate floating-point representation errors.
+ */
+export const CURRENCY_CODE_BDT = 'BDT' as const;
+export type CurrencyCode = typeof CURRENCY_CODE_BDT;
+
+/**
  * Economy Transaction Event for Append-Only Ledger.
  */
 export type TransactionCategory =
@@ -88,9 +96,10 @@ export interface EconomyTransaction {
   id: string;
   timestampMs: number;
   category: TransactionCategory;
-  deltaPence: number; // Stored in Poisha (1 Taka = 100 Poisha) for strict integer math
+  deltaMinorUnits: number; // Stored in Poisha (1 BDT = 100 Poisha) for strict integer math
+  currency: CurrencyCode;
   description: string;
-  runningBalancePence: number;
+  runningBalanceMinorUnits: number;
 }
 
 /**
@@ -117,15 +126,35 @@ export interface MissionDefinition {
   bengaliTitle: string;
   englishTitle: string;
   description: string;
-  rewardPence: number; // e.g. 3000 Poisha = ৳30
+  rewardMinorUnits: number; // Stored in Poisha (e.g. 3000 Poisha = ৳30.00 BDT)
+  currency: CurrencyCode;
   reputationDelta: number;
   objectives: MissionObjective[];
 }
 
 /**
- * Player Archetype / Role.
+ * Player Archetype / Role (Current V2 Canonical Model).
  */
 export interface PlayerState {
+  roleId: 'rickshaw_driver';
+  position: WorldPosition;
+  headingRadians: number;
+  isInVehicle: boolean;
+  vehicleState?: {
+    id: string;
+    speedMps: number;
+    steeringAngleRad: number;
+    damagePercent: number;
+  };
+  cashMinorUnits: number; // Integer Poisha (1 BDT = 100 Poisha)
+  currency: CurrencyCode; // Explicitly 'BDT'
+  reputation: number;
+}
+
+/**
+ * Legacy V1 Player State (Milestone 2 Schema).
+ */
+export interface PlayerStateV1 {
   roleId: 'rickshaw_driver';
   position: WorldPosition;
   headingRadians: number;
@@ -141,7 +170,38 @@ export interface PlayerState {
 }
 
 /**
- * Save Envelope Version 1 (Root Storage Model).
+ * Legacy V1 Economy Transaction (Milestone 2 Schema).
+ */
+export interface EconomyTransactionV1 {
+  id: string;
+  timestampMs: number;
+  category: TransactionCategory;
+  deltaPence: number;
+  description: string;
+  runningBalancePence: number;
+}
+
+/**
+ * Inventory Item Categories and Interface.
+ */
+export type ItemCategory = 'DOCUMENT' | 'TOOL' | 'CARGO' | 'VALUABLE' | 'CONSUMABLE';
+
+export interface InventoryItem {
+  id: string;
+  nameBn: string;
+  nameEn: string;
+  category: ItemCategory;
+  quantity: number;
+  isStackable: boolean;
+  maxStackSize: number;
+  descriptionBn: string;
+  descriptionEn: string;
+  metadata?: Record<string, string | number | boolean>;
+}
+
+/**
+ * Save Envelope Version 1 (Preserved Legacy Schema).
+ * Baseline schema from Milestone 2 with Pence currency and without inventory.
  */
 export interface SaveEnvelopeV1 {
   saveSchemaVersion: 1;
@@ -149,7 +209,30 @@ export interface SaveEnvelopeV1 {
   slotName: string;
   createdAtIso: string;
   updatedAtIso: string;
+  player: PlayerStateV1;
+  missions: Record<string, {
+    state: MissionState;
+    completedObjectiveIds: string[];
+    startedAtMs?: number;
+    completedAtMs?: number;
+  }>;
+  ledger: EconomyTransactionV1[];
+  worldFlags: Record<string, boolean | number | string>;
+  checksumSha256: string;
+}
+
+/**
+ * Save Envelope Version 2 (Canonical Current Storage Model).
+ * Introduces full inventory persistence, explicit BDT currency code, and standardized minor units.
+ */
+export interface SaveEnvelopeV2 {
+  saveSchemaVersion: 2;
+  saveId: string;
+  slotName: string;
+  createdAtIso: string;
+  updatedAtIso: string;
   player: PlayerState;
+  inventory: InventoryItem[];
   missions: Record<string, {
     state: MissionState;
     completedObjectiveIds: string[];
@@ -160,3 +243,5 @@ export interface SaveEnvelopeV1 {
   worldFlags: Record<string, boolean | number | string>;
   checksumSha256: string;
 }
+
+export type SaveEnvelope = SaveEnvelopeV2;

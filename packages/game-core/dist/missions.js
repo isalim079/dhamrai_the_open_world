@@ -3,14 +3,15 @@
  * ==========================================================
  * Strict, deterministic mission lifecycle with guaranteed idempotent payouts.
  */
-import { PHASE_1_ANCHORS, } from '@dhamrai/shared-contracts';
+import { PHASE_1_ANCHORS, CURRENCY_CODE_BDT, } from '@dhamrai/shared-contracts';
 export const PHASE_1_MISSIONS = {
     mission_1_first_fare: {
         id: 'mission_1_first_fare',
         bengaliTitle: 'দিনের প্রথম যাত্রী',
         englishTitle: 'First Fare',
         description: 'Pick up passenger at Rathkhola Market Corner and transport to Hardinge High School Gate.',
-        rewardPence: 3000, // ৳30.00
+        rewardMinorUnits: 3000, // ৳30.00 BDT
+        currency: CURRENCY_CODE_BDT,
         reputationDelta: 5,
         objectives: [
             {
@@ -36,7 +37,8 @@ export const PHASE_1_MISSIONS = {
         bengaliTitle: 'চেকপোস্ট ও কাগজপত্র',
         englishTitle: 'Police Checkpoint & Documents',
         description: 'Present valid vehicle license documents at Thana Junction police patrol.',
-        rewardPence: 0, // Civic duty: purely reputation gain
+        rewardMinorUnits: 0, // Civic duty: purely reputation gain
+        currency: CURRENCY_CODE_BDT,
         reputationDelta: 5,
         objectives: [
             {
@@ -62,7 +64,8 @@ export const PHASE_1_MISSIONS = {
         bengaliTitle: 'কাঁসা-পিতলের ফরমাশ',
         englishTitle: 'Brass Artisan Order',
         description: 'Collect brass bell cargo from Kayetpara workshop and deliver to Rathkhola artisan stand.',
-        rewardPence: 7500, // ৳75.00
+        rewardMinorUnits: 7500, // ৳75.00 BDT
+        currency: CURRENCY_CODE_BDT,
         reputationDelta: 10,
         objectives: [
             {
@@ -174,6 +177,7 @@ export class MissionDomain {
                 success: true,
                 payoutApplied: false,
                 transactionId: inst.payoutTxId,
+                payoutMinorUnits: 0,
                 payoutPence: 0,
                 reputationDelta: 0,
                 reason: 'ALREADY_COMPLETED',
@@ -201,9 +205,9 @@ export class MissionDomain {
         const payoutTxId = `tx_payout_${missionId}_${timestampMs}`;
         // Apply financial payout if reward > 0 and not previously claimed
         let txApplied = false;
-        if (def.rewardPence > 0 && !inst.payoutClaimed) {
+        if (def.rewardMinorUnits > 0 && !inst.payoutClaimed) {
             const category = missionId.includes('artisan') ? 'DELIVERY_PAYMENT' : 'FARE_PAYMENT';
-            economy.credit(def.rewardPence, category, `Reward for completing "${def.bengaliTitle}" (${def.englishTitle})`, timestampMs, payoutTxId);
+            economy.credit(def.rewardMinorUnits, category, `Reward for completing "${def.bengaliTitle}" (${def.englishTitle})`, timestampMs, payoutTxId);
             txApplied = true;
             inst.payoutClaimed = true;
             inst.payoutTxId = payoutTxId;
@@ -218,7 +222,8 @@ export class MissionDomain {
             success: true,
             payoutApplied: txApplied,
             transactionId: payoutTxId,
-            payoutPence: def.rewardPence,
+            payoutMinorUnits: def.rewardMinorUnits,
+            payoutPence: def.rewardMinorUnits,
             reputationDelta: def.reputationDelta,
         };
     }

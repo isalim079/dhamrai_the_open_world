@@ -4,20 +4,8 @@
  * Pure TypeScript inventory management for player items, documents, and cargo.
  */
 
-export type ItemCategory = 'DOCUMENT' | 'TOOL' | 'CARGO' | 'VALUABLE' | 'CONSUMABLE';
-
-export interface InventoryItem {
-  id: string;
-  nameBn: string;
-  nameEn: string;
-  category: ItemCategory;
-  quantity: number;
-  isStackable: boolean;
-  maxStackSize: number;
-  descriptionBn: string;
-  descriptionEn: string;
-  metadata?: Record<string, string | number | boolean>;
-}
+import { ItemCategory, InventoryItem } from '@dhamrai/shared-contracts';
+export type { ItemCategory, InventoryItem };
 
 export class InventoryDomain {
   private readonly _maxSlots: number;

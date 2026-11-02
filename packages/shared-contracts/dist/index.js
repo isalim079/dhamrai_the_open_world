@@ -34,4 +34,10 @@ export const PHASE_1_ANCHORS = {
     DHAMRAI_POURASHAVA: { x: -67.0, y: 1.0, z: -282.7 },
     DHAMRAI_GOVT_COLLEGE: { x: 41.0, y: 0.0, z: 215.2 },
 };
+/**
+ * Currency Standard: Bangladeshi Taka (BDT).
+ * All monetary calculations use integer minor units (Poisha: 1 BDT = 100 Poisha)
+ * to eliminate floating-point representation errors.
+ */
+export const CURRENCY_CODE_BDT = 'BDT';
 //# sourceMappingURL=index.js.map

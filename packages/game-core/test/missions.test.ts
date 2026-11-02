@@ -44,12 +44,12 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
 
     expect(res.success).toBe(true);
     expect(res.payoutApplied).toBe(true);
-    expect(res.payoutPence).toBe(3000); // ৳30
+    expect(res.payoutMinorUnits).toBe(3000); // ৳30
     expect(res.reputationDelta).toBe(5);
     expect(reputationGain).toBe(5);
 
     // Economy balance increases from ৳250 (25000) to ৳280 (28000)
-    expect(economy.balancePence).toBe(28000);
+    expect(economy.balanceMinorUnits).toBe(28000);
     expect(economy.balanceTaka).toBe(280);
     expect(economy.verifyIntegrity()).toBe(true);
     expect(missions.getInstance('mission_1_first_fare')!.state).toBe('COMPLETED');
@@ -74,7 +74,7 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
       2000
     );
     expect(res1.payoutApplied).toBe(true);
-    expect(economy.balancePence).toBe(28000);
+    expect(economy.balanceMinorUnits).toBe(28000);
     expect(reputationGained).toBe(5);
 
     // Second completion call (e.g. simulated network retry, UI double-click, or reload loop)
@@ -91,7 +91,7 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
     expect(res2.success).toBe(true);
     expect(res2.payoutApplied).toBe(false);
     expect(res2.reason).toBe('ALREADY_COMPLETED');
-    expect(economy.balancePence).toBe(28000); // Still exactly 28,000! No double payout!
+    expect(economy.balanceMinorUnits).toBe(28000); // Still exactly 28,000! No double payout!
     expect(reputationGained).toBe(5); // Reputation did not increase!
 
     // Third completion call
@@ -104,7 +104,7 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
       4000
     );
     expect(res3.payoutApplied).toBe(false);
-    expect(economy.balancePence).toBe(28000);
+    expect(economy.balanceMinorUnits).toBe(28000);
     expect(economy.ledger.length).toBe(2); // Initial balance + 1 payout only
   });
 
@@ -120,7 +120,7 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
     expect(res.success).toBe(false);
     expect(res.payoutApplied).toBe(false);
     expect(res.reason).toMatch(/Incomplete objectives/);
-    expect(economy.balancePence).toBe(25000);
+    expect(economy.balanceMinorUnits).toBe(25000);
     expect(missions.getInstance('mission_1_first_fare')!.state).toBe('ACTIVE');
   });
 
@@ -143,9 +143,9 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
     );
 
     expect(res.success).toBe(true);
-    expect(res.payoutPence).toBe(0);
+    expect(res.payoutMinorUnits).toBe(0);
     expect(civicRep).toBe(5);
-    expect(economy.balancePence).toBe(25000); // ৳0 reward leaves balance unchanged
+    expect(economy.balanceMinorUnits).toBe(25000); // ৳0 reward leaves balance unchanged
   });
 
   it('handles Mission 3 brass artisan order: awards ৳75 and artisan guild trust', () => {
@@ -167,9 +167,9 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
     );
 
     expect(res.success).toBe(true);
-    expect(res.payoutPence).toBe(7500); // ৳75
+    expect(res.payoutMinorUnits).toBe(7500); // ৳75
     expect(artisanRep).toBe(10);
-    expect(economy.balancePence).toBe(32500); // 25000 + 7500 = 32500 (৳325.00)
+    expect(economy.balanceMinorUnits).toBe(32500); // 25000 + 7500 = 32500 (৳325.00)
     expect(economy.verifyIntegrity()).toBe(true);
   });
 });

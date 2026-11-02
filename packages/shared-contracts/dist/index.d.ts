@@ -60,6 +60,13 @@ export declare const PHASE_1_ANCHORS: {
     readonly DHAMRAI_GOVT_COLLEGE: WorldPosition;
 };
 /**
+ * Currency Standard: Bangladeshi Taka (BDT).
+ * All monetary calculations use integer minor units (Poisha: 1 BDT = 100 Poisha)
+ * to eliminate floating-point representation errors.
+ */
+export declare const CURRENCY_CODE_BDT: "BDT";
+export type CurrencyCode = typeof CURRENCY_CODE_BDT;
+/**
  * Economy Transaction Event for Append-Only Ledger.
  */
 export type TransactionCategory = 'INITIAL_BALANCE' | 'FARE_PAYMENT' | 'DELIVERY_PAYMENT' | 'VEHICLE_RENTAL' | 'MAINTENANCE_COST' | 'FINE_PENALTY' | 'REPUTATION_BONUS';
@@ -67,9 +74,10 @@ export interface EconomyTransaction {
     id: string;
     timestampMs: number;
     category: TransactionCategory;
-    deltaPence: number;
+    deltaMinorUnits: number;
+    currency: CurrencyCode;
     description: string;
-    runningBalancePence: number;
+    runningBalanceMinorUnits: number;
 }
 /**
  * Mission Lifecycle States.
@@ -88,14 +96,33 @@ export interface MissionDefinition {
     bengaliTitle: string;
     englishTitle: string;
     description: string;
-    rewardPence: number;
+    rewardMinorUnits: number;
+    currency: CurrencyCode;
     reputationDelta: number;
     objectives: MissionObjective[];
 }
 /**
- * Player Archetype / Role.
+ * Player Archetype / Role (Current V2 Canonical Model).
  */
 export interface PlayerState {
+    roleId: 'rickshaw_driver';
+    position: WorldPosition;
+    headingRadians: number;
+    isInVehicle: boolean;
+    vehicleState?: {
+        id: string;
+        speedMps: number;
+        steeringAngleRad: number;
+        damagePercent: number;
+    };
+    cashMinorUnits: number;
+    currency: CurrencyCode;
+    reputation: number;
+}
+/**
+ * Legacy V1 Player State (Milestone 2 Schema).
+ */
+export interface PlayerStateV1 {
     roleId: 'rickshaw_driver';
     position: WorldPosition;
     headingRadians: number;
@@ -110,7 +137,35 @@ export interface PlayerState {
     reputation: number;
 }
 /**
- * Save Envelope Version 1 (Root Storage Model).
+ * Legacy V1 Economy Transaction (Milestone 2 Schema).
+ */
+export interface EconomyTransactionV1 {
+    id: string;
+    timestampMs: number;
+    category: TransactionCategory;
+    deltaPence: number;
+    description: string;
+    runningBalancePence: number;
+}
+/**
+ * Inventory Item Categories and Interface.
+ */
+export type ItemCategory = 'DOCUMENT' | 'TOOL' | 'CARGO' | 'VALUABLE' | 'CONSUMABLE';
+export interface InventoryItem {
+    id: string;
+    nameBn: string;
+    nameEn: string;
+    category: ItemCategory;
+    quantity: number;
+    isStackable: boolean;
+    maxStackSize: number;
+    descriptionBn: string;
+    descriptionEn: string;
+    metadata?: Record<string, string | number | boolean>;
+}
+/**
+ * Save Envelope Version 1 (Preserved Legacy Schema).
+ * Baseline schema from Milestone 2 with Pence currency and without inventory.
  */
 export interface SaveEnvelopeV1 {
     saveSchemaVersion: 1;
@@ -118,7 +173,29 @@ export interface SaveEnvelopeV1 {
     slotName: string;
     createdAtIso: string;
     updatedAtIso: string;
+    player: PlayerStateV1;
+    missions: Record<string, {
+        state: MissionState;
+        completedObjectiveIds: string[];
+        startedAtMs?: number;
+        completedAtMs?: number;
+    }>;
+    ledger: EconomyTransactionV1[];
+    worldFlags: Record<string, boolean | number | string>;
+    checksumSha256: string;
+}
+/**
+ * Save Envelope Version 2 (Canonical Current Storage Model).
+ * Introduces full inventory persistence, explicit BDT currency code, and standardized minor units.
+ */
+export interface SaveEnvelopeV2 {
+    saveSchemaVersion: 2;
+    saveId: string;
+    slotName: string;
+    createdAtIso: string;
+    updatedAtIso: string;
     player: PlayerState;
+    inventory: InventoryItem[];
     missions: Record<string, {
         state: MissionState;
         completedObjectiveIds: string[];
@@ -129,4 +206,5 @@ export interface SaveEnvelopeV1 {
     worldFlags: Record<string, boolean | number | string>;
     checksumSha256: string;
 }
+export type SaveEnvelope = SaveEnvelopeV2;
 //# sourceMappingURL=index.d.ts.map

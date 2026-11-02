@@ -1,0 +1,66 @@
+{
+  "saveSchemaVersion": 1,
+  "saveId": "save_slot_01",
+  "slotName": "QuickSave",
+  "createdAtIso": "2026-11-02T12:00:00.000Z",
+  "updatedAtIso": "2026-11-02T12:05:00.000Z",
+  "player": {
+    "roleId": "rickshaw_driver",
+    "position": {
+      "x": -73.1,
+      "y": 1.0,
+      "z": -221.3
+    },
+    "headingRadians": 0,
+    "isInVehicle": true,
+    "vehicleState": {
+      "id": "rickshaw_01",
+      "speedMps": 0,
+      "steeringAngleRad": 0,
+      "damagePercent": 0
+    },
+    "cashPence": 23000,
+    "reputation": 15
+  },
+  "missions": {
+    "mission_1_first_fare": {
+      "state": "COMPLETED",
+      "completedObjectiveIds": [
+        "obj_m1_pickup",
+        "obj_m1_dropoff"
+      ],
+      "startedAtMs": 3000,
+      "completedAtMs": 4000
+    }
+  },
+  "ledger": [
+    {
+      "id": "tx_init",
+      "timestampMs": 1000,
+      "category": "INITIAL_BALANCE",
+      "deltaPence": 25000,
+      "description": "Starting cash",
+      "runningBalancePence": 25000
+    },
+    {
+      "id": "tx_rent",
+      "timestampMs": 2000,
+      "category": "VEHICLE_RENTAL",
+      "deltaPence": -5000,
+      "description": "Daily rental fee",
+      "runningBalancePence": 20000
+    },
+    {
+      "id": "tx_fare",
+      "timestampMs": 4000,
+      "category": "FARE_PAYMENT",
+      "deltaPence": 3000,
+      "description": "First fare payout",
+      "runningBalancePence": 23000
+    }
+  ],
+  "worldFlags": {
+    "tutorialCompleted": true
+  },
+  "checksumSha256": "0000000000000000000000000000000000000000000000000000000000000000"
+}

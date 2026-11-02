@@ -9,6 +9,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@dhamrai/shared-contracts": "workspace:*"
+    "@dhamrai/shared-contracts": "0.1.0"
   }
 }

@@ -19,6 +19,7 @@ export interface MissionCompletionResult {
     success: boolean;
     payoutApplied: boolean;
     transactionId?: string;
+    payoutMinorUnits?: number;
     payoutPence?: number;
     reputationDelta?: number;
     reason?: string;

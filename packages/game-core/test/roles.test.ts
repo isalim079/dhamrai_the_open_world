@@ -23,6 +23,7 @@ describe('RickshawRole — Starting Conditions & Rental Mechanics', () => {
 
     expect(role.vehicleState.isRented).toBe(true);
     expect(role.vehicleState.model).toBe('basic_pedal_rickshaw');
+    expect(role.vehicleState.dailyRentMinorUnits).toBe(5000);
     expect(role.vehicleState.dailyRentPoisha).toBe(5000);
     expect(role.vehicleState.damagePercent).toBe(0);
 

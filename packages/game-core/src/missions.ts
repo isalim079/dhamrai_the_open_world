@@ -8,6 +8,7 @@ import {
   MissionDefinition,
   MissionState,
   PHASE_1_ANCHORS,
+  CURRENCY_CODE_BDT,
 } from '@dhamrai/shared-contracts';
 import { EconomyDomain } from './economy.js';
 
@@ -26,7 +27,8 @@ export interface MissionCompletionResult {
   success: boolean;
   payoutApplied: boolean;
   transactionId?: string;
-  payoutPence?: number;
+  payoutMinorUnits?: number;
+  payoutPence?: number; // Deprecated alias
   reputationDelta?: number;
   reason?: string;
 }
@@ -37,7 +39,8 @@ export const PHASE_1_MISSIONS: Record<string, MissionDefinition> = {
     bengaliTitle: 'দিনের প্রথম যাত্রী',
     englishTitle: 'First Fare',
     description: 'Pick up passenger at Rathkhola Market Corner and transport to Hardinge High School Gate.',
-    rewardPence: 3000, // ৳30.00
+    rewardMinorUnits: 3000, // ৳30.00 BDT
+    currency: CURRENCY_CODE_BDT,
     reputationDelta: 5,
     objectives: [
       {
@@ -63,7 +66,8 @@ export const PHASE_1_MISSIONS: Record<string, MissionDefinition> = {
     bengaliTitle: 'চেকপোস্ট ও কাগজপত্র',
     englishTitle: 'Police Checkpoint & Documents',
     description: 'Present valid vehicle license documents at Thana Junction police patrol.',
-    rewardPence: 0, // Civic duty: purely reputation gain
+    rewardMinorUnits: 0, // Civic duty: purely reputation gain
+    currency: CURRENCY_CODE_BDT,
     reputationDelta: 5,
     objectives: [
       {
@@ -89,7 +93,8 @@ export const PHASE_1_MISSIONS: Record<string, MissionDefinition> = {
     bengaliTitle: 'কাঁসা-পিতলের ফরমাশ',
     englishTitle: 'Brass Artisan Order',
     description: 'Collect brass bell cargo from Kayetpara workshop and deliver to Rathkhola artisan stand.',
-    rewardPence: 7500, // ৳75.00
+    rewardMinorUnits: 7500, // ৳75.00 BDT
+    currency: CURRENCY_CODE_BDT,
     reputationDelta: 10,
     objectives: [
       {
@@ -224,6 +229,7 @@ export class MissionDomain {
         success: true,
         payoutApplied: false,
         transactionId: inst.payoutTxId,
+        payoutMinorUnits: 0,
         payoutPence: 0,
         reputationDelta: 0,
         reason: 'ALREADY_COMPLETED',
@@ -256,10 +262,10 @@ export class MissionDomain {
 
     // Apply financial payout if reward > 0 and not previously claimed
     let txApplied = false;
-    if (def.rewardPence > 0 && !inst.payoutClaimed) {
+    if (def.rewardMinorUnits > 0 && !inst.payoutClaimed) {
       const category = missionId.includes('artisan') ? 'DELIVERY_PAYMENT' : 'FARE_PAYMENT';
       economy.credit(
-        def.rewardPence,
+        def.rewardMinorUnits,
         category,
         `Reward for completing "${def.bengaliTitle}" (${def.englishTitle})`,
         timestampMs,
@@ -282,7 +288,8 @@ export class MissionDomain {
       success: true,
       payoutApplied: txApplied,
       transactionId: payoutTxId,
-      payoutPence: def.rewardPence,
+      payoutMinorUnits: def.rewardMinorUnits,
+      payoutPence: def.rewardMinorUnits,
       reputationDelta: def.reputationDelta,
     };
   }

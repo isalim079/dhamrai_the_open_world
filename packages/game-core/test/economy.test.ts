@@ -27,14 +27,15 @@ describe('EconomyDomain — Currency & Append-Only Ledger', () => {
 
   it('initializes starting balance with an immutable INITIAL_BALANCE ledger entry', () => {
     const economy = new EconomyDomain([], 25000);
-    expect(economy.balancePence).toBe(25000);
+    expect(economy.balanceMinorUnits).toBe(25000);
     expect(economy.balanceTaka).toBe(250);
     expect(economy.ledger.length).toBe(1);
 
     const firstTx = economy.ledger[0]!;
     expect(firstTx.category).toBe('INITIAL_BALANCE');
-    expect(firstTx.deltaPence).toBe(25000);
-    expect(firstTx.runningBalancePence).toBe(25000);
+    expect(firstTx.deltaMinorUnits).toBe(25000);
+    expect(firstTx.currency).toBe('BDT');
+    expect(firstTx.runningBalanceMinorUnits).toBe(25000);
     expect(economy.verifyIntegrity()).toBe(true);
   });
 
@@ -43,9 +44,10 @@ describe('EconomyDomain — Currency & Append-Only Ledger', () => {
 
     // Earn ৳30 from Mission 1
     const tx = economy.credit(3000, 'FARE_PAYMENT', 'Mission 1: First Fare payout', 1000);
-    expect(tx.deltaPence).toBe(3000);
-    expect(tx.runningBalancePence).toBe(28000);
-    expect(economy.balancePence).toBe(28000);
+    expect(tx.deltaMinorUnits).toBe(3000);
+    expect(tx.currency).toBe('BDT');
+    expect(tx.runningBalanceMinorUnits).toBe(28000);
+    expect(economy.balanceMinorUnits).toBe(28000);
     expect(economy.balanceTaka).toBe(280);
     expect(economy.verifyIntegrity()).toBe(true);
   });
@@ -60,7 +62,7 @@ describe('EconomyDomain — Currency & Append-Only Ledger', () => {
     ).toThrow(RangeError);
 
     // Balance remains intact after failed transaction
-    expect(economy.balancePence).toBe(1000);
+    expect(economy.balanceMinorUnits).toBe(1000);
     expect(economy.verifyIntegrity()).toBe(true);
 
     // If allowed overdraft, transaction succeeds
@@ -72,8 +74,8 @@ describe('EconomyDomain — Currency & Append-Only Ledger', () => {
       'tx_overdraft_01',
       true
     );
-    expect(overdraftTx.runningBalancePence).toBe(-4000);
-    expect(economy.balancePence).toBe(-4000);
+    expect(overdraftTx.runningBalanceMinorUnits).toBe(-4000);
+    expect(economy.balanceMinorUnits).toBe(-4000);
     expect(economy.verifyIntegrity()).toBe(true);
   });
 
@@ -86,26 +88,28 @@ describe('EconomyDomain — Currency & Append-Only Ledger', () => {
     ).toThrow(/already exists/);
 
     expect(economy.ledger.length).toBe(2);
-    expect(economy.balancePence).toBe(11000);
+    expect(economy.balanceMinorUnits).toBe(11000);
   });
 
-  it('detects tampering or corruption when hydrating a ledger', () => {
+  it('detects corruption or inconsistent running balance when hydrating a ledger', () => {
     const corruptedLedger = [
       {
         id: 'tx_1',
         timestampMs: 1000,
         category: 'INITIAL_BALANCE' as const,
-        deltaPence: 25000,
+        deltaMinorUnits: 25000,
+        currency: 'BDT' as const,
         description: 'Start',
-        runningBalancePence: 25000,
+        runningBalanceMinorUnits: 25000,
       },
       {
         id: 'tx_2',
         timestampMs: 2000,
         category: 'FARE_PAYMENT' as const,
-        deltaPence: 3000,
+        deltaMinorUnits: 3000,
+        currency: 'BDT' as const,
         description: 'Fare',
-        runningBalancePence: 99999, // Tampered running balance
+        runningBalanceMinorUnits: 99999, // Inconsistent running balance
       },
     ];
 

@@ -1,0 +1,20 @@
+{
+  "name": "@dhamrai/save-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dhamrai/game-core": "0.1.0",
+    "@dhamrai/shared-contracts": "0.1.0",
+    "dexie": "^4.0.11",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "^6.0.0"
+  }
+}

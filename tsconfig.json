@@ -5,7 +5,8 @@
   },
   "references": [
     { "path": "./packages/shared-contracts" },
-    { "path": "./packages/game-core" }
+    { "path": "./packages/game-core" },
+    { "path": "./packages/save-core" }
   ],
   "files": []
 }

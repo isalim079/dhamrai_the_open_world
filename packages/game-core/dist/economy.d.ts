@@ -2,17 +2,17 @@
  * Dhamrai Life — Economy Domain & Append-Only Cash Ledger
  * ========================================================
  * Strict integer-based currency domain operating in minor units (Poisha).
- * 1 Taka (৳) = 100 Poisha.
+ * 1 Bangladeshi Taka (BDT) = 100 Poisha.
  *
  * Guarantees:
  * 1. Strict integer arithmetic (no floating-point rounding errors).
- * 2. Immutable, append-only transaction ledger.
- * 3. Invariant: Current balance must strictly equal the algebraic sum of all ledger events.
+ * 2. Immutable, append-only transaction ledger with explicit BDT currency code.
+ * 3. Invariant: Current balance must strictly equal the algebraic sum of all ledger deltaMinorUnits.
  * 4. Insufficient fund guards (prevents illegal overdrafts).
  */
 import { EconomyTransaction, TransactionCategory } from '@dhamrai/shared-contracts';
 /**
- * Converts whole Bangladeshi Taka (৳) to Poisha (integer pence/cents).
+ * Converts whole Bangladeshi Taka (৳) to Poisha (integer minor units).
  */
 export declare function takaToPoisha(taka: number): number;
 /**
@@ -25,16 +25,24 @@ export declare function poishaToTaka(poisha: number): number;
 export declare function formatPoishaAsTaka(poisha: number): string;
 export declare function generateDeterministicTxId(category: TransactionCategory, timestampMs: number): string;
 export declare class EconomyDomain {
-    private _balancePence;
+    private _balanceMinorUnits;
     private readonly _ledger;
     private readonly _txIdSet;
-    constructor(initialLedger?: EconomyTransaction[], startingCashPence?: number);
+    constructor(initialLedger?: EconomyTransaction[], startingCashMinorUnits?: number);
     /**
-     * Current liquid cash balance in Poisha.
+     * Current liquid cash balance in Poisha (integer minor units).
+     */
+    get balanceMinorUnits(): number;
+    /**
+     * Alias for balanceMinorUnits in Poisha.
+     */
+    get balancePoisha(): number;
+    /**
+     * Backwards-compatible alias for balanceMinorUnits.
      */
     get balancePence(): number;
     /**
-     * Current balance in Taka.
+     * Current balance in whole and fractional Taka.
      */
     get balanceTaka(): number;
     /**
@@ -46,21 +54,21 @@ export declare class EconomyDomain {
      */
     hasTransaction(id: string): boolean;
     /**
-     * Checks whether the player can afford a given expense in Poisha.
+     * Checks whether the player can afford a given expense in minor currency units (Poisha).
      */
-    hasSufficientFunds(amountPence: number): boolean;
+    hasSufficientFunds(amountMinorUnits: number): boolean;
     /**
-     * Credits the player's account with a positive amount.
+     * Credits the player's account with a positive minor unit amount.
      */
-    credit(amountPence: number, category: TransactionCategory, description: string, timestampMs?: number, customId?: string): EconomyTransaction;
+    credit(amountMinorUnits: number, category: TransactionCategory, description: string, timestampMs?: number, customId?: string): EconomyTransaction;
     /**
      * Debits the player's account with a negative delta.
      * Throws RangeError if balance is insufficient unless allowOverdraft is explicitly enabled.
      */
-    debit(amountPence: number, category: TransactionCategory, description: string, timestampMs?: number, customId?: string, allowOverdraft?: boolean): EconomyTransaction;
+    debit(amountMinorUnits: number, category: TransactionCategory, description: string, timestampMs?: number, customId?: string, allowOverdraft?: boolean): EconomyTransaction;
     /**
      * Evaluates the fundamental ledger invariant:
-     * Current Balance == Sum of all Delta Events in the Ledger.
+     * Current Balance == Sum of all deltaMinorUnits in the Ledger.
      */
     verifyIntegrity(): boolean;
 }

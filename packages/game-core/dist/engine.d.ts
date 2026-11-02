@@ -4,7 +4,7 @@
  * Pure TypeScript domain engine facade orchestrating Economy,
  * Inventory, Missions, Player Role state, and Save Envelope serialization.
  */
-import { EconomyTransaction, SaveEnvelopeV1, WorldPosition } from '@dhamrai/shared-contracts';
+import { EconomyTransaction, SaveEnvelopeV2, WorldPosition } from '@dhamrai/shared-contracts';
 import { EconomyDomain } from './economy.js';
 import { InventoryDomain } from './inventory.js';
 import { MissionDomain, MissionCompletionResult } from './missions.js';
@@ -21,9 +21,9 @@ export declare class GameCoreEngine {
      */
     static createNewGame(timestampMs?: number): GameCoreEngine;
     /**
-     * Hydrates the game engine from an existing SaveEnvelopeV1 payload.
+     * Hydrates the game engine from an existing SaveEnvelopeV2 payload.
      */
-    static fromSaveEnvelope(save: SaveEnvelopeV1): GameCoreEngine;
+    static fromSaveEnvelope(save: SaveEnvelopeV2): GameCoreEngine;
     get economy(): EconomyDomain;
     get inventory(): InventoryDomain;
     get missions(): MissionDomain;
@@ -34,7 +34,7 @@ export declare class GameCoreEngine {
     setWorldFlag(key: string, value: boolean | number | string): void;
     getWorldFlag<T extends boolean | number | string>(key: string): T | undefined;
     /**
-     * Processes the daily rental fee for the rented pedal rickshaw (৳50 = 5,000 Poisha).
+     * Processes the daily rental fee for the rented pedal rickshaw (৳50 = 5,000 Poisha BDT).
      */
     processDailyVehicleRent(timestampMs?: number): EconomyTransaction;
     /**
@@ -42,8 +42,8 @@ export declare class GameCoreEngine {
      */
     completeMission(missionId: string, timestampMs?: number): MissionCompletionResult;
     /**
-     * Exports the complete engine state into a standard SaveEnvelopeV1 structure.
+     * Exports the complete engine state into a standard SaveEnvelopeV2 structure.
      */
-    toSaveEnvelope(saveId?: string, slotName?: string): SaveEnvelopeV1;
+    toSaveEnvelope(saveId?: string, slotName?: string): SaveEnvelopeV2;
 }
 //# sourceMappingURL=engine.d.ts.map

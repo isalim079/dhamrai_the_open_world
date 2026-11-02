@@ -7,7 +7,9 @@
 import { WorldPosition } from '@dhamrai/shared-contracts';
 import { InventoryItem } from './inventory.js';
 export declare const RICKSHAW_STARTING_CASH_TAKAS = 250;
+export declare const RICKSHAW_STARTING_CASH_MINOR_UNITS = 25000;
 export declare const RICKSHAW_STARTING_CASH_POISHA = 25000;
+export declare const RICKSHAW_DAILY_RENT_MINOR_UNITS = 5000;
 export declare const RICKSHAW_DAILY_RENT_POISHA = 5000;
 export declare const RICKSHAW_LICENSE_SLIP_ITEM: InventoryItem;
 export interface PlayerReputationScores {
@@ -25,7 +27,8 @@ export interface RickshawDriverArchetype {
         id: string;
         model: string;
         isRented: boolean;
-        dailyRentPoisha: number;
+        dailyRentMinorUnits: number;
+        dailyRentPoisha?: number;
         conditionPercent: number;
         speedMps: number;
         steeringAngleRad: number;

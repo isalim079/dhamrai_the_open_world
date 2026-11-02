@@ -1,14 +1,16 @@
 # Dhamrai Life — Progress Tracker
 
 **Last updated:** 2 November 2026  
-**Overall status:** Phase 1 Authorized; Sprint 1 (Monorepo Foundation & Tooling Setup) complete; mathematical and contract tests passing; independent Survey of Bangladesh ground-control validation pending; OAuth integration requires credentials; ODbL legal review pending.
+**Overall status:** Phase 1 Authorized; Sprint 1 (Monorepo Foundation & Tooling Setup), Sprint 2 (Domain Engine & Economy), and Sprint 3 (Save System & Local Persistence) complete; migrated to Yarn Classic 1.22.22; save schema versioning reconciled (V1 legacy preserved, canonical V2 active, V1→V2 migration tested); all 72 TypeScript unit/integration tests and 10 Python verification tests passing.
 
 ## Current phase and evidence
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
 | Phase 0 architecture baseline | COMPLETE (provisionally accepted) | Nine reconciled Phase 0 Markdown documents in `docs/`, version 3.0.0. Stack and game scope unchanged. |
-| Sprint 1: Monorepo Foundation & Tooling | COMPLETE | Root `package.json` (pnpm 11.2.2), `pnpm-workspace.yaml`, `tsconfig.base.json`, `packages/shared-contracts` initialized. Vitest unit tests (4/4 passed), TypeScript project references typecheck (`tsc -b`) passed. |
+| Sprint 1: Monorepo Foundation & Tooling | COMPLETE | Root `package.json` migrated to Yarn Classic 1.22.22 (`yarn.lock`), `tsconfig.base.json`, `packages/shared-contracts` initialized. Vitest unit tests (6/6 passed), TypeScript project references typecheck (`tsc -b`) passed. |
+| Sprint 2: Domain Engine & Economy | COMPLETE | Pure TypeScript domain package `@dhamrai/game-core` implemented: `EconomyDomain` (integer minor units `deltaMinorUnits`/`runningBalanceMinorUnits`, BDT currency code, append-only ledger, invariant verification), `InventoryDomain` (stacking, capacity, document storage), `MissionDomain` (declarative state machine, idempotent payouts), `RickshawDriverArchetype` (৳250 start, rented rickshaw, license slip), and `GameCoreEngine` facade. 25 unit tests passed; `tsc -b` passed with 0 errors. |
+| Sprint 3: Save System & Local Persistence | COMPLETE | Pure persistence package `packages/save-core` implemented with clean separation: Zod schema validation, platform-independent Web Crypto SHA-256 payload consistency verification, canonical JSON serialization, sequential schema migration pipeline with pre-migration snapshot isolation, Dexie/IndexedDB storage adapter, in-memory adapter, and `SaveOrchestrator`. Save schema versioning reconciled: legacy `SaveEnvelopeV1` schema preserved without modification; canonical `SaveEnvelopeV2` introduced (`saveSchemaVersion: 2`, `currency: 'BDT'`, `cashMinorUnits`, `inventory`); pure `v1ToV2MigrationStep` registered; snapshot conflict guards implemented; 41 unit tests in save-core (72 total across workspace, 10 test files); 100% passing; `tsc -b` passed with 0 errors. |
 | Coordinate/route mathematical suite | PASSED | Ten tests rerun in existing `.venv` (including full-precision origin constants verification); outputs in `data/sources/test_execution.json` and final validation report. These are not independent ground-control tests. |
 | Synthetic grid algorithm checks | PASSED | Three tests exercise partial cells, closed-boundary touches and holes. They do not validate Dhamrai geometry. |
 | Offline OSM audit | REPRODUCED | Four actual XML snapshots, raw manifest, clipped rectangle metrics A16.731/B9.706/C6.024/D28.531km, checksum verification. Counts cover returned objects. |
@@ -20,25 +22,56 @@
 | Independent SoB validation | PENDING EXTERNAL DATA | No certified control-point/leveling sheets. ESRI:102954 remains provisionally adopted; mathematical consistency and round trips pass. |
 | ODbL/source legal review | PENDING COUNSEL | Intended classification is not legal clearance; actual source files/terms require review before distribution. |
 | OAuth and Drive integration | REQUIRES CREDENTIALS; NOT IMPLEMENTED | Google Cloud client credentials, consent, redirects and Drive scope needed for future E2E integration. |
-| Sprint 2: Domain Engine & Economy | COMPLETE | Pure TypeScript domain package `@dhamrai/game-core` implemented: `EconomyDomain` (integer Poisha math, append-only ledger, invariant verification), `InventoryDomain` (stacking, capacity, document storage), `MissionDomain` (declarative state machine, idempotent payouts), `RickshawDriverArchetype` (৳250 start, rented rickshaw, license slip), and `GameCoreEngine` facade. 25 unit tests passed (29 total across workspace); `tsc -b` passed with 0 errors. |
-| Sprint 3: Save System & Local Persistence | PENDING | Planned in `packages/save-core`. |
 | Sprint 4: Backend OAuth & Drive Sync | PENDING | Planned in `apps/api`. |
 | Sprint 5: Offline Slice Data Generation | PENDING | Planned in `tools/geo-pipeline`. |
 | Sprint 6: 3D Client & Rickshaw Physics | PENDING | Planned in `apps/web`. |
 | Sprint 7: Content, Missions & React HUD | PENDING | Planned in `apps/web`. |
 | Phases 2–6 | NOT STARTED | Long-term scope unchanged. |
 
-## Work log — Phase 1 Sprint 2 Domain Engine & Economy
+## Work log — Package Manager Migration & Milestone 3 (Sprint 3) Save System
 
-1. Implemented `@dhamrai/game-core` as a pure TypeScript domain package with zero DOM, Three.js, React, or Node-specific dependencies.
-2. Built `EconomyDomain`: integer Poisha arithmetic (1 Taka = 100 Poisha), append-only ledger, balance invariant verification (`balance == sum(ledger.deltaPence)`), and overdraft prevention.
-3. Built `InventoryDomain`: slot-capacity enforcement, stackable vs non-stackable items, document storage (`rickshaw_license_slip`).
-4. Built `MissionDomain`: declarative Phase 1 missions (First Fare ৳30, Police Checkpoint +5 civic trust, Brass Artisan Order ৳75), state machine (`AVAILABLE` -> `ACTIVE` -> `COMPLETED`), and mathematically guaranteed idempotent payouts (zero duplicate payouts on multiple triggers or reload).
-5. Built `RickshawDriverArchetype`: ৳250 (25,000 Poisha) starting cash, rented pedal rickshaw with ৳50 daily rent, license slip, starting coordinates at Rathkhola `(0, 0, 0)`.
-6. Built `GameCoreEngine` aggregate root: seamless game loop orchestration, daily rent processing, and complete bidirectional hydration with `SaveEnvelopeV1`.
-7. Created 25 comprehensive unit tests across 5 test suites in `packages/game-core/test/` (29 total tests in workspace), testing edge cases, non-integer rejections, capacity overflow, and reload idempotency. All passed.
-8. Ran TypeScript composite project typecheck (`tsc -b`), passing with 0 errors.
+1. **Yarn Classic 1.22.22 Migration:**
+   - Set `"packageManager": "yarn@1.22.22"` in root `package.json`.
+   - Replaced pnpm workspace with standard Yarn Classic `workspaces` field (`packages/*`, `apps/*`).
+   - Removed `pnpm-lock.yaml`, `pnpm-workspace.yaml`, and cleaned `node_modules`.
+   - Generated Yarn v1 `yarn.lock` with standard `node_modules` installation strategy (zero Plug'n'Play, zero Yarn Berry).
+   - Verified frozen lockfile installation (`yarn install --frozen-lockfile`).
+   - Verified with `yarn --version` (1.22.22), `yarn test` (all tests passing), and `yarn typecheck` (0 errors).
+
+2. **Currency Standardization (BDT & Minor Units):**
+   - Replaced `cashPence` and `deltaPence` with `cashMinorUnits` and `deltaMinorUnits`.
+   - Stored currency code explicitly as `currency: 'BDT'`.
+   - Guaranteed strict integer arithmetic across all domain models, contracts, and Zod validation schemas.
+
+3. **Checksum Security Clarification:**
+   - Clarified in docstrings, error messages, and tests that unkeyed SHA-256 verifies payload consistency and detects accidental corruption (e.g. disk corruption, truncation, inadvertent edits), and does not claim protection against deliberate adversary tampering with recomputed hashes.
+
+4. **Save Schema Versioning & Sequential V1 → V2 Migration:**
+   - Preserved original `SaveEnvelopeV1` schema as immutable legacy model (`saveSchemaVersion: 1`, `cashPence`, `deltaPence`, no inventory).
+   - Introduced canonical `SaveEnvelopeV2` (`saveSchemaVersion: 2`, `cashMinorUnits`, `deltaMinorUnits`, required `currency: 'BDT'`, `inventory: InventoryItem[]`).
+   - Set `CURRENT_SAVE_SCHEMA_VERSION = 2` and `MIN_SUPPORTED_SAVE_SCHEMA_VERSION = 1`.
+   - Implemented pure, immutable `v1ToV2MigrationStep` (maps cash and ledger units 1:1, populates starting documents if missing, sets schema version to 2).
+   - Added realistic original V1 save fixture (`packages/save-core/test/fixtures/legacy-v1-save.json`).
+   - Added automated tests verifying:
+     - Pure V1 → V2 migration with the realistic fixture.
+     - Failed migration preserves original V1 record in storage without corruption.
+     - Unsupported future schema versions (e.g., V3, V5) rejected with `UnsupportedFutureVersionError`.
+     - Newly created saves write canonical V2 (`saveSchemaVersion: 2`).
+
+5. **Migration Safety Audit & Reconciled Criteria:**
+   - Pre-migration snapshot isolation verified in Dexie/IndexedDB and memory adapters.
+   - Atomic transactions implemented for snapshot and migrated record writes (`saveMigratedRecordWithSnapshot`).
+   - Verified that failed migrations do not mutate or overwrite original saves.
+   - Verified that invalid migrated payloads are rejected before committing to storage.
+   - Guarded snapshot restoration against overwriting unrelated saves (different `saveId`) or newer gameplay progress via `SnapshotRestorationConflictError`.
+   - Automatic cleanup of associated migration snapshots when deleting a save slot.
+   - Added `restoreFromSnapshot` capability to recover original saves.
+   - Verified that repeated failed migrations leave original data 100% uncorrupted.
+
+6. **Automated Testing Suite:**
+   - Monorepo totals: 72 TypeScript unit/integration tests passing (100%), 0 compiler errors across all packages.
+   - 10 Python verification tests and 20 evidence files passing.
 
 ## Next task
 
-Await user review of Milestone 2 before proceeding to Milestone 3 (Sprint 3: Save System & Local Persistence in `packages/save-core`).
+Await user review before proceeding to Milestone 4.
