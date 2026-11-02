@@ -10,3 +10,13 @@ it('SQL contract mock: upsert conflicts on google_sub and returns persisted inte
   expect(sql).not.toMatch(/\bid\s*=\s*EXCLUDED.id/);
   expect(result.id).toBe('original-id');
 });
+
+it('SQL contract mock: profile-only updates never replay stale encrypted credentials or change identity',async()=>{
+  const query=vi.fn().mockResolvedValue({rowCount:0,rows:[]});
+  const result=await new PostgresUserRepository({query}).update('original-id',{email:'new@example.com'});
+  const sql=query.mock.calls[0]![0] as string;
+  expect(sql).toContain('UPDATE users SET email=$2');
+  expect(sql).not.toContain('encrypted_refresh_token=');
+  expect(sql).not.toContain('google_sub=');
+  expect(query).toHaveBeenCalledTimes(1);expect(result).toBeNull();
+});

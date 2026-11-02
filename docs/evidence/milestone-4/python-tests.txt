@@ -23,6 +23,6 @@ test_scale_factor_distortion (test_coordinate_transform.TestCoordinateTransform)
 Verify that BUTM2010 scale factor in Dhamrai produces ... ok
 
 ----------------------------------------------------------------------
-Ran 13 tests in 0.072s
+Ran 13 tests in 0.069s
 
 OK

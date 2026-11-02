@@ -3,4 +3,4 @@ warning Skipping preferred cache folder "/Users/salim/Library/Caches/Yarn" becau
 warning Selected the next writable cache folder in the list, will be "/var/folders/46/vm6092hn1sd95yrbn2byxzyr0000gn/T/.yarn-cache-501".
 $ tsc -b
 warning Cannot find a suitable global folder. Tried these: "/usr/local, /Users/salim/.yarn"
-Done in 1.13s.
+Done in 1.26s.

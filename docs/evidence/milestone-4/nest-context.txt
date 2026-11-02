@@ -1,0 +1,1 @@
+PASS: Nest application context resolves and closes without network listeners (test mode)

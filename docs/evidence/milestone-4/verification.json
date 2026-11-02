@@ -58,8 +58,50 @@
       ],
       "exit_code": 0,
       "output_file": "docs/evidence/milestone-4/diff-check.txt"
+    },
+    {
+      "command": [
+        "yarn",
+        "install",
+        "--frozen-lockfile",
+        "--offline",
+        "--ignore-scripts"
+      ],
+      "exit_code": 1,
+      "output_file": "docs/evidence/milestone-4/dependency-install.txt"
+    },
+    {
+      "command": [
+        "initdb",
+        "-D",
+        "/tmp/dhamrai-m4-pg-data",
+        "-A",
+        "trust",
+        "--no-locale",
+        "-U",
+        "dhamrai_test"
+      ],
+      "exit_code": 1,
+      "output_file": "docs/evidence/milestone-4/postgres-init.txt"
+    },
+    {
+      "command": "NODE_ENV=test node: NestFactory.createApplicationContext(AppModule); app.close()",
+      "exit_code": 0,
+      "output_file": "docs/evidence/milestone-4/nest-context.txt"
     }
   ],
   "real_postgresql": "NOT VERIFIED; four tests skipped; initdb failed with shared-memory permission denied",
-  "dependency_install": "BLOCKED: pg@8.16.3 absent from cache; registry DNS unavailable; yarn.lock not regenerated"
+  "dependency_install": "BLOCKED: pg@8.16.3 absent from cache; registry DNS unavailable; yarn.lock not regenerated",
+  "typescript": {
+    "passed": 153,
+    "skipped_real_postgresql": 4
+  },
+  "python": {
+    "passed": 13
+  },
+  "constraints": {
+    "packageManager": "yarn@1.22.22",
+    "milestone5_started": false,
+    "commit_or_push": false
+  }
 }

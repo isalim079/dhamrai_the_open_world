@@ -10,7 +10,7 @@ warning Cannot find a suitable global folder. Tried these: "/usr/local, /Users/s
 
  Test Files  1 skipped (1)
       Tests  4 skipped (4)
-   Start at  18:18:45
-   Duration  231ms (transform 28ms, setup 0ms, collect 71ms, tests 0ms, environment 0ms, prepare 28ms)
+   Start at  18:23:37
+   Duration  228ms (transform 26ms, setup 0ms, collect 71ms, tests 0ms, environment 0ms, prepare 25ms)
 
-Done in 0.72s.
+Done in 0.65s.

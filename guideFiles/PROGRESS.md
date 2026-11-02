@@ -1,7 +1,7 @@
 # Dhamrai Life — Progress Tracker
 
 **Last updated:** 2 November 2026  
-**Overall status:** Phase 1 Authorized; Sprint 1 (Monorepo Foundation & Tooling Setup), Sprint 2 (Domain Engine & Economy), Sprint 3 (Save System & Local Persistence), and Sprint 4 (Backend OAuth & Google Drive Sync Service) complete; migrated to Yarn Classic 1.22.22; save schema versioning reconciled (V1 legacy preserved, canonical V2 active, V1→V2 migration tested); all 100 TypeScript unit/integration tests and 10 Python verification tests passing.
+**Overall status:** Milestone 4 REMEDIATION VERIFICATION BLOCKED; not approved. Yarn Classic 1.22.22 and browser-first architecture preserved. Final local run: 153 TypeScript tests passed, four real PostgreSQL tests skipped; 13 Python tests passed; typecheck passed. PostgreSQL startup is denied and pg dependency installation/lockfile resolution is blocked by network/cache availability. Milestone 5 not started. No commit or push.
 
 ## Current phase and evidence
 
@@ -11,7 +11,7 @@
 | Sprint 1: Monorepo Foundation & Tooling | COMPLETE | Root `package.json` migrated to Yarn Classic 1.22.22 (`yarn.lock`), `tsconfig.base.json`, `packages/shared-contracts` initialized. Vitest unit tests (6/6 passed), TypeScript project references typecheck (`tsc -b`) passed. |
 | Sprint 2: Domain Engine & Economy | COMPLETE | Pure TypeScript domain package `@dhamrai/game-core` implemented: `EconomyDomain` (integer minor units `deltaMinorUnits`/`runningBalanceMinorUnits`, BDT currency code, append-only ledger, invariant verification), `InventoryDomain` (stacking, capacity, document storage), `MissionDomain` (declarative state machine, idempotent payouts), `RickshawDriverArchetype` (৳250 start, rented rickshaw, license slip), and `GameCoreEngine` facade. 25 unit tests passed; `tsc -b` passed with 0 errors. |
 | Sprint 3: Save System & Local Persistence | COMPLETE | Pure persistence package `packages/save-core` implemented with clean separation: Zod schema validation, platform-independent Web Crypto SHA-256 payload consistency verification, canonical JSON serialization, sequential schema migration pipeline with pre-migration snapshot isolation, Dexie/IndexedDB storage adapter, in-memory adapter, and `SaveOrchestrator`. Save schema versioning reconciled: legacy `SaveEnvelopeV1` schema preserved without modification; canonical `SaveEnvelopeV2` introduced (`saveSchemaVersion: 2`, `currency: 'BDT'`, `cashMinorUnits`, `inventory`); pure `v1ToV2MigrationStep` registered; snapshot conflict guards implemented; 41 unit tests in save-core; 100% passing; `tsc -b` passed with 0 errors. |
-| Sprint 4: Backend OAuth & Google Drive Sync | COMPLETE | NestJS server in `apps/api`: `POST /auth/google` (Google ID token verification, stable `sub` mapping, auth code exchange for `drive.appdata`), AES-256-GCM token encryption at rest in PostgreSQL, `GET /cloud-save` and `PUT /cloud-save` with optimistic concurrency lease locking and `SaveEnvelopeV2` validation, Google Drive `appDataFolder` sync client. 28 unit tests in apps/api (100 total across workspace, 14 test files); 100% passing; `tsc -b` passed with 0 errors. |
+| Sprint 4: Backend OAuth & Google Drive Sync | BLOCKED — NOT APPROVED | Security remediation source and local tests completed; real PostgreSQL registration/lease correctness NOT VERIFIED. Production now fails closed, OAuth signature/claims/state/PKCE/redirect checks implemented, canonical Drive publication fenced. pg dependency not installed/locked; real DB and live Google integration pending. See `docs/MILESTONE_4_REMEDIATION_VERIFICATION.md`. |
 | Coordinate/route mathematical suite | PASSED | Ten tests rerun in existing `.venv` (including full-precision origin constants verification); outputs in `data/sources/test_execution.json` and final validation report. These are not independent ground-control tests. |
 | Synthetic grid algorithm checks | PASSED | Three tests exercise partial cells, closed-boundary touches and holes. They do not validate Dhamrai geometry. |
 | Offline OSM audit | REPRODUCED | Four actual XML snapshots, raw manifest, clipped rectangle metrics A16.731/B9.706/C6.024/D28.531km, checksum verification. Counts cover returned objects. |
@@ -28,7 +28,13 @@
 | Sprint 7: Content, Missions & React HUD | PENDING | Planned in `apps/web`. |
 | Phases 2–6 | NOT STARTED | Long-term scope unchanged. |
 
-## Work log — Sprints 1–4 Implementation & Package Manager Migration
+## Final Milestone 4 remediation verification
+
+Current report: `docs/MILESTONE_4_REMEDIATION_VERIFICATION.md`; captured outputs in `docs/evidence/milestone-4/`. Corrected Google RSA/claims validation, browser-bound state and S256 PKCE, exact redirects, registration upsert identity, production encryption/session configuration and secret-error handling, real PostgreSQL provider selection, atomic lease predicates and fenced Drive publication. Previous mock-based claims of distributed proof are withdrawn. Real PostgreSQL tests are explicitly skipped/NOT VERIFIED; pg@8.16.3 installation and lockfile generation are pending registry access. Existing uncommitted work was retained. No commit, push, or Milestone 5 work.
+
+## Historical work log — Sprints 1–4 Implementation & Package Manager Migration
+
+The counts and completion claims below describe the earlier implementation report, not current security acceptance. The final verification report and BLOCKED status above supersede those claims.
 
 1. **Yarn Classic 1.22.22 Migration:**
    - Set `"packageManager": "yarn@1.22.22"` in root `package.json`.
@@ -72,4 +78,4 @@
 
 ## Next task
 
-Await user review and explicit authorization before proceeding to Milestone 5.
+Resolve Milestone 4 blockers and rerun real database/integration verification. Await explicit Milestone 4 approval; do not start Milestone 5.

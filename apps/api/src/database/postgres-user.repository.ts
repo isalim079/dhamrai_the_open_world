@@ -98,17 +98,26 @@ export class PostgresUserRepository implements IUserRepository {
   }
 
   public async update(id: string, partial: Partial<UserRecord>): Promise<UserRecord | null> {
-    const existing = await this.findById(id);
-    if (!existing) return null;
-
-    const merged: UserRecord = {
-      ...existing,
-      ...partial,
-      id: existing.id,
-      updatedAtIso: new Date().toISOString(),
-    };
-
-    return this.save(merged);
+    if (!this._client) throw new Error('PostgreSQL client pool not configured.');
+    // Update only supplied mutable fields. Reading/merging an older full record
+    // could overwrite a refresh token rotated by a simultaneous code login.
+    const columns = {
+      email: 'email', name: 'name', encryptedRefreshToken: 'encrypted_refresh_token',
+      encryptionIv: 'encryption_iv', encryptionTag: 'encryption_tag',
+    } as const;
+    const params: unknown[] = [id];
+    const assignments: string[] = [];
+    for (const field of Object.keys(columns) as Array<keyof typeof columns>) {
+      if (partial[field] !== undefined) {
+        params.push(partial[field]);
+        assignments.push(`${columns[field]}=$${params.length}`);
+      }
+    }
+    assignments.push('updated_at_iso=NOW()');
+    const result = await this._client.query(
+      `UPDATE users SET ${assignments.join(',')} WHERE id=$1 RETURNING *`, params
+    );
+    return result.rows[0] ? this.mapRowToRecord(result.rows[0] as Record<string, unknown>) : null;
   }
 
   public async delete(id: string): Promise<boolean> {

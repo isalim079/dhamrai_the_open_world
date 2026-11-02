@@ -86,16 +86,25 @@ let PostgresUserRepository = class PostgresUserRepository {
         return this.mapRowToRecord(result.rows[0]);
     }
     async update(id, partial) {
-        const existing = await this.findById(id);
-        if (!existing)
-            return null;
-        const merged = {
-            ...existing,
-            ...partial,
-            id: existing.id,
-            updatedAtIso: new Date().toISOString(),
+        if (!this._client)
+            throw new Error('PostgreSQL client pool not configured.');
+        // Update only supplied mutable fields. Reading/merging an older full record
+        // could overwrite a refresh token rotated by a simultaneous code login.
+        const columns = {
+            email: 'email', name: 'name', encryptedRefreshToken: 'encrypted_refresh_token',
+            encryptionIv: 'encryption_iv', encryptionTag: 'encryption_tag',
         };
-        return this.save(merged);
+        const params = [id];
+        const assignments = [];
+        for (const field of Object.keys(columns)) {
+            if (partial[field] !== undefined) {
+                params.push(partial[field]);
+                assignments.push(`${columns[field]}=$${params.length}`);
+            }
+        }
+        assignments.push('updated_at_iso=NOW()');
+        const result = await this._client.query(`UPDATE users SET ${assignments.join(',')} WHERE id=$1 RETURNING *`, params);
+        return result.rows[0] ? this.mapRowToRecord(result.rows[0]) : null;
     }
     async delete(id) {
         if (!this._client) {
