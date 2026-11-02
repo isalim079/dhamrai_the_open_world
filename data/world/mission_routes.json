@@ -1,0 +1,2446 @@
+{
+  "metadata": {
+    "fixture": "mission_routes.json",
+    "version": "3.0.0",
+    "crs": "ESRI:102954 (BUTM2010)",
+    "vertical_baseline_msl_m": 12.0,
+    "source_snapshot": "data/sources/raw_osm_sample_b_phase1_slice.xml",
+    "source_sha256": "e69f01828ddbf3a7efc0267b126b987324e88b68c0343c4dafcf0532bb18e3a7",
+    "description": "OSM snapshot graph routes between nearest road vertices; not field-verified access routes.",
+    "distance_semantics": "Horizontal projected metres between snapped vertices; excludes anchor-to-road offsets. No elevation profile is available.",
+    "routing_model": "Undirected highway graph sharing OSM node IDs; ignores access restrictions, turn restrictions and one-way tags. A topology audit, not certified rickshaw navigation.",
+    "courtyard_evidence": "No verified temple courtyard polygon or entrance/access connector is preserved; courtyard traversal is unknown for every route.",
+    "axis_convention": "+X east, +Y up relative to provisional 12m MSL, +Z south"
+  },
+  "control_locations": {
+    "rathkhola_origin": {
+      "name": "Dhamrai Rathkhola Stand",
+      "wgs84": {
+        "lon": 90.2174,
+        "lat": 23.9148,
+        "elevation": 12.0
+      },
+      "world_position": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -0.0
+      },
+      "nearest_graph_node": "13923209214",
+      "snap_offset_m": 29.46
+    },
+    "rathkhola_pickup": {
+      "name": "Rathkhola Market Corner",
+      "wgs84": {
+        "lon": 90.2175475,
+        "lat": 23.9148901,
+        "elevation": 12.0
+      },
+      "world_position": {
+        "x": 14.997,
+        "y": 0.0,
+        "z": -9.9984
+      },
+      "nearest_graph_node": "13923209214",
+      "snap_offset_m": 46.95
+    },
+    "hardinge_gate": {
+      "name": "Dhamrai Hardinge High School Gate",
+      "wgs84": {
+        "lon": 90.216685,
+        "lat": 23.9168,
+        "elevation": 13.0
+      },
+      "world_position": {
+        "x": -73.111,
+        "y": 1.0,
+        "z": -221.3147
+      },
+      "nearest_graph_node": "5617945281",
+      "snap_offset_m": 45.93
+    },
+    "thana_junction": {
+      "name": "Thana Junction Checkpoint",
+      "wgs84": {
+        "lon": 90.2168,
+        "lat": 23.9142,
+        "elevation": 12.0
+      },
+      "world_position": {
+        "x": -60.9652,
+        "y": 0.0,
+        "z": 66.5217
+      },
+      "nearest_graph_node": "13686881067",
+      "snap_offset_m": 14.6
+    },
+    "police_station": {
+      "name": "Dhamrai Police Station",
+      "wgs84": {
+        "lon": 90.216275,
+        "lat": 23.914777,
+        "elevation": 12.0
+      },
+      "world_position": {
+        "x": -114.4968,
+        "y": 0.0,
+        "z": 2.7221
+      },
+      "nearest_graph_node": "6383980983",
+      "snap_offset_m": 25.0
+    },
+    "metal_workshop": {
+      "name": "Kayetpara Metal Craft Workshop",
+      "wgs84": {
+        "lon": 90.2145,
+        "lat": 23.9155,
+        "elevation": 12.0
+      },
+      "world_position": {
+        "x": -295.275,
+        "y": 0.0,
+        "z": -77.0483
+      },
+      "nearest_graph_node": "7464434330",
+      "snap_offset_m": 30.35
+    },
+    "yashomadhab_temple": {
+      "name": "Sri Sri Yashomadhab Mandir",
+      "wgs84": {
+        "lon": 90.214,
+        "lat": 23.9158,
+        "elevation": 12.5
+      },
+      "world_position": {
+        "x": -346.2142,
+        "y": 0.5,
+        "z": -110.1851
+      },
+      "nearest_graph_node": "7464434335",
+      "snap_offset_m": 6.38
+    }
+  },
+  "mission_3_distance_evidence": {
+    "documented_world_anchors": {
+      "workshop": [
+        -295.3,
+        0.0,
+        -77.0
+      ],
+      "temple": [
+        -346.2,
+        0.5,
+        -110.2
+      ],
+      "rathkhola": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "horizontal_straight_line_workshop_to_temple_m": 60.7704698023637,
+    "delta_workshop_to_temple_xz_m": [
+      -50.9,
+      -33.2
+    ],
+    "workshop_to_temple_graph_m": 42.38,
+    "temple_to_rathkhola_graph_m": 573.12,
+    "direct_workshop_to_rathkhola_graph_m": 534.16,
+    "detour_via_temple_graph_m": 615.5,
+    "workshop_to_temple_polyline": [
+      {
+        "seq": 0,
+        "osm_node_id": "7464434330",
+        "way_id": "",
+        "road_name": "Start Anchor",
+        "leg_distance_m": 0.0,
+        "cumulative_distance_m": 0.0,
+        "position": {
+          "x": -299.5241,
+          "y": 0.0,
+          "z": -107.1005
+        },
+        "wgs84": {
+          "lon": 90.2144587,
+          "lat": 23.9157715
+        }
+      },
+      {
+        "seq": 1,
+        "osm_node_id": "11201519112",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 8.47,
+        "cumulative_distance_m": 8.47,
+        "position": {
+          "x": -307.9725,
+          "y": 0.0,
+          "z": -107.6967
+        },
+        "wgs84": {
+          "lon": 90.2143757,
+          "lat": 23.915777
+        }
+      },
+      {
+        "seq": 2,
+        "osm_node_id": "7464434331",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 7.16,
+        "cumulative_distance_m": 15.63,
+        "position": {
+          "x": -315.0779,
+          "y": 0.0,
+          "z": -108.5494
+        },
+        "wgs84": {
+          "lon": 90.2143059,
+          "lat": 23.9157848
+        }
+      },
+      {
+        "seq": 3,
+        "osm_node_id": "7464434332",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 2.57,
+        "cumulative_distance_m": 18.2,
+        "position": {
+          "x": -317.5724,
+          "y": 0.0,
+          "z": -109.1657
+        },
+        "wgs84": {
+          "lon": 90.2142814,
+          "lat": 23.9157904
+        }
+      },
+      {
+        "seq": 4,
+        "osm_node_id": "7464434333",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 3.8,
+        "cumulative_distance_m": 21.99,
+        "position": {
+          "x": -321.2581,
+          "y": 0.0,
+          "z": -110.079
+        },
+        "wgs84": {
+          "lon": 90.2142452,
+          "lat": 23.9157987
+        }
+      },
+      {
+        "seq": 5,
+        "osm_node_id": "7464434334",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 3.92,
+        "cumulative_distance_m": 25.91,
+        "position": {
+          "x": -325.1669,
+          "y": 0.0,
+          "z": -110.3941
+        },
+        "wgs84": {
+          "lon": 90.2142068,
+          "lat": 23.9158016
+        }
+      },
+      {
+        "seq": 6,
+        "osm_node_id": "7464434335",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 16.47,
+        "cumulative_distance_m": 42.38,
+        "position": {
+          "x": -341.2026,
+          "y": 0.0,
+          "z": -114.1341
+        },
+        "wgs84": {
+          "lon": 90.2140493,
+          "lat": 23.9158356
+        }
+      }
+    ],
+    "temple_to_rathkhola_polyline": [
+      {
+        "seq": 0,
+        "osm_node_id": "7464434335",
+        "way_id": "",
+        "road_name": "Start Anchor",
+        "leg_distance_m": 0.0,
+        "cumulative_distance_m": 0.0,
+        "position": {
+          "x": -341.2026,
+          "y": 0.0,
+          "z": -114.1341
+        },
+        "wgs84": {
+          "lon": 90.2140493,
+          "lat": 23.9158356
+        }
+      },
+      {
+        "seq": 1,
+        "osm_node_id": "7464434336",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 8.59,
+        "cumulative_distance_m": 8.59,
+        "position": {
+          "x": -341.4293,
+          "y": 0.0,
+          "z": -122.7251
+        },
+        "wgs84": {
+          "lon": 90.2140472,
+          "lat": 23.9159132
+        }
+      },
+      {
+        "seq": 2,
+        "osm_node_id": "7464434337",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 4.82,
+        "cumulative_distance_m": 13.41,
+        "position": {
+          "x": -340.6223,
+          "y": 0.0,
+          "z": -127.4759
+        },
+        "wgs84": {
+          "lon": 90.2140552,
+          "lat": 23.9159561
+        }
+      },
+      {
+        "seq": 3,
+        "osm_node_id": "7464434338",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 1.35,
+        "cumulative_distance_m": 14.76,
+        "position": {
+          "x": -339.3916,
+          "y": 0.0,
+          "z": -128.0203
+        },
+        "wgs84": {
+          "lon": 90.2140673,
+          "lat": 23.915961
+        }
+      },
+      {
+        "seq": 4,
+        "osm_node_id": "7464434339",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 4.35,
+        "cumulative_distance_m": 19.11,
+        "position": {
+          "x": -339.3982,
+          "y": 0.0,
+          "z": -132.3713
+        },
+        "wgs84": {
+          "lon": 90.2140673,
+          "lat": 23.9160003
+        }
+      },
+      {
+        "seq": 5,
+        "osm_node_id": "13276083899",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 22.71,
+        "cumulative_distance_m": 41.82,
+        "position": {
+          "x": -342.4347,
+          "y": 0.0,
+          "z": -154.8748
+        },
+        "wgs84": {
+          "lon": 90.2140378,
+          "lat": 23.9162036
+        }
+      },
+      {
+        "seq": 6,
+        "osm_node_id": "7464434340",
+        "way_id": "798093431",
+        "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+        "leg_distance_m": 38.56,
+        "cumulative_distance_m": 80.37,
+        "position": {
+          "x": -346.9811,
+          "y": 0.0,
+          "z": -193.1637
+        },
+        "wgs84": {
+          "lon": 90.2139937,
+          "lat": 23.9165495
+        }
+      },
+      {
+        "seq": 7,
+        "osm_node_id": "6624692556",
+        "way_id": "705241381",
+        "road_name": "way/705241381",
+        "leg_distance_m": 14.15,
+        "cumulative_distance_m": 94.53,
+        "position": {
+          "x": -333.7883,
+          "y": 0.0,
+          "z": -198.2876
+        },
+        "wgs84": {
+          "lon": 90.2141234,
+          "lat": 23.9165956
+        }
+      },
+      {
+        "seq": 8,
+        "osm_node_id": "6624692557",
+        "way_id": "705241381",
+        "road_name": "way/705241381",
+        "leg_distance_m": 36.5,
+        "cumulative_distance_m": 131.03,
+        "position": {
+          "x": -298.1682,
+          "y": 0.0,
+          "z": -206.2687
+        },
+        "wgs84": {
+          "lon": 90.2144735,
+          "lat": 23.9166672
+        }
+      },
+      {
+        "seq": 9,
+        "osm_node_id": "6624692558",
+        "way_id": "705241381",
+        "road_name": "way/705241381",
+        "leg_distance_m": 16.76,
+        "cumulative_distance_m": 147.8,
+        "position": {
+          "x": -282.0435,
+          "y": 0.0,
+          "z": -210.8545
+        },
+        "wgs84": {
+          "lon": 90.214632,
+          "lat": 23.9167084
+        }
+      },
+      {
+        "seq": 10,
+        "osm_node_id": "4475158500",
+        "way_id": "705241381",
+        "road_name": "way/705241381",
+        "leg_distance_m": 22.08,
+        "cumulative_distance_m": 169.87,
+        "position": {
+          "x": -260.2379,
+          "y": 0.0,
+          "z": -214.3087
+        },
+        "wgs84": {
+          "lon": 90.2148463,
+          "lat": 23.9167393
+        }
+      },
+      {
+        "seq": 11,
+        "osm_node_id": "13276100701",
+        "way_id": "450597018",
+        "road_name": "way/450597018",
+        "leg_distance_m": 16.14,
+        "cumulative_distance_m": 186.01,
+        "position": {
+          "x": -245.156,
+          "y": 0.0,
+          "z": -208.5746
+        },
+        "wgs84": {
+          "lon": 90.2149944,
+          "lat": 23.9166873
+        }
+      },
+      {
+        "seq": 12,
+        "osm_node_id": "13276083900",
+        "way_id": "450597018",
+        "road_name": "way/450597018",
+        "leg_distance_m": 18.16,
+        "cumulative_distance_m": 204.17,
+        "position": {
+          "x": -226.9985,
+          "y": 0.0,
+          "z": -208.2811
+        },
+        "wgs84": {
+          "lon": 90.2151728,
+          "lat": 23.9166844
+        }
+      },
+      {
+        "seq": 13,
+        "osm_node_id": "4475158499",
+        "way_id": "450597018",
+        "road_name": "way/450597018",
+        "leg_distance_m": 39.68,
+        "cumulative_distance_m": 243.85,
+        "position": {
+          "x": -187.3441,
+          "y": 0.0,
+          "z": -206.9244
+        },
+        "wgs84": {
+          "lon": 90.2155624,
+          "lat": 23.9166716
+        }
+      },
+      {
+        "seq": 14,
+        "osm_node_id": "4475158498",
+        "way_id": "450597018",
+        "road_name": "way/450597018",
+        "leg_distance_m": 15.19,
+        "cumulative_distance_m": 259.04,
+        "position": {
+          "x": -172.1597,
+          "y": 0.0,
+          "z": -207.4237
+        },
+        "wgs84": {
+          "lon": 90.2157116,
+          "lat": 23.9166759
+        }
+      },
+      {
+        "seq": 15,
+        "osm_node_id": "4475158492",
+        "way_id": "450597018",
+        "road_name": "way/450597018",
+        "leg_distance_m": 53.16,
+        "cumulative_distance_m": 312.19,
+        "position": {
+          "x": -156.968,
+          "y": 0.0,
+          "z": -156.4854
+        },
+        "wgs84": {
+          "lon": 90.2158601,
+          "lat": 23.9162156
+        }
+      },
+      {
+        "seq": 16,
+        "osm_node_id": "13474258986",
+        "way_id": "450597019",
+        "road_name": "way/450597019",
+        "leg_distance_m": 104.13,
+        "cumulative_distance_m": 416.32,
+        "position": {
+          "x": -53.5334,
+          "y": 0.0,
+          "z": -144.4764
+        },
+        "wgs84": {
+          "lon": 90.2168762,
+          "lat": 23.9161057
+        }
+      },
+      {
+        "seq": 17,
+        "osm_node_id": "14009942067",
+        "way_id": "1469209794",
+        "road_name": "way/1469209794",
+        "leg_distance_m": 14.83,
+        "cumulative_distance_m": 431.16,
+        "position": {
+          "x": -54.0297,
+          "y": 0.0,
+          "z": -129.6511
+        },
+        "wgs84": {
+          "lon": 90.2168711,
+          "lat": 23.9159718
+        }
+      },
+      {
+        "seq": 18,
+        "osm_node_id": "14009942066",
+        "way_id": "1469209794",
+        "road_name": "way/1469209794",
+        "leg_distance_m": 15.0,
+        "cumulative_distance_m": 446.16,
+        "position": {
+          "x": -54.5257,
+          "y": 0.0,
+          "z": -114.6597
+        },
+        "wgs84": {
+          "lon": 90.216866,
+          "lat": 23.9158364
+        }
+      },
+      {
+        "seq": 19,
+        "osm_node_id": "13474258987",
+        "way_id": "1469209794",
+        "road_name": "way/1469209794",
+        "leg_distance_m": 2.69,
+        "cumulative_distance_m": 448.85,
+        "position": {
+          "x": -54.6132,
+          "y": 0.0,
+          "z": -111.9692
+        },
+        "wgs84": {
+          "lon": 90.2168651,
+          "lat": 23.9158121
+        }
+      },
+      {
+        "seq": 20,
+        "osm_node_id": "14009824734",
+        "way_id": "1469209795",
+        "road_name": "way/1469209795",
+        "leg_distance_m": 13.57,
+        "cumulative_distance_m": 462.41,
+        "position": {
+          "x": -53.9512,
+          "y": 0.0,
+          "z": -98.4189
+        },
+        "wgs84": {
+          "lon": 90.2168714,
+          "lat": 23.9156897
+        }
+      },
+      {
+        "seq": 21,
+        "osm_node_id": "13474258988",
+        "way_id": "1469209795",
+        "road_name": "way/1469209795",
+        "leg_distance_m": 18.18,
+        "cumulative_distance_m": 480.59,
+        "position": {
+          "x": -53.0684,
+          "y": 0.0,
+          "z": -80.2633
+        },
+        "wgs84": {
+          "lon": 90.2168798,
+          "lat": 23.9155257
+        }
+      },
+      {
+        "seq": 22,
+        "osm_node_id": "13474258989",
+        "way_id": "1469209796",
+        "road_name": "way/1469209796",
+        "leg_distance_m": 39.22,
+        "cumulative_distance_m": 519.81,
+        "position": {
+          "x": -46.4037,
+          "y": 0.0,
+          "z": -41.6123
+        },
+        "wgs84": {
+          "lon": 90.2169447,
+          "lat": 23.9151765
+        }
+      },
+      {
+        "seq": 23,
+        "osm_node_id": "13474258990",
+        "way_id": "1469209796",
+        "road_name": "way/1469209796",
+        "leg_distance_m": 20.83,
+        "cumulative_distance_m": 540.64,
+        "position": {
+          "x": -36.4929,
+          "y": 0.0,
+          "z": -23.2934
+        },
+        "wgs84": {
+          "lon": 90.2170418,
+          "lat": 23.9150109
+        }
+      },
+      {
+        "seq": 24,
+        "osm_node_id": "13997858359",
+        "way_id": "1469209797",
+        "road_name": "way/1469209797",
+        "leg_distance_m": 18.38,
+        "cumulative_distance_m": 559.02,
+        "position": {
+          "x": -32.1297,
+          "y": 0.0,
+          "z": -5.442
+        },
+        "wgs84": {
+          "lon": 90.2170844,
+          "lat": 23.9148496
+        }
+      },
+      {
+        "seq": 25,
+        "osm_node_id": "13474258991",
+        "way_id": "1469209797",
+        "road_name": "way/1469209797",
+        "leg_distance_m": 11.75,
+        "cumulative_distance_m": 570.76,
+        "position": {
+          "x": -29.3438,
+          "y": 0.0,
+          "z": 5.9683
+        },
+        "wgs84": {
+          "lon": 90.2171116,
+          "lat": 23.9147465
+        }
+      },
+      {
+        "seq": 26,
+        "osm_node_id": "13923209214",
+        "way_id": "1469209797",
+        "road_name": "way/1469209797",
+        "leg_distance_m": 2.36,
+        "cumulative_distance_m": 573.12,
+        "position": {
+          "x": -28.3227,
+          "y": 0.0,
+          "z": 8.0924
+        },
+        "wgs84": {
+          "lon": 90.2171216,
+          "lat": 23.9147273
+        }
+      }
+    ],
+    "anchor_access_status": "Unverified. snap_offset_m is straight-line offset, not a surveyed or mapped access path.",
+    "traverses_temple_courtyard": {
+      "workshop_to_temple": null,
+      "temple_to_rathkhola": null,
+      "direct_delivery": null,
+      "detour": null
+    }
+  },
+  "missions": {
+    "mission_1_first_fare": {
+      "id": "mission_1",
+      "title_bn": "দিনের প্রথম যাত্রী",
+      "title_en": "First Fare",
+      "start_anchor": "rathkhola_origin",
+      "destination_anchor": "hardinge_gate",
+      "pickup_anchor": "rathkhola_pickup",
+      "route_type": "origin_to_school_road_graph_fixture_only",
+      "passenger_pickup_status": "pending_plaza_access_geometry",
+      "route_semantics_note": "This 552.67m road graph fixture connects nearest road vertices between Rathkhola Stand and Hardinge High School Gate. It does NOT include the intermediate passenger pickup at Rathkhola Market Corner (+14.997, 0.0, -9.998), which lies in the open fairground plaza off the tagged OSM street network. The complete passenger mission is labeled as an origin-to-school route only with the passenger pickup leg pending plaza access geometry modeling.",
+      "pickup_snap_offset_m": 46.95,
+      "calculated_road_distance_m": 552.67,
+      "waypoint_count": 26,
+      "route_polyline": [
+        {
+          "seq": 0,
+          "osm_node_id": "13923209214",
+          "way_id": "",
+          "road_name": "Start Anchor",
+          "leg_distance_m": 0.0,
+          "cumulative_distance_m": 0.0,
+          "position": {
+            "x": -28.3227,
+            "y": 0.0,
+            "z": 8.0924
+          },
+          "wgs84": {
+            "lon": 90.2171216,
+            "lat": 23.9147273
+          }
+        },
+        {
+          "seq": 1,
+          "osm_node_id": "13474258991",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 2.36,
+          "cumulative_distance_m": 2.36,
+          "position": {
+            "x": -29.3438,
+            "y": 0.0,
+            "z": 5.9683
+          },
+          "wgs84": {
+            "lon": 90.2171116,
+            "lat": 23.9147465
+          }
+        },
+        {
+          "seq": 2,
+          "osm_node_id": "13997858359",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 11.75,
+          "cumulative_distance_m": 14.1,
+          "position": {
+            "x": -32.1297,
+            "y": 0.0,
+            "z": -5.442
+          },
+          "wgs84": {
+            "lon": 90.2170844,
+            "lat": 23.9148496
+          }
+        },
+        {
+          "seq": 3,
+          "osm_node_id": "13474258990",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 18.38,
+          "cumulative_distance_m": 32.48,
+          "position": {
+            "x": -36.4929,
+            "y": 0.0,
+            "z": -23.2934
+          },
+          "wgs84": {
+            "lon": 90.2170418,
+            "lat": 23.9150109
+          }
+        },
+        {
+          "seq": 4,
+          "osm_node_id": "13474258989",
+          "way_id": "1469209796",
+          "road_name": "way/1469209796",
+          "leg_distance_m": 20.83,
+          "cumulative_distance_m": 53.31,
+          "position": {
+            "x": -46.4037,
+            "y": 0.0,
+            "z": -41.6123
+          },
+          "wgs84": {
+            "lon": 90.2169447,
+            "lat": 23.9151765
+          }
+        },
+        {
+          "seq": 5,
+          "osm_node_id": "13474258988",
+          "way_id": "1469209796",
+          "road_name": "way/1469209796",
+          "leg_distance_m": 39.22,
+          "cumulative_distance_m": 92.53,
+          "position": {
+            "x": -53.0684,
+            "y": 0.0,
+            "z": -80.2633
+          },
+          "wgs84": {
+            "lon": 90.2168798,
+            "lat": 23.9155257
+          }
+        },
+        {
+          "seq": 6,
+          "osm_node_id": "14009824734",
+          "way_id": "1469209795",
+          "road_name": "way/1469209795",
+          "leg_distance_m": 18.18,
+          "cumulative_distance_m": 110.71,
+          "position": {
+            "x": -53.9512,
+            "y": 0.0,
+            "z": -98.4189
+          },
+          "wgs84": {
+            "lon": 90.2168714,
+            "lat": 23.9156897
+          }
+        },
+        {
+          "seq": 7,
+          "osm_node_id": "13474258987",
+          "way_id": "1469209795",
+          "road_name": "way/1469209795",
+          "leg_distance_m": 13.57,
+          "cumulative_distance_m": 124.27,
+          "position": {
+            "x": -54.6132,
+            "y": 0.0,
+            "z": -111.9692
+          },
+          "wgs84": {
+            "lon": 90.2168651,
+            "lat": 23.9158121
+          }
+        },
+        {
+          "seq": 8,
+          "osm_node_id": "14009942066",
+          "way_id": "1469209794",
+          "road_name": "way/1469209794",
+          "leg_distance_m": 2.69,
+          "cumulative_distance_m": 126.96,
+          "position": {
+            "x": -54.5257,
+            "y": 0.0,
+            "z": -114.6597
+          },
+          "wgs84": {
+            "lon": 90.216866,
+            "lat": 23.9158364
+          }
+        },
+        {
+          "seq": 9,
+          "osm_node_id": "14009942067",
+          "way_id": "1469209794",
+          "road_name": "way/1469209794",
+          "leg_distance_m": 15.0,
+          "cumulative_distance_m": 141.96,
+          "position": {
+            "x": -54.0297,
+            "y": 0.0,
+            "z": -129.6511
+          },
+          "wgs84": {
+            "lon": 90.2168711,
+            "lat": 23.9159718
+          }
+        },
+        {
+          "seq": 10,
+          "osm_node_id": "13474258986",
+          "way_id": "1469209794",
+          "road_name": "way/1469209794",
+          "leg_distance_m": 14.83,
+          "cumulative_distance_m": 156.8,
+          "position": {
+            "x": -53.5334,
+            "y": 0.0,
+            "z": -144.4764
+          },
+          "wgs84": {
+            "lon": 90.2168762,
+            "lat": 23.9161057
+          }
+        },
+        {
+          "seq": 11,
+          "osm_node_id": "4475158492",
+          "way_id": "450597019",
+          "road_name": "way/450597019",
+          "leg_distance_m": 104.13,
+          "cumulative_distance_m": 260.93,
+          "position": {
+            "x": -156.968,
+            "y": 0.0,
+            "z": -156.4854
+          },
+          "wgs84": {
+            "lon": 90.2158601,
+            "lat": 23.9162156
+          }
+        },
+        {
+          "seq": 12,
+          "osm_node_id": "4475158498",
+          "way_id": "450597018",
+          "road_name": "way/450597018",
+          "leg_distance_m": 53.16,
+          "cumulative_distance_m": 314.08,
+          "position": {
+            "x": -172.1597,
+            "y": 0.0,
+            "z": -207.4237
+          },
+          "wgs84": {
+            "lon": 90.2157116,
+            "lat": 23.9166759
+          }
+        },
+        {
+          "seq": 13,
+          "osm_node_id": "11140245548",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 47.62,
+          "cumulative_distance_m": 361.71,
+          "position": {
+            "x": -174.8479,
+            "y": 0.0,
+            "z": -254.971
+          },
+          "wgs84": {
+            "lon": 90.2156859,
+            "lat": 23.9171054
+          }
+        },
+        {
+          "seq": 14,
+          "osm_node_id": "11140245547",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 8.67,
+          "cumulative_distance_m": 370.37,
+          "position": {
+            "x": -175.6244,
+            "y": 0.0,
+            "z": -263.6055
+          },
+          "wgs84": {
+            "lon": 90.2156784,
+            "lat": 23.9171834
+          }
+        },
+        {
+          "seq": 15,
+          "osm_node_id": "11140245546",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 9.38,
+          "cumulative_distance_m": 379.76,
+          "position": {
+            "x": -175.2621,
+            "y": 0.0,
+            "z": -272.9835
+          },
+          "wgs84": {
+            "lon": 90.2156821,
+            "lat": 23.9172681
+          }
+        },
+        {
+          "seq": 16,
+          "osm_node_id": "11140245545",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 8.2,
+          "cumulative_distance_m": 387.96,
+          "position": {
+            "x": -173.0046,
+            "y": 0.0,
+            "z": -280.8697
+          },
+          "wgs84": {
+            "lon": 90.2157044,
+            "lat": 23.9173393
+          }
+        },
+        {
+          "seq": 17,
+          "osm_node_id": "11140245544",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 7.37,
+          "cumulative_distance_m": 395.34,
+          "position": {
+            "x": -171.1326,
+            "y": 0.0,
+            "z": -288.0025
+          },
+          "wgs84": {
+            "lon": 90.2157229,
+            "lat": 23.9174037
+          }
+        },
+        {
+          "seq": 18,
+          "osm_node_id": "11140245543",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 16.82,
+          "cumulative_distance_m": 412.16,
+          "position": {
+            "x": -164.3574,
+            "y": 0.0,
+            "z": -303.402
+          },
+          "wgs84": {
+            "lon": 90.2157897,
+            "lat": 23.9175427
+          }
+        },
+        {
+          "seq": 19,
+          "osm_node_id": "11140245542",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 15.99,
+          "cumulative_distance_m": 428.15,
+          "position": {
+            "x": -153.8114,
+            "y": 0.0,
+            "z": -315.4195
+          },
+          "wgs84": {
+            "lon": 90.2158935,
+            "lat": 23.9176511
+          }
+        },
+        {
+          "seq": 20,
+          "osm_node_id": "11140245541",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 21.4,
+          "cumulative_distance_m": 449.55,
+          "position": {
+            "x": -137.2323,
+            "y": 0.0,
+            "z": -328.9519
+          },
+          "wgs84": {
+            "lon": 90.2160566,
+            "lat": 23.9177731
+          }
+        },
+        {
+          "seq": 21,
+          "osm_node_id": "5617945284",
+          "way_id": "1201590375",
+          "road_name": "way/1201590375",
+          "leg_distance_m": 15.88,
+          "cumulative_distance_m": 465.43,
+          "position": {
+            "x": -122.8923,
+            "y": 0.0,
+            "z": -335.7716
+          },
+          "wgs84": {
+            "lon": 90.2161976,
+            "lat": 23.9178345
+          }
+        },
+        {
+          "seq": 22,
+          "osm_node_id": "5617945283",
+          "way_id": "588178592",
+          "road_name": "way/588178592",
+          "leg_distance_m": 68.23,
+          "cumulative_distance_m": 533.66,
+          "position": {
+            "x": -95.6324,
+            "y": 0.0,
+            "z": -273.227
+          },
+          "wgs84": {
+            "lon": 90.2164645,
+            "lat": 23.9172692
+          }
+        },
+        {
+          "seq": 23,
+          "osm_node_id": "5617945274",
+          "way_id": "588178592",
+          "road_name": "way/588178592",
+          "leg_distance_m": 3.89,
+          "cumulative_distance_m": 537.55,
+          "position": {
+            "x": -93.0428,
+            "y": 0.0,
+            "z": -270.3192
+          },
+          "wgs84": {
+            "lon": 90.2164899,
+            "lat": 23.9172429
+          }
+        },
+        {
+          "seq": 24,
+          "osm_node_id": "5617945282",
+          "way_id": "588178592",
+          "road_name": "way/588178592",
+          "leg_distance_m": 3.86,
+          "cumulative_distance_m": 541.41,
+          "position": {
+            "x": -89.7727,
+            "y": 0.0,
+            "z": -268.276
+          },
+          "wgs84": {
+            "lon": 90.216522,
+            "lat": 23.9172244
+          }
+        },
+        {
+          "seq": 25,
+          "osm_node_id": "5617945281",
+          "way_id": "588178592",
+          "road_name": "way/588178592",
+          "leg_distance_m": 11.26,
+          "cumulative_distance_m": 552.67,
+          "position": {
+            "x": -78.5955,
+            "y": 0.0,
+            "z": -266.9203
+          },
+          "wgs84": {
+            "lon": 90.2166318,
+            "lat": 23.917212
+          }
+        }
+      ]
+    },
+    "mission_2_police_checkpoint": {
+      "id": "mission_2",
+      "title_bn": "চেকপোস্ট ও কাগজপত্র",
+      "title_en": "Police Checkpoint",
+      "start_anchor": "rathkhola_origin",
+      "destination_anchor": "thana_junction",
+      "calculated_road_distance_m": 149.7,
+      "waypoint_count": 11,
+      "location_context": {
+        "checkpoint_world_position": {
+          "x": -60.9652,
+          "y": 0.0,
+          "z": 66.5217
+        },
+        "police_station_world_position": {
+          "x": -114.4968,
+          "y": 0.0,
+          "z": 2.7221
+        },
+        "euclidean_distance_to_station_m": 83.28,
+        "road_network_distance_to_station_m": 149.44,
+        "relationship_description": "Checkpoint is situated at Thana Junction on the town thoroughfare, 83.3m ESE (straight-line) and 149.4m (road distance) from Dhamrai Police Station compound."
+      },
+      "route_polyline": [
+        {
+          "seq": 0,
+          "osm_node_id": "13923209214",
+          "way_id": "",
+          "road_name": "Start Anchor",
+          "leg_distance_m": 0.0,
+          "cumulative_distance_m": 0.0,
+          "position": {
+            "x": -28.3227,
+            "y": 0.0,
+            "z": 8.0924
+          },
+          "wgs84": {
+            "lon": 90.2171216,
+            "lat": 23.9147273
+          }
+        },
+        {
+          "seq": 1,
+          "osm_node_id": "13923209217",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 12.94,
+          "cumulative_distance_m": 12.94,
+          "position": {
+            "x": -22.7273,
+            "y": 0.0,
+            "z": 19.7641
+          },
+          "wgs84": {
+            "lon": 90.2171764,
+            "lat": 23.9146218
+          }
+        },
+        {
+          "seq": 2,
+          "osm_node_id": "13474258992",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 23.36,
+          "cumulative_distance_m": 36.31,
+          "position": {
+            "x": -12.6189,
+            "y": 0.0,
+            "z": 40.8284
+          },
+          "wgs84": {
+            "lon": 90.2172754,
+            "lat": 23.9144314
+          }
+        },
+        {
+          "seq": 3,
+          "osm_node_id": "14009942017",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 4.91,
+          "cumulative_distance_m": 41.22,
+          "position": {
+            "x": -9.9866,
+            "y": 0.0,
+            "z": 44.9761
+          },
+          "wgs84": {
+            "lon": 90.2173012,
+            "lat": 23.9143939
+          }
+        },
+        {
+          "seq": 4,
+          "osm_node_id": "13993049483",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 17.03,
+          "cumulative_distance_m": 58.25,
+          "position": {
+            "x": -0.8858,
+            "y": 0.0,
+            "z": 59.3659
+          },
+          "wgs84": {
+            "lon": 90.2173904,
+            "lat": 23.9142638
+          }
+        },
+        {
+          "seq": 5,
+          "osm_node_id": "13474258993",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 8.17,
+          "cumulative_distance_m": 66.42,
+          "position": {
+            "x": 2.403,
+            "y": 0.0,
+            "z": 66.8451
+          },
+          "wgs84": {
+            "lon": 90.2174226,
+            "lat": 23.9141962
+          }
+        },
+        {
+          "seq": 6,
+          "osm_node_id": "13474258994",
+          "way_id": "1469209798",
+          "road_name": "way/1469209798",
+          "leg_distance_m": 6.75,
+          "cumulative_distance_m": 73.16,
+          "position": {
+            "x": 1.3039,
+            "y": 0.0,
+            "z": 73.5007
+          },
+          "wgs84": {
+            "lon": 90.2174117,
+            "lat": 23.9141361
+          }
+        },
+        {
+          "seq": 7,
+          "osm_node_id": "13474258995",
+          "way_id": "1469209799",
+          "road_name": "way/1469209799",
+          "leg_distance_m": 37.31,
+          "cumulative_distance_m": 110.48,
+          "position": {
+            "x": -28.8093,
+            "y": 0.0,
+            "z": 95.5347
+          },
+          "wgs84": {
+            "lon": 90.2171155,
+            "lat": 23.9139375
+          }
+        },
+        {
+          "seq": 8,
+          "osm_node_id": "6383984495",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 4.59,
+          "cumulative_distance_m": 115.06,
+          "position": {
+            "x": -31.1766,
+            "y": 0.0,
+            "z": 91.608
+          },
+          "wgs84": {
+            "lon": 90.2170923,
+            "lat": 23.913973
+          }
+        },
+        {
+          "seq": 9,
+          "osm_node_id": "6383984494",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 9.64,
+          "cumulative_distance_m": 124.7,
+          "position": {
+            "x": -38.2806,
+            "y": 0.0,
+            "z": 85.0979
+          },
+          "wgs84": {
+            "lon": 90.2170226,
+            "lat": 23.9140319
+          }
+        },
+        {
+          "seq": 10,
+          "osm_node_id": "13686881067",
+          "way_id": "1493661490",
+          "road_name": "way/1493661490",
+          "leg_distance_m": 25.0,
+          "cumulative_distance_m": 149.7,
+          "position": {
+            "x": -47.1713,
+            "y": 0.0,
+            "z": 61.7288
+          },
+          "wgs84": {
+            "lon": 90.2169356,
+            "lat": 23.9142431
+          }
+        }
+      ]
+    },
+    "mission_3_artisan_order_direct": {
+      "id": "mission_3_direct",
+      "title_bn": "কাঁসা-পিতলের ফরমাশ (সরাসরি পথ)",
+      "title_en": "Artisan Order (Direct Delivery Route)",
+      "pickup_anchor": "metal_workshop",
+      "delivery_anchor": "rathkhola_origin",
+      "calculated_road_distance_m": 534.16,
+      "waypoint_count": 26,
+      "passes_temple_road_node": false,
+      "traverses_temple_courtyard": null,
+      "temple_position_relative_to_delivery": "Temple is 50.9m west and 33.2m north of the documented workshop anchor; horizontal straight-line distance 60.77m.",
+      "route_polyline": [
+        {
+          "seq": 0,
+          "osm_node_id": "7464434330",
+          "way_id": "",
+          "road_name": "Start Anchor",
+          "leg_distance_m": 0.0,
+          "cumulative_distance_m": 0.0,
+          "position": {
+            "x": -299.5241,
+            "y": 0.0,
+            "z": -107.1005
+          },
+          "wgs84": {
+            "lon": 90.2144587,
+            "lat": 23.9157715
+          }
+        },
+        {
+          "seq": 1,
+          "osm_node_id": "7464434329",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 24.68,
+          "cumulative_distance_m": 24.68,
+          "position": {
+            "x": -274.8961,
+            "y": 0.0,
+            "z": -108.6436
+          },
+          "wgs84": {
+            "lon": 90.2147007,
+            "lat": 23.9157851
+          }
+        },
+        {
+          "seq": 2,
+          "osm_node_id": "11201519110",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 15.95,
+          "cumulative_distance_m": 40.62,
+          "position": {
+            "x": -259.1961,
+            "y": 0.0,
+            "z": -111.4464
+          },
+          "wgs84": {
+            "lon": 90.214855,
+            "lat": 23.9158102
+          }
+        },
+        {
+          "seq": 3,
+          "osm_node_id": "11201519111",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 8.15,
+          "cumulative_distance_m": 48.78,
+          "position": {
+            "x": -251.5365,
+            "y": 0.0,
+            "z": -114.237
+          },
+          "wgs84": {
+            "lon": 90.2149303,
+            "lat": 23.9158353
+          }
+        },
+        {
+          "seq": 4,
+          "osm_node_id": "7464434328",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 3.68,
+          "cumulative_distance_m": 52.45,
+          "position": {
+            "x": -248.1596,
+            "y": 0.0,
+            "z": -115.6924
+          },
+          "wgs84": {
+            "lon": 90.2149635,
+            "lat": 23.9158484
+          }
+        },
+        {
+          "seq": 5,
+          "osm_node_id": "6624692552",
+          "way_id": "705241381",
+          "road_name": "way/705241381",
+          "leg_distance_m": 34.13,
+          "cumulative_distance_m": 86.58,
+          "position": {
+            "x": -245.1564,
+            "y": 0.0,
+            "z": -81.6969
+          },
+          "wgs84": {
+            "lon": 90.2149925,
+            "lat": 23.9155413
+          }
+        },
+        {
+          "seq": 6,
+          "osm_node_id": "11161085170",
+          "way_id": "705241381",
+          "road_name": "way/705241381",
+          "leg_distance_m": 28.45,
+          "cumulative_distance_m": 115.03,
+          "position": {
+            "x": -244.1055,
+            "y": 0.0,
+            "z": -53.2673
+          },
+          "wgs84": {
+            "lon": 90.2150024,
+            "lat": 23.9152845
+          }
+        },
+        {
+          "seq": 7,
+          "osm_node_id": "11161085169",
+          "way_id": "1204203992",
+          "road_name": "way/1204203992",
+          "leg_distance_m": 9.63,
+          "cumulative_distance_m": 124.67,
+          "position": {
+            "x": -234.5813,
+            "y": 0.0,
+            "z": -54.721
+          },
+          "wgs84": {
+            "lon": 90.215096,
+            "lat": 23.9152975
+          }
+        },
+        {
+          "seq": 8,
+          "osm_node_id": "11161085168",
+          "way_id": "1204203992",
+          "road_name": "way/1204203992",
+          "leg_distance_m": 16.6,
+          "cumulative_distance_m": 141.27,
+          "position": {
+            "x": -217.9813,
+            "y": 0.0,
+            "z": -54.7463
+          },
+          "wgs84": {
+            "lon": 90.2152591,
+            "lat": 23.9152975
+          }
+        },
+        {
+          "seq": 9,
+          "osm_node_id": "10875539124",
+          "way_id": "1204203992",
+          "road_name": "way/1204203992",
+          "leg_distance_m": 16.88,
+          "cumulative_distance_m": 158.14,
+          "position": {
+            "x": -201.9331,
+            "y": 0.0,
+            "z": -49.5229
+          },
+          "wgs84": {
+            "lon": 90.2154167,
+            "lat": 23.9152501
+          }
+        },
+        {
+          "seq": 10,
+          "osm_node_id": "4475158474",
+          "way_id": "1204203992",
+          "road_name": "way/1204203992",
+          "leg_distance_m": 53.48,
+          "cumulative_distance_m": 211.62,
+          "position": {
+            "x": -149.4823,
+            "y": 0.0,
+            "z": -59.9547
+          },
+          "wgs84": {
+            "lon": 90.2159322,
+            "lat": 23.9153436
+          }
+        },
+        {
+          "seq": 11,
+          "osm_node_id": "13686901835",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 37.57,
+          "cumulative_distance_m": 249.19,
+          "position": {
+            "x": -141.7419,
+            "y": 0.0,
+            "z": -23.1875
+          },
+          "wgs84": {
+            "lon": 90.2160077,
+            "lat": 23.9150114
+          }
+        },
+        {
+          "seq": 12,
+          "osm_node_id": "13912341004",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 16.35,
+          "cumulative_distance_m": 265.55,
+          "position": {
+            "x": -140.0071,
+            "y": 0.0,
+            "z": -6.9263
+          },
+          "wgs84": {
+            "lon": 90.2160245,
+            "lat": 23.9148645
+          }
+        },
+        {
+          "seq": 13,
+          "osm_node_id": "13912341002",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 4.0,
+          "cumulative_distance_m": 269.55,
+          "position": {
+            "x": -140.7543,
+            "y": 0.0,
+            "z": -2.9949
+          },
+          "wgs84": {
+            "lon": 90.2160171,
+            "lat": 23.914829
+          }
+        },
+        {
+          "seq": 14,
+          "osm_node_id": "13997870762",
+          "way_id": "1536559390",
+          "road_name": "way/1536559390",
+          "leg_distance_m": 56.05,
+          "cumulative_distance_m": 325.59,
+          "position": {
+            "x": -97.8401,
+            "y": 0.0,
+            "z": 33.0542
+          },
+          "wgs84": {
+            "lon": 90.2164382,
+            "lat": 23.9145028
+          }
+        },
+        {
+          "seq": 15,
+          "osm_node_id": "6383984493",
+          "way_id": "1536559390",
+          "road_name": "way/1536559390",
+          "leg_distance_m": 69.11,
+          "cumulative_distance_m": 394.7,
+          "position": {
+            "x": -53.0275,
+            "y": 0.0,
+            "z": 85.663
+          },
+          "wgs84": {
+            "lon": 90.2168777,
+            "lat": 23.914027
+          }
+        },
+        {
+          "seq": 16,
+          "osm_node_id": "6383984494",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 14.76,
+          "cumulative_distance_m": 409.46,
+          "position": {
+            "x": -38.2806,
+            "y": 0.0,
+            "z": 85.0979
+          },
+          "wgs84": {
+            "lon": 90.2170226,
+            "lat": 23.9140319
+          }
+        },
+        {
+          "seq": 17,
+          "osm_node_id": "6383984495",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 9.64,
+          "cumulative_distance_m": 419.1,
+          "position": {
+            "x": -31.1766,
+            "y": 0.0,
+            "z": 91.608
+          },
+          "wgs84": {
+            "lon": 90.2170923,
+            "lat": 23.913973
+          }
+        },
+        {
+          "seq": 18,
+          "osm_node_id": "13474258995",
+          "way_id": "681687081",
+          "road_name": "way/681687081",
+          "leg_distance_m": 4.59,
+          "cumulative_distance_m": 423.68,
+          "position": {
+            "x": -28.8093,
+            "y": 0.0,
+            "z": 95.5347
+          },
+          "wgs84": {
+            "lon": 90.2171155,
+            "lat": 23.9139375
+          }
+        },
+        {
+          "seq": 19,
+          "osm_node_id": "13474258994",
+          "way_id": "1469209799",
+          "road_name": "way/1469209799",
+          "leg_distance_m": 37.31,
+          "cumulative_distance_m": 460.99,
+          "position": {
+            "x": 1.3039,
+            "y": 0.0,
+            "z": 73.5007
+          },
+          "wgs84": {
+            "lon": 90.2174117,
+            "lat": 23.9141361
+          }
+        },
+        {
+          "seq": 20,
+          "osm_node_id": "13474258993",
+          "way_id": "1469209798",
+          "road_name": "way/1469209798",
+          "leg_distance_m": 6.75,
+          "cumulative_distance_m": 467.74,
+          "position": {
+            "x": 2.403,
+            "y": 0.0,
+            "z": 66.8451
+          },
+          "wgs84": {
+            "lon": 90.2174226,
+            "lat": 23.9141962
+          }
+        },
+        {
+          "seq": 21,
+          "osm_node_id": "13993049483",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 8.17,
+          "cumulative_distance_m": 475.91,
+          "position": {
+            "x": -0.8858,
+            "y": 0.0,
+            "z": 59.3659
+          },
+          "wgs84": {
+            "lon": 90.2173904,
+            "lat": 23.9142638
+          }
+        },
+        {
+          "seq": 22,
+          "osm_node_id": "14009942017",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 17.03,
+          "cumulative_distance_m": 492.94,
+          "position": {
+            "x": -9.9866,
+            "y": 0.0,
+            "z": 44.9761
+          },
+          "wgs84": {
+            "lon": 90.2173012,
+            "lat": 23.9143939
+          }
+        },
+        {
+          "seq": 23,
+          "osm_node_id": "13474258992",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 4.91,
+          "cumulative_distance_m": 497.85,
+          "position": {
+            "x": -12.6189,
+            "y": 0.0,
+            "z": 40.8284
+          },
+          "wgs84": {
+            "lon": 90.2172754,
+            "lat": 23.9144314
+          }
+        },
+        {
+          "seq": 24,
+          "osm_node_id": "13923209217",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 23.36,
+          "cumulative_distance_m": 521.21,
+          "position": {
+            "x": -22.7273,
+            "y": 0.0,
+            "z": 19.7641
+          },
+          "wgs84": {
+            "lon": 90.2171764,
+            "lat": 23.9146218
+          }
+        },
+        {
+          "seq": 25,
+          "osm_node_id": "13923209214",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 12.94,
+          "cumulative_distance_m": 534.16,
+          "position": {
+            "x": -28.3227,
+            "y": 0.0,
+            "z": 8.0924
+          },
+          "wgs84": {
+            "lon": 90.2171216,
+            "lat": 23.9147273
+          }
+        }
+      ]
+    },
+    "mission_3_artisan_order_temple_detour": {
+      "id": "mission_3_detour",
+      "title_bn": "কাঁসা-পিতলের ফরমাশ (যশোমাধব মন্দির আশীর্বাদসহ)",
+      "title_en": "Artisan Order (Temple Blessing Detour)",
+      "pickup_anchor": "metal_workshop",
+      "detour_anchor": "yashomadhab_temple",
+      "delivery_anchor": "rathkhola_origin",
+      "workshop_to_temple_road_m": 42.38,
+      "temple_to_rathkhola_road_m": 573.12,
+      "calculated_road_distance_m": 615.5,
+      "waypoint_count": 33,
+      "passes_temple_road_node": true,
+      "traverses_temple_courtyard": null,
+      "detour_narrative": "Optional narrative detour visits the nearest temple road vertex. Courtyard entry and last-metre access remain unverified.",
+      "route_polyline": [
+        {
+          "seq": 0,
+          "osm_node_id": "7464434330",
+          "way_id": "",
+          "road_name": "Start Anchor",
+          "leg_distance_m": 0.0,
+          "cumulative_distance_m": 0.0,
+          "position": {
+            "x": -299.5241,
+            "y": 0.0,
+            "z": -107.1005
+          },
+          "wgs84": {
+            "lon": 90.2144587,
+            "lat": 23.9157715
+          }
+        },
+        {
+          "seq": 1,
+          "osm_node_id": "11201519112",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 8.47,
+          "cumulative_distance_m": 8.47,
+          "position": {
+            "x": -307.9725,
+            "y": 0.0,
+            "z": -107.6967
+          },
+          "wgs84": {
+            "lon": 90.2143757,
+            "lat": 23.915777
+          }
+        },
+        {
+          "seq": 2,
+          "osm_node_id": "7464434331",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 7.16,
+          "cumulative_distance_m": 15.63,
+          "position": {
+            "x": -315.0779,
+            "y": 0.0,
+            "z": -108.5494
+          },
+          "wgs84": {
+            "lon": 90.2143059,
+            "lat": 23.9157848
+          }
+        },
+        {
+          "seq": 3,
+          "osm_node_id": "7464434332",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 2.57,
+          "cumulative_distance_m": 18.2,
+          "position": {
+            "x": -317.5724,
+            "y": 0.0,
+            "z": -109.1657
+          },
+          "wgs84": {
+            "lon": 90.2142814,
+            "lat": 23.9157904
+          }
+        },
+        {
+          "seq": 4,
+          "osm_node_id": "7464434333",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 3.8,
+          "cumulative_distance_m": 21.99,
+          "position": {
+            "x": -321.2581,
+            "y": 0.0,
+            "z": -110.079
+          },
+          "wgs84": {
+            "lon": 90.2142452,
+            "lat": 23.9157987
+          }
+        },
+        {
+          "seq": 5,
+          "osm_node_id": "7464434334",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 3.92,
+          "cumulative_distance_m": 25.91,
+          "position": {
+            "x": -325.1669,
+            "y": 0.0,
+            "z": -110.3941
+          },
+          "wgs84": {
+            "lon": 90.2142068,
+            "lat": 23.9158016
+          }
+        },
+        {
+          "seq": 6,
+          "osm_node_id": "7464434335",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 16.47,
+          "cumulative_distance_m": 42.38,
+          "position": {
+            "x": -341.2026,
+            "y": 0.0,
+            "z": -114.1341
+          },
+          "wgs84": {
+            "lon": 90.2140493,
+            "lat": 23.9158356
+          }
+        },
+        {
+          "seq": 7,
+          "osm_node_id": "7464434336",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 8.59,
+          "cumulative_distance_m": 50.97,
+          "position": {
+            "x": -341.4293,
+            "y": 0.0,
+            "z": -122.7251
+          },
+          "wgs84": {
+            "lon": 90.2140472,
+            "lat": 23.9159132
+          }
+        },
+        {
+          "seq": 8,
+          "osm_node_id": "7464434337",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 4.82,
+          "cumulative_distance_m": 55.79,
+          "position": {
+            "x": -340.6223,
+            "y": 0.0,
+            "z": -127.4759
+          },
+          "wgs84": {
+            "lon": 90.2140552,
+            "lat": 23.9159561
+          }
+        },
+        {
+          "seq": 9,
+          "osm_node_id": "7464434338",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 1.35,
+          "cumulative_distance_m": 57.14,
+          "position": {
+            "x": -339.3916,
+            "y": 0.0,
+            "z": -128.0203
+          },
+          "wgs84": {
+            "lon": 90.2140673,
+            "lat": 23.915961
+          }
+        },
+        {
+          "seq": 10,
+          "osm_node_id": "7464434339",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 4.35,
+          "cumulative_distance_m": 61.49,
+          "position": {
+            "x": -339.3982,
+            "y": 0.0,
+            "z": -132.3713
+          },
+          "wgs84": {
+            "lon": 90.2140673,
+            "lat": 23.9160003
+          }
+        },
+        {
+          "seq": 11,
+          "osm_node_id": "13276083899",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 22.71,
+          "cumulative_distance_m": 84.2,
+          "position": {
+            "x": -342.4347,
+            "y": 0.0,
+            "z": -154.8748
+          },
+          "wgs84": {
+            "lon": 90.2140378,
+            "lat": 23.9162036
+          }
+        },
+        {
+          "seq": 12,
+          "osm_node_id": "7464434340",
+          "way_id": "798093431",
+          "road_name": "হুজুরিটোলা সরকারি প্রাথমিক স্কুল রোড।",
+          "leg_distance_m": 38.56,
+          "cumulative_distance_m": 122.75,
+          "position": {
+            "x": -346.9811,
+            "y": 0.0,
+            "z": -193.1637
+          },
+          "wgs84": {
+            "lon": 90.2139937,
+            "lat": 23.9165495
+          }
+        },
+        {
+          "seq": 13,
+          "osm_node_id": "6624692556",
+          "way_id": "705241381",
+          "road_name": "way/705241381",
+          "leg_distance_m": 14.15,
+          "cumulative_distance_m": 136.91,
+          "position": {
+            "x": -333.7883,
+            "y": 0.0,
+            "z": -198.2876
+          },
+          "wgs84": {
+            "lon": 90.2141234,
+            "lat": 23.9165956
+          }
+        },
+        {
+          "seq": 14,
+          "osm_node_id": "6624692557",
+          "way_id": "705241381",
+          "road_name": "way/705241381",
+          "leg_distance_m": 36.5,
+          "cumulative_distance_m": 173.41,
+          "position": {
+            "x": -298.1682,
+            "y": 0.0,
+            "z": -206.2687
+          },
+          "wgs84": {
+            "lon": 90.2144735,
+            "lat": 23.9166672
+          }
+        },
+        {
+          "seq": 15,
+          "osm_node_id": "6624692558",
+          "way_id": "705241381",
+          "road_name": "way/705241381",
+          "leg_distance_m": 16.76,
+          "cumulative_distance_m": 190.18,
+          "position": {
+            "x": -282.0435,
+            "y": 0.0,
+            "z": -210.8545
+          },
+          "wgs84": {
+            "lon": 90.214632,
+            "lat": 23.9167084
+          }
+        },
+        {
+          "seq": 16,
+          "osm_node_id": "4475158500",
+          "way_id": "705241381",
+          "road_name": "way/705241381",
+          "leg_distance_m": 22.08,
+          "cumulative_distance_m": 212.25,
+          "position": {
+            "x": -260.2379,
+            "y": 0.0,
+            "z": -214.3087
+          },
+          "wgs84": {
+            "lon": 90.2148463,
+            "lat": 23.9167393
+          }
+        },
+        {
+          "seq": 17,
+          "osm_node_id": "13276100701",
+          "way_id": "450597018",
+          "road_name": "way/450597018",
+          "leg_distance_m": 16.14,
+          "cumulative_distance_m": 228.39,
+          "position": {
+            "x": -245.156,
+            "y": 0.0,
+            "z": -208.5746
+          },
+          "wgs84": {
+            "lon": 90.2149944,
+            "lat": 23.9166873
+          }
+        },
+        {
+          "seq": 18,
+          "osm_node_id": "13276083900",
+          "way_id": "450597018",
+          "road_name": "way/450597018",
+          "leg_distance_m": 18.16,
+          "cumulative_distance_m": 246.55,
+          "position": {
+            "x": -226.9985,
+            "y": 0.0,
+            "z": -208.2811
+          },
+          "wgs84": {
+            "lon": 90.2151728,
+            "lat": 23.9166844
+          }
+        },
+        {
+          "seq": 19,
+          "osm_node_id": "4475158499",
+          "way_id": "450597018",
+          "road_name": "way/450597018",
+          "leg_distance_m": 39.68,
+          "cumulative_distance_m": 286.23,
+          "position": {
+            "x": -187.3441,
+            "y": 0.0,
+            "z": -206.9244
+          },
+          "wgs84": {
+            "lon": 90.2155624,
+            "lat": 23.9166716
+          }
+        },
+        {
+          "seq": 20,
+          "osm_node_id": "4475158498",
+          "way_id": "450597018",
+          "road_name": "way/450597018",
+          "leg_distance_m": 15.19,
+          "cumulative_distance_m": 301.42,
+          "position": {
+            "x": -172.1597,
+            "y": 0.0,
+            "z": -207.4237
+          },
+          "wgs84": {
+            "lon": 90.2157116,
+            "lat": 23.9166759
+          }
+        },
+        {
+          "seq": 21,
+          "osm_node_id": "4475158492",
+          "way_id": "450597018",
+          "road_name": "way/450597018",
+          "leg_distance_m": 53.16,
+          "cumulative_distance_m": 354.57,
+          "position": {
+            "x": -156.968,
+            "y": 0.0,
+            "z": -156.4854
+          },
+          "wgs84": {
+            "lon": 90.2158601,
+            "lat": 23.9162156
+          }
+        },
+        {
+          "seq": 22,
+          "osm_node_id": "13474258986",
+          "way_id": "450597019",
+          "road_name": "way/450597019",
+          "leg_distance_m": 104.13,
+          "cumulative_distance_m": 458.7,
+          "position": {
+            "x": -53.5334,
+            "y": 0.0,
+            "z": -144.4764
+          },
+          "wgs84": {
+            "lon": 90.2168762,
+            "lat": 23.9161057
+          }
+        },
+        {
+          "seq": 23,
+          "osm_node_id": "14009942067",
+          "way_id": "1469209794",
+          "road_name": "way/1469209794",
+          "leg_distance_m": 14.83,
+          "cumulative_distance_m": 473.54,
+          "position": {
+            "x": -54.0297,
+            "y": 0.0,
+            "z": -129.6511
+          },
+          "wgs84": {
+            "lon": 90.2168711,
+            "lat": 23.9159718
+          }
+        },
+        {
+          "seq": 24,
+          "osm_node_id": "14009942066",
+          "way_id": "1469209794",
+          "road_name": "way/1469209794",
+          "leg_distance_m": 15.0,
+          "cumulative_distance_m": 488.54,
+          "position": {
+            "x": -54.5257,
+            "y": 0.0,
+            "z": -114.6597
+          },
+          "wgs84": {
+            "lon": 90.216866,
+            "lat": 23.9158364
+          }
+        },
+        {
+          "seq": 25,
+          "osm_node_id": "13474258987",
+          "way_id": "1469209794",
+          "road_name": "way/1469209794",
+          "leg_distance_m": 2.69,
+          "cumulative_distance_m": 491.23,
+          "position": {
+            "x": -54.6132,
+            "y": 0.0,
+            "z": -111.9692
+          },
+          "wgs84": {
+            "lon": 90.2168651,
+            "lat": 23.9158121
+          }
+        },
+        {
+          "seq": 26,
+          "osm_node_id": "14009824734",
+          "way_id": "1469209795",
+          "road_name": "way/1469209795",
+          "leg_distance_m": 13.57,
+          "cumulative_distance_m": 504.79,
+          "position": {
+            "x": -53.9512,
+            "y": 0.0,
+            "z": -98.4189
+          },
+          "wgs84": {
+            "lon": 90.2168714,
+            "lat": 23.9156897
+          }
+        },
+        {
+          "seq": 27,
+          "osm_node_id": "13474258988",
+          "way_id": "1469209795",
+          "road_name": "way/1469209795",
+          "leg_distance_m": 18.18,
+          "cumulative_distance_m": 522.97,
+          "position": {
+            "x": -53.0684,
+            "y": 0.0,
+            "z": -80.2633
+          },
+          "wgs84": {
+            "lon": 90.2168798,
+            "lat": 23.9155257
+          }
+        },
+        {
+          "seq": 28,
+          "osm_node_id": "13474258989",
+          "way_id": "1469209796",
+          "road_name": "way/1469209796",
+          "leg_distance_m": 39.22,
+          "cumulative_distance_m": 562.19,
+          "position": {
+            "x": -46.4037,
+            "y": 0.0,
+            "z": -41.6123
+          },
+          "wgs84": {
+            "lon": 90.2169447,
+            "lat": 23.9151765
+          }
+        },
+        {
+          "seq": 29,
+          "osm_node_id": "13474258990",
+          "way_id": "1469209796",
+          "road_name": "way/1469209796",
+          "leg_distance_m": 20.83,
+          "cumulative_distance_m": 583.02,
+          "position": {
+            "x": -36.4929,
+            "y": 0.0,
+            "z": -23.2934
+          },
+          "wgs84": {
+            "lon": 90.2170418,
+            "lat": 23.9150109
+          }
+        },
+        {
+          "seq": 30,
+          "osm_node_id": "13997858359",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 18.38,
+          "cumulative_distance_m": 601.4,
+          "position": {
+            "x": -32.1297,
+            "y": 0.0,
+            "z": -5.442
+          },
+          "wgs84": {
+            "lon": 90.2170844,
+            "lat": 23.9148496
+          }
+        },
+        {
+          "seq": 31,
+          "osm_node_id": "13474258991",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 11.75,
+          "cumulative_distance_m": 613.14,
+          "position": {
+            "x": -29.3438,
+            "y": 0.0,
+            "z": 5.9683
+          },
+          "wgs84": {
+            "lon": 90.2171116,
+            "lat": 23.9147465
+          }
+        },
+        {
+          "seq": 32,
+          "osm_node_id": "13923209214",
+          "way_id": "1469209797",
+          "road_name": "way/1469209797",
+          "leg_distance_m": 2.36,
+          "cumulative_distance_m": 615.5,
+          "position": {
+            "x": -28.3227,
+            "y": 0.0,
+            "z": 8.0924
+          },
+          "wgs84": {
+            "lon": 90.2171216,
+            "lat": 23.9147273
+          }
+        }
+      ]
+    }
+  }
+}

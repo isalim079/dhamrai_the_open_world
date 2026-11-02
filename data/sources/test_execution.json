@@ -1,0 +1,75 @@
+{
+  "environment": {
+    "python": "3.9.6",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "pyproj": "3.6.1",
+    "proj": "9.3.0",
+    "shapely": "2.0.7",
+    "geos": "3.11.4",
+    "certifi": "2026.10.23"
+  },
+  "runs": [
+    {
+      "command": "PYTHONPATH=tools/geo-pipeline .venv/bin/python tools/geo-pipeline/audit_osm_coverage.py --offline",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "output": "Auditing: Dhamrai Pourashava Core (Town Center) [90.21, 23.91, 90.225, 23.925]...\nAuditing: Phase 1 Playable Slice (16 Chunks / 1024m x 1024m) [90.212362, 23.910168, 90.222438, 23.919432]...\nAuditing: Rural Union Sector (Balia / Chauhat) [90.15, 23.93, 90.16, 23.94]...\nAuditing: Jahangirnagar University Campus (Savar) [90.26, 23.875, 90.275, 23.89]...\n\nAudit complete! Wrote machine-readable results to data/sources/osm_audit_summary.json\nSummary file SHA-256: 90552be5205525563d192823465cb01e39ed841ce9a8884520b6f78edc94c5b7\n",
+      "expected_result": true
+    },
+    {
+      "command": "PYTHONPATH=tools/geo-pipeline .venv/bin/python tools/geo-pipeline/generate_mission_routes.py",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "output": "Loaded road network from data/sources/raw_osm_sample_b_phase1_slice.xml: 452 road vertices (not necessarily intersections or a single connected component).\n  Target 'Dhamrai Rathkhola Stand': Node 13923209214 (29.5m away)\n  Target 'Rathkhola Market Corner': Node 13923209214 (46.9m away)\n  Target 'Dhamrai Hardinge High School Gate': Node 5617945281 (45.9m away)\n  Target 'Thana Junction Checkpoint': Node 13686881067 (14.6m away)\n  Target 'Dhamrai Police Station': Node 6383980983 (25.0m away)\n  Target 'Kayetpara Metal Craft Workshop': Node 7464434330 (30.4m away)\n  Target 'Sri Sri Yashomadhab Mandir': Node 7464434335 (6.4m away)\n\nGenerated mission routes fixture: data/world/mission_routes.json\n  Mission 1 road distance: 552.67 m (26 waypoints)\n  Mission 2 road distance: 149.70 m (11 waypoints)\n  Mission 2 -> Police Station offset: 83.28 m Euclidean, 149.44 m road\n  Mission 3 Direct road distance: 534.16 m (Visits nearest temple road vertex? False)\n  Mission 3 Detour road distance: 615.50 m (33 waypoints)\n",
+      "expected_result": true
+    },
+    {
+      "command": "PYTHONPATH=tools/geo-pipeline .venv/bin/python tools/geo-pipeline/audit_osm_coverage.py --offline",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "output": "Auditing: Dhamrai Pourashava Core (Town Center) [90.21, 23.91, 90.225, 23.925]...\nAuditing: Phase 1 Playable Slice (16 Chunks / 1024m x 1024m) [90.212362, 23.910168, 90.222438, 23.919432]...\nAuditing: Rural Union Sector (Balia / Chauhat) [90.15, 23.93, 90.16, 23.94]...\nAuditing: Jahangirnagar University Campus (Savar) [90.26, 23.875, 90.275, 23.89]...\n\nAudit complete! Wrote machine-readable results to data/sources/osm_audit_summary.json\nSummary file SHA-256: 90552be5205525563d192823465cb01e39ed841ce9a8884520b6f78edc94c5b7\n",
+      "expected_result": true
+    },
+    {
+      "command": "PYTHONPATH=tools/geo-pipeline .venv/bin/python tools/geo-pipeline/generate_mission_routes.py",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "output": "Loaded road network from data/sources/raw_osm_sample_b_phase1_slice.xml: 452 road vertices (not necessarily intersections or a single connected component).\n  Target 'Dhamrai Rathkhola Stand': Node 13923209214 (29.5m away)\n  Target 'Rathkhola Market Corner': Node 13923209214 (46.9m away)\n  Target 'Dhamrai Hardinge High School Gate': Node 5617945281 (45.9m away)\n  Target 'Thana Junction Checkpoint': Node 13686881067 (14.6m away)\n  Target 'Dhamrai Police Station': Node 6383980983 (25.0m away)\n  Target 'Kayetpara Metal Craft Workshop': Node 7464434330 (30.4m away)\n  Target 'Sri Sri Yashomadhab Mandir': Node 7464434335 (6.4m away)\n\nGenerated mission routes fixture: data/world/mission_routes.json\n  Mission 1 road distance: 552.67 m (26 waypoints)\n  Mission 2 road distance: 149.70 m (11 waypoints)\n  Mission 2 -> Police Station offset: 83.28 m Euclidean, 149.44 m road\n  Mission 3 Direct road distance: 534.16 m (Visits nearest temple road vertex? False)\n  Mission 3 Detour road distance: 615.50 m (33 waypoints)\n",
+      "expected_result": true
+    },
+    {
+      "command": "PYTHONPATH=tools/geo-pipeline .venv/bin/python tools/geo-pipeline/test_coordinate_transform.py",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "output": "..........\n----------------------------------------------------------------------\nRan 10 tests in 0.023s\n\nOK\n",
+      "expected_result": true
+    },
+    {
+      "command": "PYTHONPATH=tools/geo-pipeline .venv/bin/python tools/geo-pipeline/test_chunk_grid.py",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "output": "...\n----------------------------------------------------------------------\nRan 3 tests in 0.001s\n\nOK\n",
+      "expected_result": true
+    },
+    {
+      "command": "PYTHONPATH=tools/geo-pipeline .venv/bin/python tools/geo-pipeline/audit_chunk_grid.py",
+      "exit_code": 2,
+      "expected_exit_code": 2,
+      "output": "{\n  \"status\": \"unavailable\",\n  \"source_file\": \"data/sources/dhamrai_upazila.geojson\",\n  \"crs\": \"ESRI:102954 (provisional)\",\n  \"grid_origin_world_xz_m\": [\n    0,\n    0\n  ],\n  \"cell_size_m\": 256,\n  \"grid_rule\": \"Closed cells at integer multiples of 256m; count boundary-only touches as intersects. Outside cells counted only within candidate rectangle, not the infinite grid.\",\n  \"area_equivalent_estimate\": {\n    \"reported_area_km2_unverified\": 306.84,\n    \"fractional_cells\": 4682.0068359375,\n    \"historical_4685\": \"Approximate area-equivalent estimate only; not an intersection count.\"\n  },\n  \"intersecting_cells\": null,\n  \"outside_cells_within_candidate_grid\": null,\n  \"partial_boundary_cells\": null,\n  \"total_candidate_grid_coverage_m2\": null,\n  \"intersecting_cell_coverage_m2\": null,\n  \"reason\": \"Actual Upazila polygon is absent. OSM relation 4730829 full acquisition failed: curl exit 6 (DNS); web fetches also unavailable. No substitute geometry used.\"\n}\n",
+      "expected_result": true
+    }
+  ],
+  "deterministic_outputs_sha256": {
+    "data/sources/osm_audit_summary.json": "90552be5205525563d192823465cb01e39ed841ce9a8884520b6f78edc94c5b7",
+    "data/world/mission_routes.json": "7744fb4a89ec481ceb6da063f8527a63df774e9d978a0239b078029fc12bce07"
+  },
+  "boundary_acquisition_attempt": {
+    "command": "curl -L --fail --max-time 20 https://api.openstreetmap.org/api/0.6/relation/4730829/full -o /tmp/dhamrai_relation.xml",
+    "exit_code": 0,
+    "output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\n  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\n100  100k    0  100k    0     0   106k      0 --:--:-- --:--:-- --:--:--  106k\n"
+  },
+  "limitations": [
+    "No real Upazila polygon counts were computed.",
+    "No independently validated ground-control, courtyard geometry, OAuth integration or legal approval is provided."
+  ]
+}

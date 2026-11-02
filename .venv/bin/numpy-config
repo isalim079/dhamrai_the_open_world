@@ -1,0 +1,6 @@
+#!/Volumes/Salim_EX/salim/Dhamrai_city_the_open_world/.venv/bin/python3
+import sys
+from numpy._configtool import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())

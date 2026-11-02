@@ -1,0 +1,498 @@
+{
+  "audit_metadata": {
+    "tool": "audit_osm_coverage.py",
+    "version": "2.1.0",
+    "date": "2026-11-02",
+    "source": "OpenStreetMap Foundation API v0.6",
+    "license": "ODbL 1.0 (http://osm.org/copyright)",
+    "metric_scope": "Road lengths clipped to historical geographic query rectangles; counts and tag denominators cover returned API objects including external way members. These are not exact projected-square or field-completeness metrics.",
+    "execution_mode": "offline_cache",
+    "reproducibility_notice": "Live OSM API responses may change over time as contributors edit data. Cached raw XML snapshots preserve deterministic 2026-11-02 audit state.",
+    "dependencies": {
+      "python": "3.9.6",
+      "pyproj": "3.6.1",
+      "proj": "9.3.0",
+      "shapely": "2.0.7",
+      "geos": "3.11.4",
+      "certifi": "2026.10.23"
+    }
+  },
+  "areas": {
+    "sample_a_pourashava_core": {
+      "area_key": "sample_a_pourashava_core",
+      "name": "Dhamrai Pourashava Core (Town Center)",
+      "bbox": [
+        90.21,
+        23.91,
+        90.225,
+        23.925
+      ],
+      "snapshot_sha256": "62a8c13d770e164afbcde033cb1d10696e05d17696a4d38b94ec59e78d6d9141",
+      "source_origin": "cached_offline_file",
+      "counts": {
+        "total_nodes": 8568,
+        "total_ways": 1763,
+        "total_relations": 1,
+        "highway_ways_count": 88,
+        "clipped_road_length_km": 16.731,
+        "unclipped_road_length_km": 26.021,
+        "building_footprints_count": 1638,
+        "waterway_features_count": 27,
+        "poi_features_count": 19
+      },
+      "road_clipping_explanation": {
+        "clipped_length_km": 16.731,
+        "unclipped_length_km": 26.021,
+        "note": "Clipped length reflects actual road segments within the sample bounding box. Unclipped length includes full external extents of highways that traverse the sample boundary."
+      },
+      "road_attributes": {
+        "highway_classes": {
+          "primary": 2,
+          "secondary": 1,
+          "unclassified": 17,
+          "residential": 51,
+          "path": 6,
+          "service": 1,
+          "footway": 7,
+          "pedestrian": 3
+        },
+        "with_name_count": 4,
+        "with_name_pct": 4.55,
+        "with_surface_count": 9,
+        "with_surface_pct": 10.23,
+        "with_width_count": 0,
+        "with_width_pct": 0.0,
+        "with_lanes_count": 0,
+        "with_lanes_pct": 0.0,
+        "with_oneway_count": 0,
+        "with_oneway_pct": 0.0
+      },
+      "building_attributes": {
+        "named_buildings_count": 9,
+        "named_buildings_pct": 0.55,
+        "with_levels_count": 9,
+        "with_levels_pct": 0.55,
+        "with_height_count": 0,
+        "with_height_pct": 0.0
+      },
+      "sample_pois": [
+        {
+          "osm_type": "node",
+          "id": "3560860495",
+          "name": "Dhamrai Harding High School",
+          "category": "school"
+        },
+        {
+          "osm_type": "node",
+          "id": "7387956544",
+          "name": "শাহী মস্জিদ",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "11173395294",
+          "name": "Dhamrai Upazila Parishad",
+          "category": "government"
+        },
+        {
+          "osm_type": "node",
+          "id": "12518107314",
+          "name": "Kumrail Government Primary School",
+          "category": "school"
+        },
+        {
+          "osm_type": "node",
+          "id": "12518107315",
+          "name": "Kumrail Cemetery Jame Masjid, Mosque",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "12518183036",
+          "name": "Baitul Mamur Jame Masjid",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "12518189106",
+          "name": "Dhamrai College Mosque, Mosque",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "12518193294",
+          "name": "Momtaz Diabetic Hospital And Diagnostic Centre, Private hospital",
+          "category": "hospital"
+        },
+        {
+          "osm_type": "node",
+          "id": "13064986969",
+          "name": "Hardinge High School Masjid",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "13064999141",
+          "name": "Dhamrai Municipality",
+          "category": "townhall"
+        },
+        {
+          "osm_type": "node",
+          "id": "13065003115",
+          "name": "Dhamrai Boro Masjid",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "13686899479",
+          "name": "Dhamrai Police Station",
+          "category": "police"
+        },
+        {
+          "osm_type": "way",
+          "id": "350334236",
+          "name": "Dhamrai Hardinge High School",
+          "category": "school"
+        },
+        {
+          "osm_type": "way",
+          "id": "1169600358",
+          "name": "Dhamrai Girls High School",
+          "category": "school"
+        },
+        {
+          "osm_type": "way",
+          "id": "1493661220",
+          "name": "Dhamrai Police Station",
+          "category": "police"
+        }
+      ]
+    },
+    "sample_b_phase1_slice": {
+      "area_key": "sample_b_phase1_slice",
+      "name": "Phase 1 Playable Slice (16 Chunks / 1024m x 1024m)",
+      "bbox": [
+        90.212362,
+        23.910168,
+        90.222438,
+        23.919432
+      ],
+      "snapshot_sha256": "e69f01828ddbf3a7efc0267b126b987324e88b68c0343c4dafcf0532bb18e3a7",
+      "source_origin": "cached_offline_file",
+      "counts": {
+        "total_nodes": 3766,
+        "total_ways": 752,
+        "total_relations": 0,
+        "highway_ways_count": 59,
+        "clipped_road_length_km": 9.706,
+        "unclipped_road_length_km": 12.944,
+        "building_footprints_count": 675,
+        "waterway_features_count": 12,
+        "poi_features_count": 13
+      },
+      "road_clipping_explanation": {
+        "clipped_length_km": 9.706,
+        "unclipped_length_km": 12.944,
+        "note": "Clipped length reflects actual road segments within the sample bounding box. Unclipped length includes full external extents of highways that traverse the sample boundary."
+      },
+      "road_attributes": {
+        "highway_classes": {
+          "unclassified": 15,
+          "residential": 33,
+          "path": 6,
+          "service": 1,
+          "footway": 3,
+          "pedestrian": 1
+        },
+        "with_name_count": 3,
+        "with_name_pct": 5.08,
+        "with_surface_count": 6,
+        "with_surface_pct": 10.17,
+        "with_width_count": 0,
+        "with_width_pct": 0.0,
+        "with_lanes_count": 0,
+        "with_lanes_pct": 0.0,
+        "with_oneway_count": 0,
+        "with_oneway_pct": 0.0
+      },
+      "building_attributes": {
+        "named_buildings_count": 9,
+        "named_buildings_pct": 1.33,
+        "with_levels_count": 9,
+        "with_levels_pct": 1.33,
+        "with_height_count": 0,
+        "with_height_pct": 0.0
+      },
+      "sample_pois": [
+        {
+          "osm_type": "node",
+          "id": "3560860495",
+          "name": "Dhamrai Harding High School",
+          "category": "school"
+        },
+        {
+          "osm_type": "node",
+          "id": "7387956544",
+          "name": "শাহী মস্জিদ",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "12518183036",
+          "name": "Baitul Mamur Jame Masjid",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "12518189106",
+          "name": "Dhamrai College Mosque, Mosque",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "13064986969",
+          "name": "Hardinge High School Masjid",
+          "category": "place_of_worship"
+        },
+        {
+          "osm_type": "node",
+          "id": "13064999141",
+          "name": "Dhamrai Municipality",
+          "category": "townhall"
+        },
+        {
+          "osm_type": "node",
+          "id": "13686899479",
+          "name": "Dhamrai Police Station",
+          "category": "police"
+        },
+        {
+          "osm_type": "way",
+          "id": "350334236",
+          "name": "Dhamrai Hardinge High School",
+          "category": "school"
+        },
+        {
+          "osm_type": "way",
+          "id": "1169600358",
+          "name": "Dhamrai Girls High School",
+          "category": "school"
+        },
+        {
+          "osm_type": "way",
+          "id": "1493661220",
+          "name": "Dhamrai Police Station",
+          "category": "police"
+        }
+      ]
+    },
+    "sample_c_rural_union": {
+      "area_key": "sample_c_rural_union",
+      "name": "Rural Union Sector (Balia / Chauhat)",
+      "bbox": [
+        90.15,
+        23.93,
+        90.16,
+        23.94
+      ],
+      "snapshot_sha256": "7a527854ff79ada45e48ba8f7dcd3e1e94b4c2a4dbf73ace78f7627747edd007",
+      "source_origin": "cached_offline_file",
+      "counts": {
+        "total_nodes": 1528,
+        "total_ways": 113,
+        "total_relations": 0,
+        "highway_ways_count": 20,
+        "clipped_road_length_km": 6.024,
+        "unclipped_road_length_km": 35.21,
+        "building_footprints_count": 91,
+        "waterway_features_count": 1,
+        "poi_features_count": 0
+      },
+      "road_clipping_explanation": {
+        "clipped_length_km": 6.024,
+        "unclipped_length_km": 35.21,
+        "note": "Clipped length reflects actual road segments within the sample bounding box. Unclipped length includes full external extents of highways that traverse the sample boundary."
+      },
+      "road_attributes": {
+        "highway_classes": {
+          "secondary": 4,
+          "primary": 2,
+          "residential": 13,
+          "path": 1
+        },
+        "with_name_count": 0,
+        "with_name_pct": 0.0,
+        "with_surface_count": 0,
+        "with_surface_pct": 0.0,
+        "with_width_count": 0,
+        "with_width_pct": 0.0,
+        "with_lanes_count": 0,
+        "with_lanes_pct": 0.0,
+        "with_oneway_count": 0,
+        "with_oneway_pct": 0.0
+      },
+      "building_attributes": {
+        "named_buildings_count": 0,
+        "named_buildings_pct": 0.0,
+        "with_levels_count": 0,
+        "with_levels_pct": 0.0,
+        "with_height_count": 0,
+        "with_height_pct": 0.0
+      },
+      "sample_pois": []
+    },
+    "sample_d_jahangirnagar_univ": {
+      "area_key": "sample_d_jahangirnagar_univ",
+      "name": "Jahangirnagar University Campus (Savar)",
+      "bbox": [
+        90.26,
+        23.875,
+        90.275,
+        23.89
+      ],
+      "snapshot_sha256": "2c0b3a6ca6fd7a1c0899ea4e0c1062bdbe0d900e6eabdc2a8e49e771663939f2",
+      "source_origin": "cached_offline_file",
+      "counts": {
+        "total_nodes": 11727,
+        "total_ways": 1780,
+        "total_relations": 26,
+        "highway_ways_count": 194,
+        "clipped_road_length_km": 28.531,
+        "unclipped_road_length_km": 41.879,
+        "building_footprints_count": 1327,
+        "waterway_features_count": 41,
+        "poi_features_count": 394
+      },
+      "road_clipping_explanation": {
+        "clipped_length_km": 28.531,
+        "unclipped_length_km": 41.879,
+        "note": "Clipped length reflects actual road segments within the sample bounding box. Unclipped length includes full external extents of highways that traverse the sample boundary."
+      },
+      "road_attributes": {
+        "highway_classes": {
+          "residential": 71,
+          "path": 12,
+          "tertiary": 22,
+          "footway": 44,
+          "service": 12,
+          "trunk": 8,
+          "living_street": 1,
+          "unclassified": 8,
+          "pedestrian": 5,
+          "steps": 10,
+          "trunk_link": 1
+        },
+        "with_name_count": 58,
+        "with_name_pct": 29.9,
+        "with_surface_count": 35,
+        "with_surface_pct": 18.04,
+        "with_width_count": 11,
+        "with_width_pct": 5.67,
+        "with_lanes_count": 18,
+        "with_lanes_pct": 9.28,
+        "with_oneway_count": 31,
+        "with_oneway_pct": 15.98
+      },
+      "building_attributes": {
+        "named_buildings_count": 111,
+        "named_buildings_pct": 8.36,
+        "with_levels_count": 90,
+        "with_levels_pct": 6.78,
+        "with_height_count": 6,
+        "with_height_pct": 0.45
+      },
+      "sample_pois": [
+        {
+          "osm_type": "node",
+          "id": "2521473729",
+          "name": "Amar Ekushey",
+          "category": "monument"
+        },
+        {
+          "osm_type": "node",
+          "id": "2521558563",
+          "name": "Jahangirnagar University Post Office",
+          "category": "post_office"
+        },
+        {
+          "osm_type": "node",
+          "id": "2521558565",
+          "name": "পরিসংখ্যান বিভাগ",
+          "category": "yes"
+        },
+        {
+          "osm_type": "node",
+          "id": "2521558617",
+          "name": "Cafeteria",
+          "category": "restaurant"
+        },
+        {
+          "osm_type": "node",
+          "id": "2521558619",
+          "name": "Jahangirnagar University Shaheed Minar",
+          "category": "monument"
+        },
+        {
+          "osm_type": "node",
+          "id": "3731348565",
+          "name": "Kobir Soroni",
+          "category": "memorial"
+        },
+        {
+          "osm_type": "node",
+          "id": "3734547096",
+          "name": "Tarzan Point",
+          "category": "restaurant"
+        },
+        {
+          "osm_type": "node",
+          "id": "3734556243",
+          "name": "সেলিম আল দ্বীন মুক্তমঞ্চ",
+          "category": "theatre"
+        },
+        {
+          "osm_type": "node",
+          "id": "5253837121",
+          "name": "Banglar Shad Confectionery & Restora",
+          "category": "restaurant"
+        },
+        {
+          "osm_type": "node",
+          "id": "5256349817",
+          "name": "Badhon Office, Jahangirnagar University",
+          "category": null
+        },
+        {
+          "osm_type": "node",
+          "id": "5256349818",
+          "name": "1st Year Student Bus Station",
+          "category": "bus_station"
+        },
+        {
+          "osm_type": "node",
+          "id": "5274565640",
+          "name": "Anawor Confectonary",
+          "category": "confectionery"
+        },
+        {
+          "osm_type": "node",
+          "id": "5274565667",
+          "name": "Apon Gift Shop আপন গিফট শপ",
+          "category": "gift"
+        },
+        {
+          "osm_type": "node",
+          "id": "5274565761",
+          "name": "Joy Bangla Store জয়বাংলা স্টোর",
+          "category": "convenience"
+        },
+        {
+          "osm_type": "node",
+          "id": "5274565770",
+          "name": "Rofiq General Store",
+          "category": "convenience"
+        }
+      ]
+    }
+  }
+}

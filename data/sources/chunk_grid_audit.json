@@ -1,0 +1,22 @@
+{
+  "status": "unavailable",
+  "source_file": "data/sources/dhamrai_upazila.geojson",
+  "crs": "ESRI:102954 (provisional)",
+  "grid_origin_world_xz_m": [
+    0,
+    0
+  ],
+  "cell_size_m": 256,
+  "grid_rule": "Closed cells at integer multiples of 256m; count boundary-only touches as intersects. Outside cells counted only within candidate rectangle, not the infinite grid.",
+  "area_equivalent_estimate": {
+    "reported_area_km2_unverified": 306.84,
+    "fractional_cells": 4682.0068359375,
+    "historical_4685": "Approximate area-equivalent estimate only; not an intersection count."
+  },
+  "intersecting_cells": null,
+  "outside_cells_within_candidate_grid": null,
+  "partial_boundary_cells": null,
+  "total_candidate_grid_coverage_m2": null,
+  "intersecting_cell_coverage_m2": null,
+  "reason": "Actual Upazila polygon is absent. OSM relation 4730829 full acquisition failed: curl exit 6 (DNS); web fetches also unavailable. No substitute geometry used."
+}
