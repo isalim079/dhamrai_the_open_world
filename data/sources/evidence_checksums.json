@@ -4,8 +4,8 @@
   "files": [
     {
       "file": "PROGRESS.md",
-      "size_bytes": 10027,
-      "sha256": "6a038bc917d94eac185db50ab58fcc79ea97bd061767d1f4308c8cba249c8efe"
+      "size_bytes": 10919,
+      "sha256": "d386e8536dfa4a3976af063a60cb2842eb7378901b56a4b35d9f5b6c660c98b7"
     },
     {
       "file": "data/sources/chunk_grid_audit.json",
@@ -54,8 +54,8 @@
     },
     {
       "file": "guideFiles/PROGRESS.md",
-      "size_bytes": 10027,
-      "sha256": "6a038bc917d94eac185db50ab58fcc79ea97bd061767d1f4308c8cba249c8efe"
+      "size_bytes": 10919,
+      "sha256": "d386e8536dfa4a3976af063a60cb2842eb7378901b56a4b35d9f5b6c660c98b7"
     },
     {
       "file": "tools/geo-pipeline/audit_chunk_grid.py",

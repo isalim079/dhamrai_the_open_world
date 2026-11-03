@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "start:api": "yarn --cwd apps/api start",
+    "start:web": "yarn --cwd apps/web dev",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b"

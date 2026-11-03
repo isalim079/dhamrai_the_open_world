@@ -56,14 +56,14 @@ let LeaseLockService = class LeaseLockService {
             // No preceding SELECT; expired reclamation and acquisition are the same CAS.
             const res = await this.db.query(`INSERT INTO save_leases
         (key,user_id,slot_name,lease_token,acquired_at_ms,expires_at_ms,expected_version)
-        SELECT $1,$2,$3,$4,${DB_NOW},${DB_NOW}+$5,$6 WHERE $6::text IS NULL
+        SELECT $1,$2,$3,$4,${DB_NOW},${DB_NOW}+$5,$6::varchar WHERE $6::varchar IS NULL
         ON CONFLICT (key) DO UPDATE SET
           lease_token = CASE WHEN save_leases.expires_at_ms > ${DB_NOW} THEN save_leases.lease_token ELSE $4 END,
           acquired_at_ms = CASE WHEN save_leases.expires_at_ms > ${DB_NOW} THEN save_leases.acquired_at_ms ELSE ${DB_NOW} END,
-          expires_at_ms = ${DB_NOW}+$5, expected_version = $6, updated_at_iso=NOW()
-        WHERE (save_leases.expires_at_ms <= ${DB_NOW} AND save_leases.known_version IS NOT DISTINCT FROM $6::text)
+          expires_at_ms = ${DB_NOW}+$5, expected_version = $6::varchar, updated_at_iso=NOW()
+        WHERE (save_leases.expires_at_ms <= ${DB_NOW} AND save_leases.known_version IS NOT DISTINCT FROM $6::varchar)
            OR (save_leases.expires_at_ms > ${DB_NOW} AND save_leases.lease_token=$7
-               AND save_leases.expected_version IS NOT DISTINCT FROM $6::text)
+               AND save_leases.expected_version IS NOT DISTINCT FROM $6::varchar)
         RETURNING *`, [key, userId, slotName, freshToken, ttlMs, expectedVersion ?? null, clientLeaseToken ?? null]);
             // INSERT's WHERE must not hide existing rows when expectedVersion is non-null.
             // The alternate UPDATE below is also an atomic CAS and cannot create a lease.
@@ -72,9 +72,9 @@ let LeaseLockService = class LeaseLockService {
                 const updated = await this.db.query(`UPDATE save_leases SET
           lease_token=CASE WHEN expires_at_ms > ${DB_NOW} THEN lease_token ELSE $2 END,
           acquired_at_ms=CASE WHEN expires_at_ms > ${DB_NOW} THEN acquired_at_ms ELSE ${DB_NOW} END,
-          expires_at_ms=${DB_NOW}+$3, expected_version=$4, updated_at_iso=NOW()
-          WHERE key=$1 AND ((expires_at_ms <= ${DB_NOW} AND known_version IS NOT DISTINCT FROM $4::text)
-            OR (expires_at_ms > ${DB_NOW} AND lease_token=$5 AND expected_version IS NOT DISTINCT FROM $4::text)) RETURNING *`, [key, freshToken, ttlMs, expectedVersion, clientLeaseToken ?? null]);
+          expires_at_ms=${DB_NOW}+$3, expected_version=$4::varchar, updated_at_iso=NOW()
+          WHERE key=$1 AND ((expires_at_ms <= ${DB_NOW} AND known_version IS NOT DISTINCT FROM $4::varchar)
+            OR (expires_at_ms > ${DB_NOW} AND lease_token=$5 AND expected_version IS NOT DISTINCT FROM $4::varchar)) RETURNING *`, [key, freshToken, ttlMs, expectedVersion, clientLeaseToken ?? null]);
                 row = updated.rows[0];
             }
             if (!row)

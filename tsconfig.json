@@ -7,7 +7,8 @@
     { "path": "./packages/shared-contracts" },
     { "path": "./packages/game-core" },
     { "path": "./packages/save-core" },
-    { "path": "./apps/api" }
+    { "path": "./apps/api" },
+    { "path": "./apps/web" }
   ],
   "files": []
 }

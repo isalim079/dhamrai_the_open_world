@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import {
   CRS_IDENTIFIER,
@@ -13,7 +16,11 @@ import {
   PHASE_1_ANCHORS,
   SaveEnvelopeV1,
   SaveEnvelopeV2,
+  WorldManifest,
 } from '../src/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe('Shared Contracts & Spatial Reference System', () => {
   it('preserves the canonical BUTM 2010 CRS identifier and full-precision origin', () => {
@@ -151,5 +158,73 @@ describe('Shared Contracts & Spatial Reference System', () => {
     expect(canonicalV2.player.currency).toBe('BDT');
     expect(canonicalV2.inventory.length).toBe(1);
     expect(canonicalV2.ledger[0]?.currency).toBe('BDT');
+  });
+
+  it('validates DirectedNavGraph and ChunkManifest streaming contract definitions', () => {
+    const mockGraph: import('../src/index.js').DirectedNavGraph = {
+      version: '1.0.0',
+      crs: 'ESRI:102954',
+      origin: { x: 0, y: 0, z: 0 },
+      nodes: {
+        node_1: { id: 'node_1', position: { x: 0, y: 0, z: 0 }, isJunction: true, connectedEdgeIds: ['edge_1'] },
+      },
+      edges: [
+        {
+          id: 'edge_1',
+          fromNodeId: 'node_1',
+          toNodeId: 'node_2',
+          distanceMeters: 45.2,
+          highwayClass: 'residential',
+          isOneWay: false,
+          allowsRickshaw: true,
+          widthMeters: 4.0,
+          speedLimitKph: 20,
+          surface: 'asphalt',
+          waypoints: [{ x: 0, y: 0, z: 0 }, { x: 45.2, y: 0, z: 0 }],
+        },
+      ],
+      turnRestrictions: [],
+      totalRoadLengthMeters: 45.2,
+      plazaConnectorsCount: 1,
+    };
+
+    expect(mockGraph.version).toBe('1.0.0');
+    expect(mockGraph.edges[0]?.allowsRickshaw).toBe(true);
+
+    const mockChunk: import('../src/index.js').ChunkManifest = {
+      worldDataVersion: '1.0.0',
+      chunkId: 'dhamrai_chunk_x0_z0',
+      chunkX: 0,
+      chunkZ: 0,
+      boundsMeters: { minX: 0, minZ: 0, maxX: 256, maxZ: 256 },
+      neighbors: ['dhamrai_chunk_x-1_z0', 'dhamrai_chunk_x1_z0'],
+      glbAsset: 'chunks/dhamrai_chunk_x0_z0.glb',
+      roadCount: 5,
+      buildingCount: 30,
+      triangleCount: 4500,
+      fileSizeBytes: 120000,
+    };
+
+    expect(mockChunk.boundsMeters.maxX - mockChunk.boundsMeters.minX).toBe(CHUNK_SIZE_M);
+  });
+
+  it('loads and validates the generated world_manifest.json with all 16 canonical chunks', () => {
+    const manifestPath = path.resolve(__dirname, '../../../data/world/world_manifest.json');
+    expect(fs.existsSync(manifestPath)).toBe(true);
+    const data = JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) as WorldManifest & { totalChunks: number };
+    expect(data.totalChunks).toBe(16);
+    expect(data.chunks.length).toBe(16);
+    expect(data.crs).toBe('ESRI:102954');
+    expect(data.chunkSizeMeters).toBe(256);
+    expect(data.activeChunkAxisIndices).toEqual([-2, -1, 0, 1]);
+
+    for (const chunk of data.chunks) {
+      expect(chunk.triangleCount).toBeLessThanOrEqual(40000);
+      expect(chunk.fileSizeBytes).toBeLessThanOrEqual(2.5 * 1024 * 1024);
+      expect(chunk.boundsMeters.maxX - chunk.boundsMeters.minX).toBe(256);
+      expect(chunk.boundsMeters.maxZ - chunk.boundsMeters.minZ).toBe(256);
+      const glbPath = path.resolve(__dirname, '../../../data/world/chunks', chunk.glbAsset);
+      expect(fs.existsSync(glbPath)).toBe(true);
+    }
   });
 });

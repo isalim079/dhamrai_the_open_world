@@ -1,0 +1,24 @@
+{
+  "worldDataVersion": "1.0.0",
+  "chunkId": "dhamrai_chunk_x-2_z-1",
+  "chunkX": -2,
+  "chunkZ": -1,
+  "boundsMeters": {
+    "minX": -512.0,
+    "minZ": -256.0,
+    "maxX": -256.0,
+    "maxZ": 0.0
+  },
+  "neighbors": [
+    "dhamrai_chunk_x-2_z-2",
+    "dhamrai_chunk_x-2_z0",
+    "dhamrai_chunk_x-1_z-2",
+    "dhamrai_chunk_x-1_z-1",
+    "dhamrai_chunk_x-1_z0"
+  ],
+  "glbAsset": "dhamrai_chunk_x-2_z-1.glb",
+  "roadCount": 9,
+  "buildingCount": 3,
+  "triangleCount": 590,
+  "fileSizeBytes": 45048
+}

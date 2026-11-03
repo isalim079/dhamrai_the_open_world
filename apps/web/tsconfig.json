@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "jsx": "react-jsx"
+  },
+  "references": [
+    { "path": "../../packages/shared-contracts" },
+    { "path": "../../packages/game-core" },
+    { "path": "../../packages/save-core" }
+  ],
+  "include": ["src/**/*"]
+}

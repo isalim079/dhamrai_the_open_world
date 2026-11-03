@@ -207,4 +207,82 @@ export interface SaveEnvelopeV2 {
     checksumSha256: string;
 }
 export type SaveEnvelope = SaveEnvelopeV2;
+/**
+ * Navigation Graph & World Streaming Contracts (Phase 1 Sprint 5 / 6).
+ */
+export interface NavNode {
+    id: string;
+    osmNodeId?: number;
+    position: WorldPosition;
+    isJunction: boolean;
+    connectedEdgeIds: string[];
+}
+export interface NavEdge {
+    id: string;
+    osmWayId?: number;
+    fromNodeId: string;
+    toNodeId: string;
+    distanceMeters: number;
+    highwayClass: string;
+    isOneWay: boolean;
+    allowsRickshaw: boolean;
+    widthMeters: number;
+    speedLimitKph: number;
+    surface: string;
+    waypoints: WorldPosition[];
+}
+export interface TurnRestriction {
+    id: string;
+    type: 'no_left_turn' | 'no_right_turn' | 'no_u_turn' | 'only_straight_on' | string;
+    fromEdgeId?: string;
+    fromWayId?: number;
+    viaNodeId: string;
+    toEdgeId?: string;
+    toWayId?: number;
+}
+export interface DirectedNavGraph {
+    version: string;
+    crs: string;
+    origin: WorldPosition;
+    nodes: Record<string, NavNode>;
+    edges: NavEdge[];
+    turnRestrictions: TurnRestriction[];
+    totalRoadLengthMeters: number;
+    plazaConnectorsCount: number;
+}
+export interface ChunkBounds {
+    minX: number;
+    minZ: number;
+    maxX: number;
+    maxZ: number;
+}
+export interface ChunkManifest {
+    worldDataVersion: string;
+    chunkId: string;
+    chunkX: number;
+    chunkZ: number;
+    boundsMeters: ChunkBounds;
+    neighbors: string[];
+    glbAsset: string;
+    roadCount: number;
+    buildingCount: number;
+    triangleCount: number;
+    fileSizeBytes: number;
+}
+export interface WorldManifest {
+    worldDataVersion: string;
+    crs: string;
+    origin: {
+        name: string;
+        wgs84Lon: number;
+        wgs84Lat: number;
+        elevationM: number;
+        projectedEasting: number;
+        projectedNorthing: number;
+    };
+    sliceBoundingBox: BoundingEnvelopeTuple;
+    chunkSizeMeters: number;
+    activeChunkAxisIndices: readonly number[];
+    chunks: ChunkManifest[];
+}
 //# sourceMappingURL=index.d.ts.map

@@ -1,0 +1,419 @@
+{
+  "worldDataVersion": "1.0.0",
+  "crs": "ESRI:102954",
+  "origin": {
+    "name": "Dhamrai Rathkhola Stand",
+    "wgs84Lon": 90.2174,
+    "wgs84Lat": 23.9148,
+    "elevationM": 12.0,
+    "projectedEasting": 522126.5567081776,
+    "projectedNorthing": 2644810.7821246446
+  },
+  "sliceBoundingBox": [
+    90.212361,
+    23.910168,
+    90.222439,
+    23.919432
+  ],
+  "chunkSizeMeters": 256,
+  "activeChunkAxisIndices": [
+    -2,
+    -1,
+    0,
+    1
+  ],
+  "totalChunks": 16,
+  "totalRoads": 100,
+  "totalBuildings": 657,
+  "totalTriangles": 10464,
+  "chunks": [
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-2_z-2",
+      "chunkX": -2,
+      "chunkZ": -2,
+      "boundsMeters": {
+        "minX": -512.0,
+        "minZ": -512.0,
+        "maxX": -256.0,
+        "maxZ": -256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z-1",
+        "dhamrai_chunk_x-1_z-2",
+        "dhamrai_chunk_x-1_z-1"
+      ],
+      "glbAsset": "dhamrai_chunk_x-2_z-2.glb",
+      "roadCount": 5,
+      "buildingCount": 37,
+      "triangleCount": 648,
+      "fileSizeBytes": 49056
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-1_z-2",
+      "chunkX": -1,
+      "chunkZ": -2,
+      "boundsMeters": {
+        "minX": -256.0,
+        "minZ": -512.0,
+        "maxX": 0.0,
+        "maxZ": -256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z-2",
+        "dhamrai_chunk_x-2_z-1",
+        "dhamrai_chunk_x-1_z-1",
+        "dhamrai_chunk_x0_z-2",
+        "dhamrai_chunk_x0_z-1"
+      ],
+      "glbAsset": "dhamrai_chunk_x-1_z-2.glb",
+      "roadCount": 10,
+      "buildingCount": 28,
+      "triangleCount": 744,
+      "fileSizeBytes": 55576
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x0_z-2",
+      "chunkX": 0,
+      "chunkZ": -2,
+      "boundsMeters": {
+        "minX": 0.0,
+        "minZ": -512.0,
+        "maxX": 256.0,
+        "maxZ": -256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-1_z-2",
+        "dhamrai_chunk_x-1_z-1",
+        "dhamrai_chunk_x0_z-1",
+        "dhamrai_chunk_x1_z-2",
+        "dhamrai_chunk_x1_z-1"
+      ],
+      "glbAsset": "dhamrai_chunk_x0_z-2.glb",
+      "roadCount": 7,
+      "buildingCount": 85,
+      "triangleCount": 1236,
+      "fileSizeBytes": 89984
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x1_z-2",
+      "chunkX": 1,
+      "chunkZ": -2,
+      "boundsMeters": {
+        "minX": 256.0,
+        "minZ": -512.0,
+        "maxX": 512.0,
+        "maxZ": -256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x0_z-2",
+        "dhamrai_chunk_x0_z-1",
+        "dhamrai_chunk_x1_z-1"
+      ],
+      "glbAsset": "dhamrai_chunk_x1_z-2.glb",
+      "roadCount": 4,
+      "buildingCount": 136,
+      "triangleCount": 1538,
+      "fileSizeBytes": 111224
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-2_z-1",
+      "chunkX": -2,
+      "chunkZ": -1,
+      "boundsMeters": {
+        "minX": -512.0,
+        "minZ": -256.0,
+        "maxX": -256.0,
+        "maxZ": 0.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z-2",
+        "dhamrai_chunk_x-2_z0",
+        "dhamrai_chunk_x-1_z-2",
+        "dhamrai_chunk_x-1_z-1",
+        "dhamrai_chunk_x-1_z0"
+      ],
+      "glbAsset": "dhamrai_chunk_x-2_z-1.glb",
+      "roadCount": 9,
+      "buildingCount": 3,
+      "triangleCount": 590,
+      "fileSizeBytes": 45048
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-1_z-1",
+      "chunkX": -1,
+      "chunkZ": -1,
+      "boundsMeters": {
+        "minX": -256.0,
+        "minZ": -256.0,
+        "maxX": 0.0,
+        "maxZ": 0.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z-2",
+        "dhamrai_chunk_x-2_z-1",
+        "dhamrai_chunk_x-2_z0",
+        "dhamrai_chunk_x-1_z-2",
+        "dhamrai_chunk_x-1_z0",
+        "dhamrai_chunk_x0_z-2",
+        "dhamrai_chunk_x0_z-1",
+        "dhamrai_chunk_x0_z0"
+      ],
+      "glbAsset": "dhamrai_chunk_x-1_z-1.glb",
+      "roadCount": 18,
+      "buildingCount": 23,
+      "triangleCount": 667,
+      "fileSizeBytes": 50208
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x0_z-1",
+      "chunkX": 0,
+      "chunkZ": -1,
+      "boundsMeters": {
+        "minX": 0.0,
+        "minZ": -256.0,
+        "maxX": 256.0,
+        "maxZ": 0.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-1_z-2",
+        "dhamrai_chunk_x-1_z-1",
+        "dhamrai_chunk_x-1_z0",
+        "dhamrai_chunk_x0_z-2",
+        "dhamrai_chunk_x0_z0",
+        "dhamrai_chunk_x1_z-2",
+        "dhamrai_chunk_x1_z-1",
+        "dhamrai_chunk_x1_z0"
+      ],
+      "glbAsset": "dhamrai_chunk_x0_z-1.glb",
+      "roadCount": 9,
+      "buildingCount": 47,
+      "triangleCount": 780,
+      "fileSizeBytes": 58016
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x1_z-1",
+      "chunkX": 1,
+      "chunkZ": -1,
+      "boundsMeters": {
+        "minX": 256.0,
+        "minZ": -256.0,
+        "maxX": 512.0,
+        "maxZ": 0.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x0_z-2",
+        "dhamrai_chunk_x0_z-1",
+        "dhamrai_chunk_x0_z0",
+        "dhamrai_chunk_x1_z-2",
+        "dhamrai_chunk_x1_z0"
+      ],
+      "glbAsset": "dhamrai_chunk_x1_z-1.glb",
+      "roadCount": 4,
+      "buildingCount": 117,
+      "triangleCount": 1334,
+      "fileSizeBytes": 96992
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-2_z0",
+      "chunkX": -2,
+      "chunkZ": 0,
+      "boundsMeters": {
+        "minX": -512.0,
+        "minZ": 0.0,
+        "maxX": -256.0,
+        "maxZ": 256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z-1",
+        "dhamrai_chunk_x-2_z1",
+        "dhamrai_chunk_x-1_z-1",
+        "dhamrai_chunk_x-1_z0",
+        "dhamrai_chunk_x-1_z1"
+      ],
+      "glbAsset": "dhamrai_chunk_x-2_z0.glb",
+      "roadCount": 4,
+      "buildingCount": 0,
+      "triangleCount": 90,
+      "fileSizeBytes": 9296
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-1_z0",
+      "chunkX": -1,
+      "chunkZ": 0,
+      "boundsMeters": {
+        "minX": -256.0,
+        "minZ": 0.0,
+        "maxX": 0.0,
+        "maxZ": 256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z-1",
+        "dhamrai_chunk_x-2_z0",
+        "dhamrai_chunk_x-2_z1",
+        "dhamrai_chunk_x-1_z-1",
+        "dhamrai_chunk_x-1_z1",
+        "dhamrai_chunk_x0_z-1",
+        "dhamrai_chunk_x0_z0",
+        "dhamrai_chunk_x0_z1"
+      ],
+      "glbAsset": "dhamrai_chunk_x-1_z0.glb",
+      "roadCount": 13,
+      "buildingCount": 8,
+      "triangleCount": 531,
+      "fileSizeBytes": 40880
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x0_z0",
+      "chunkX": 0,
+      "chunkZ": 0,
+      "boundsMeters": {
+        "minX": 0.0,
+        "minZ": 0.0,
+        "maxX": 256.0,
+        "maxZ": 256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-1_z-1",
+        "dhamrai_chunk_x-1_z0",
+        "dhamrai_chunk_x-1_z1",
+        "dhamrai_chunk_x0_z-1",
+        "dhamrai_chunk_x0_z1",
+        "dhamrai_chunk_x1_z-1",
+        "dhamrai_chunk_x1_z0",
+        "dhamrai_chunk_x1_z1"
+      ],
+      "glbAsset": "dhamrai_chunk_x0_z0.glb",
+      "roadCount": 5,
+      "buildingCount": 22,
+      "triangleCount": 343,
+      "fileSizeBytes": 27440
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x1_z0",
+      "chunkX": 1,
+      "chunkZ": 0,
+      "boundsMeters": {
+        "minX": 256.0,
+        "minZ": 0.0,
+        "maxX": 512.0,
+        "maxZ": 256.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x0_z-1",
+        "dhamrai_chunk_x0_z0",
+        "dhamrai_chunk_x0_z1",
+        "dhamrai_chunk_x1_z-1",
+        "dhamrai_chunk_x1_z1"
+      ],
+      "glbAsset": "dhamrai_chunk_x1_z0.glb",
+      "roadCount": 1,
+      "buildingCount": 95,
+      "triangleCount": 1082,
+      "fileSizeBytes": 79080
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-2_z1",
+      "chunkX": -2,
+      "chunkZ": 1,
+      "boundsMeters": {
+        "minX": -512.0,
+        "minZ": 256.0,
+        "maxX": -256.0,
+        "maxZ": 512.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z0",
+        "dhamrai_chunk_x-1_z0",
+        "dhamrai_chunk_x-1_z1"
+      ],
+      "glbAsset": "dhamrai_chunk_x-2_z1.glb",
+      "roadCount": 6,
+      "buildingCount": 5,
+      "triangleCount": 132,
+      "fileSizeBytes": 13028
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x-1_z1",
+      "chunkX": -1,
+      "chunkZ": 1,
+      "boundsMeters": {
+        "minX": -256.0,
+        "minZ": 256.0,
+        "maxX": 0.0,
+        "maxZ": 512.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-2_z0",
+        "dhamrai_chunk_x-2_z1",
+        "dhamrai_chunk_x-1_z0",
+        "dhamrai_chunk_x0_z0",
+        "dhamrai_chunk_x0_z1"
+      ],
+      "glbAsset": "dhamrai_chunk_x-1_z1.glb",
+      "roadCount": 2,
+      "buildingCount": 0,
+      "triangleCount": 42,
+      "fileSizeBytes": 5928
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x0_z1",
+      "chunkX": 0,
+      "chunkZ": 1,
+      "boundsMeters": {
+        "minX": 0.0,
+        "minZ": 256.0,
+        "maxX": 256.0,
+        "maxZ": 512.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x-1_z0",
+        "dhamrai_chunk_x-1_z1",
+        "dhamrai_chunk_x0_z0",
+        "dhamrai_chunk_x1_z0",
+        "dhamrai_chunk_x1_z1"
+      ],
+      "glbAsset": "dhamrai_chunk_x0_z1.glb",
+      "roadCount": 2,
+      "buildingCount": 26,
+      "triangleCount": 409,
+      "fileSizeBytes": 32132
+    },
+    {
+      "worldDataVersion": "1.0.0",
+      "chunkId": "dhamrai_chunk_x1_z1",
+      "chunkX": 1,
+      "chunkZ": 1,
+      "boundsMeters": {
+        "minX": 256.0,
+        "minZ": 256.0,
+        "maxX": 512.0,
+        "maxZ": 512.0
+      },
+      "neighbors": [
+        "dhamrai_chunk_x0_z0",
+        "dhamrai_chunk_x0_z1",
+        "dhamrai_chunk_x1_z0"
+      ],
+      "glbAsset": "dhamrai_chunk_x1_z1.glb",
+      "roadCount": 1,
+      "buildingCount": 25,
+      "triangleCount": 298,
+      "fileSizeBytes": 24576
+    }
+  ]
+}
