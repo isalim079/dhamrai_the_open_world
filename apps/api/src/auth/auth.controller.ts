@@ -7,11 +7,13 @@ import {
   Body,
   BadRequestException,
   Inject,
+  UseGuards,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import type { Request, Response } from 'express';
 import { GoogleAuthService } from './google-auth.service.js';
-import { SessionService } from './session.service.js';
+import { SessionService, type SessionPayload } from './session.service.js';
+import { AuthGuard } from './auth.guard.js';
 import { AesGcmService } from '../crypto/aes-gcm.service.js';
 import {
   IUserRepository,
@@ -51,6 +53,12 @@ export class AuthController {
     res.cookie('dhamrai_oauth', started.cookie, { httpOnly: true, secure: process.env['NODE_ENV'] === 'production',
       sameSite: 'lax', path: '/api/auth', maxAge: 600_000 });
     return { authorizationUrl: started.authorizationUrl };
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  public async getMe(@Req() req: Request & { user?: SessionPayload }) {
+    return { user: req.user };
   }
 
   @Post('google')

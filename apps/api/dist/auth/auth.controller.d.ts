@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { GoogleAuthService } from './google-auth.service.js';
-import { SessionService } from './session.service.js';
+import { SessionService, type SessionPayload } from './session.service.js';
 import { AesGcmService } from '../crypto/aes-gcm.service.js';
 import { IUserRepository } from '../database/user.repository.interface.js';
 export interface GoogleAuthDto {
@@ -26,6 +26,11 @@ export declare class AuthController {
     constructor(_googleAuthService: GoogleAuthService, _sessionService: SessionService, _aesGcmService: AesGcmService, _userRepository: IUserRepository);
     beginGoogle(res: Response): Promise<{
         authorizationUrl: string;
+    }>;
+    getMe(req: Request & {
+        user?: SessionPayload;
+    }): Promise<{
+        user: SessionPayload | undefined;
     }>;
     authenticateGoogle(body: GoogleAuthDto, req?: Request): Promise<AuthResponseDto>;
 }

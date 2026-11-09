@@ -66,11 +66,11 @@ KEY=value
 
     it('should load variables without overriding existing environment variables', () => {
       process.env['TEST_PRE_EXISTING'] = 'already_set';
+      process.env['PORT'] = '9999';
       const info = loadEnv();
       expect(info.loaded).toBe(true);
       expect(process.env['TEST_PRE_EXISTING']).toBe('already_set');
-      // PORT was defined in .env as 3000
-      expect(process.env['PORT']).toBe('3000');
+      expect(process.env['PORT']).toBe('9999');
     });
   });
 

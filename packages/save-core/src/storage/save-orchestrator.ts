@@ -281,4 +281,13 @@ export class SaveOrchestrator {
     await this._adapter.saveRecord(destinationSlot, withChecksum);
     return withChecksum;
   }
+
+  /**
+   * Directly writes a verified SaveEnvelopeV2 into persistent storage.
+   */
+  public async writeEnvelope(slotName: string, envelope: SaveEnvelopeV2): Promise<void> {
+    const validated = validateSaveEnvelopeV2(envelope);
+    await verifySaveIntegrity(validated as unknown as Record<string, unknown>);
+    await this._adapter.saveRecord(slotName, validated);
+  }
 }

@@ -65,5 +65,9 @@ export declare class SaveOrchestrator {
      * Validates version, structure, and integrity before writing.
      */
     importSaveFromJson(jsonString: string, targetSlotName?: string): Promise<SaveEnvelopeV2>;
+    /**
+     * Directly writes a verified SaveEnvelopeV2 into persistent storage.
+     */
+    writeEnvelope(slotName: string, envelope: SaveEnvelopeV2): Promise<void>;
 }
 //# sourceMappingURL=save-orchestrator.d.ts.map

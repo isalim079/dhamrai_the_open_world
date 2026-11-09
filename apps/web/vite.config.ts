@@ -5,7 +5,13 @@ import path from 'node:path';
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: 5175,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3050',
+        changeOrigin: true,
+      },
+    },
     fs: {
       allow: ['..', '../../packages', '../../data'],
     },

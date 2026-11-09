@@ -1,6 +1,6 @@
 # Dhamrai Life — Progress Tracker
 
-**Last updated:** 2 November 2026  
+**Last updated:** 3 November 2026
 **Overall status:** Milestone 4 REMEDIATION VERIFICATION BLOCKED; not approved. Yarn Classic 1.22.22 and browser-first architecture preserved. Final local run: 153 TypeScript tests passed, four real PostgreSQL tests skipped; 13 Python tests passed; typecheck passed. PostgreSQL startup is denied and pg dependency installation/lockfile resolution is blocked by network/cache availability. Milestone 5 not started. No commit or push.
 
 ## Current phase and evidence
@@ -79,3 +79,11 @@ The counts and completion claims below describe the earlier implementation repor
 ## Next task
 
 Resolve Milestone 4 blockers and rerun real database/integration verification. Await explicit Milestone 4 approval; do not start Milestone 5.
+
+## 2026-11-03 — Existing web development startup repair
+
+- Fixed the incompatible Vite 7.3.7 / React plugin 6.2.1 pairing by pinning Vite 7.3.7 and @vitejs/plugin-react 4.7.0, whose declared peer range includes Vite 7. Regenerated yarn.lock offline using cached packages; Yarn Classic remains 1.22.22.
+- Verification: web production build passed; workspace typecheck passed; frozen/offline dependency install and git diff --check passed. The build emits an existing large-bundle warning. No new unit tests were added for this dependency-only repair.
+- Dev command now loads its configuration; HTTP serving could not be checked because this sandbox denies listening on 127.0.0.1:5173 (EPERM).
+- API port 3000 is held by another project's Arc-One server, PID 74924 at inspection. That process and local credentials were left unchanged. Port 3001 had no listener at inspection; use PORT=3001 yarn start:api to run a second API without disturbing it.
+- This repairs the existing web startup only; it does not approve a milestone or implement additional milestone scope. No commit or push.

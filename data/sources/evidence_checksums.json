@@ -4,8 +4,8 @@
   "files": [
     {
       "file": "PROGRESS.md",
-      "size_bytes": 10919,
-      "sha256": "d386e8536dfa4a3976af063a60cb2842eb7378901b56a4b35d9f5b6c660c98b7"
+      "size_bytes": 12005,
+      "sha256": "baa7a66a77cd00f93d1c463210d6fb67438accadf77127a39edefc77abf1d545"
     },
     {
       "file": "data/sources/chunk_grid_audit.json",
@@ -48,14 +48,184 @@
       "sha256": "3f0a2796aa85b371c5aa021634eaf9274d1c3af79e8a45db40374b92bc7c0870"
     },
     {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z-1.glb",
+      "size_bytes": 50208,
+      "sha256": "abded1bffb16df5d277cb04b44fe3090d490a9f7855e80b6ce51828adf179d96"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z-1.json",
+      "size_bytes": 583,
+      "sha256": "e0e9d226529d93f1cbce4083c00c953e499d1455031c3ec71132bce9144af638"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z-2.glb",
+      "size_bytes": 55576,
+      "sha256": "816e006753d0e3a2f42594c2c1250ebae50556826ba04b18b38b9c4e75cccb91"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z-2.json",
+      "size_bytes": 503,
+      "sha256": "b16cebaa2d1c14a2d83741daa601d1b3b04af5c83a7ed28d52b700e9027d4358"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z0.glb",
+      "size_bytes": 40880,
+      "sha256": "bf0504354e7747ae2a2e72f1861994c20157058b74c855dfad3535aff34b0518"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z0.json",
+      "size_bytes": 576,
+      "sha256": "939a4043955d6222ea808ca244c32c3b27a13586168c529bf10c624601af1bb5"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z1.glb",
+      "size_bytes": 5928,
+      "sha256": "b2e9d99420cac10e6c53994e5f95ce6a01d345b91e2d010a6b79c87d78e39b03"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-1_z1.json",
+      "size_bytes": 489,
+      "sha256": "b0c7aa8a3c48ec98c76d9bf60038aeceeba23925b4ee0db3e2bd6998e014718e"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z-1.glb",
+      "size_bytes": 45048,
+      "sha256": "34c21d12e90946e1e77d1a070f1bf49da7b45c1375fd20f711dfef2375a51ba5"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z-1.json",
+      "size_bytes": 501,
+      "sha256": "0eeaeba810c1bdaf8566be38ef387941dd40ce4131f871d43b4d026627cb21a0"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z-2.glb",
+      "size_bytes": 49056,
+      "sha256": "e30f360046641d8d2d41fbeee6c060a252898bb9f282c380f7f45647ddee48f0"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z-2.json",
+      "size_bytes": 449,
+      "sha256": "2fc469085c631bcb8b9347822dbba6e72733fb6794172a978bf6a704ea98529a"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z0.glb",
+      "size_bytes": 9296,
+      "sha256": "6dac34db05829a5f597900ca638274bc1cc0f8c33b96e26f4c070ef53923da1a"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z0.json",
+      "size_bytes": 494,
+      "sha256": "b6c3ee942adbf5065ba9df8701da0668fbd377e03e88cf4ca82a9067a44329bb"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z1.glb",
+      "size_bytes": 13028,
+      "sha256": "1d7a6efa6b1fc891555fb42381c56fc4bf425586e6f848328a813ac5ad62ef22"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x-2_z1.json",
+      "size_bytes": 440,
+      "sha256": "dfcdc52a5787b35349250536a01541ac2fb6ba26ad75096e8a8c031aaa18cc89"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z-1.glb",
+      "size_bytes": 58016,
+      "sha256": "2054ecd27561d8ba78c5ca07cffb9c61c135dfc26741da835f012cf5839ce75b"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z-1.json",
+      "size_bytes": 576,
+      "sha256": "1e295b28e6ffa7ceefd82cd485d6ad3a5596120ed6a774bfa025354d01c8b4d2"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z-2.glb",
+      "size_bytes": 89984,
+      "sha256": "fc50ee5edf8f8552e861bd378c93311750f03b09141c6e4d3bcf8b35302c6505"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z-2.json",
+      "size_bytes": 498,
+      "sha256": "7871654e33443389fcd625620b3c39694ed8cc56f7255932d7b4b8cb57fb7577"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z0.glb",
+      "size_bytes": 27440,
+      "sha256": "d223cf801aee21f5352c47c3ca8f8a06c7abde888f4e35e5795d506619e3d81a"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z0.json",
+      "size_bytes": 570,
+      "sha256": "fb9eddc76e89481e6339cf11a2b4d07c04c97e8f48895f026ce8108080bfad88"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z1.glb",
+      "size_bytes": 32132,
+      "sha256": "68c8fb323e2438d7d7d01996a7560503aa02e492ee7988375665a9c75179041b"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x0_z1.json",
+      "size_bytes": 487,
+      "sha256": "ce6043a6883d93576cbd6816c28ac9f646273c6dee3cd3e98f0453df5b5b8814"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z-1.glb",
+      "size_bytes": 96992,
+      "sha256": "e906130c1e8543d0f1242ee18375ff81cd224e62789b3c520974f61e4deea670"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z-1.json",
+      "size_bytes": 494,
+      "sha256": "74baa2dd4ca836eee635cf6331824ae64721d2d1bc3b183552bccb976609c71b"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z-2.glb",
+      "size_bytes": 111224,
+      "sha256": "62e1945a58145cae6cffca0b930604004c823972dd4fb743addd5277b1fc498a"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z-2.json",
+      "size_bytes": 444,
+      "sha256": "c1d31e471a53d931667145a225176ce584705aa6d3628224ff7e5cf21eaac0a0"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z0.glb",
+      "size_bytes": 79080,
+      "sha256": "273c62eef2ed7fcea24ddd9359f2d17357ae64d480a7aa3cd5ffda8d3967ece8"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z0.json",
+      "size_bytes": 488,
+      "sha256": "e2965804bf0fca7d12a736bc666e155e8bae7863708833f5237e23810bf310e5"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z1.glb",
+      "size_bytes": 24576,
+      "sha256": "03b85fed47600c7eed62baeeaf779e498adb74e4a8c76ee14435b770743fb81c"
+    },
+    {
+      "file": "data/world/chunks/dhamrai_chunk_x1_z1.json",
+      "size_bytes": 433,
+      "sha256": "6da7a00996902b8a89da206312dfde9d6c563efcdfd3b47c19582cd7ae5be938"
+    },
+    {
+      "file": "data/world/directed_nav_graph.json",
+      "size_bytes": 651727,
+      "sha256": "e507c57bb4c080f96f691faadfbd83c826975215c74bb9483b4d51a7a2254cd2"
+    },
+    {
       "file": "data/world/mission_routes.json",
       "size_bytes": 66269,
       "sha256": "7744fb4a89ec481ceb6da063f8527a63df774e9d978a0239b078029fc12bce07"
     },
     {
+      "file": "data/world/world_manifest.json",
+      "size_bytes": 10175,
+      "sha256": "a4a54248e587df55aacea3d62373ac14fd3bcbcfb63f1e1f0e5a6bd2d5e5e61a"
+    },
+    {
       "file": "guideFiles/PROGRESS.md",
-      "size_bytes": 10919,
-      "sha256": "d386e8536dfa4a3976af063a60cb2842eb7378901b56a4b35d9f5b6c660c98b7"
+      "size_bytes": 12005,
+      "sha256": "baa7a66a77cd00f93d1c463210d6fb67438accadf77127a39edefc77abf1d545"
     },
     {
       "file": "tools/geo-pipeline/audit_chunk_grid.py",
@@ -68,14 +238,29 @@
       "sha256": "39c9877eadb0b935ff36d71ad25ee5f37dab9451bbece8bffacb51f1d7aef2fe"
     },
     {
+      "file": "tools/geo-pipeline/chunk_partitioner.py",
+      "size_bytes": 11464,
+      "sha256": "cd9c2af4bbf3d5ff20bd8f22307720653dc609968594e47d500cda070f702c9d"
+    },
+    {
       "file": "tools/geo-pipeline/coordinate_transform.py",
       "size_bytes": 8065,
       "sha256": "0241339153c7bd52d743777d0dda2dd58541b88fcbf60488b4d55adb69ba0602"
     },
     {
+      "file": "tools/geo-pipeline/directed_nav_graph.py",
+      "size_bytes": 19133,
+      "sha256": "7cf894f12f1f187dc2de4faf52af8a4d6ceb2067cc7511057208dadcb9e3470d"
+    },
+    {
       "file": "tools/geo-pipeline/generate_mission_routes.py",
       "size_bytes": 15964,
       "sha256": "a0229dcb56162800ccfaa8574a3b598d74c611908fa8e71422feccbc85e7de70"
+    },
+    {
+      "file": "tools/geo-pipeline/qa_slice_validation.py",
+      "size_bytes": 13616,
+      "sha256": "3bae56a2256254c6a3e488990b999a4332e0359b72ac602fece939bcdc5d3c12"
     },
     {
       "file": "tools/geo-pipeline/reproduce_evidence.py",
@@ -88,6 +273,11 @@
       "sha256": "57f680e001f9e41a98f3dd9b405a718fa8795a95f2bfe7282f65ca7b4669443f"
     },
     {
+      "file": "tools/geo-pipeline/slice_mesh_generator.py",
+      "size_bytes": 23957,
+      "sha256": "83c5befab1890961cc3432937c54a2f9e30d9283605604d62e7d914f891ad16f"
+    },
+    {
       "file": "tools/geo-pipeline/test_chunk_grid.py",
       "size_bytes": 1345,
       "sha256": "35685c8b4454819e55aa2fcdb239cebd000309206dbd73c205a949e2af15c5e7"
@@ -96,6 +286,11 @@
       "file": "tools/geo-pipeline/test_coordinate_transform.py",
       "size_bytes": 16942,
       "sha256": "f64a93b63daa8c68c73d9b96a2266678e41322ae26bd3273c416fb7d1d3d96c7"
+    },
+    {
+      "file": "tools/geo-pipeline/test_slice_generation.py",
+      "size_bytes": 9311,
+      "sha256": "1726bd823baf852e3320f30b83fb90fd29debce744a10c3925bc6de6840aedec"
     },
     {
       "file": "tools/geo-pipeline/verify_evidence.py",

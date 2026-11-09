@@ -330,3 +330,124 @@ export interface WorldManifest {
   activeChunkAxisIndices: readonly number[];
   chunks: ChunkManifest[];
 }
+
+/**
+ * Milestone 7 — Dialogue Data Contracts
+ */
+export interface DialogueChoice {
+  id: string;
+  textBn: string;
+  textEn: string;
+  nextNodeId?: string;
+  actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'CLOSE_DIALOGUE';
+}
+
+export interface DialogueNode {
+  id: string;
+  speakerId: string;
+  speakerNameBn: string;
+  speakerNameEn: string;
+  textBn: string;
+  textEn: string;
+  choices?: DialogueChoice[];
+  autoNextNodeId?: string;
+  onEnterAction?: string;
+}
+
+export interface DialogueTree {
+  id: string;
+  initialNodeId: string;
+  nodes: Record<string, DialogueNode>;
+}
+
+/**
+ * Milestone 7 — NPC Entity Definitions
+ */
+export type NPCRoleType = 'STORY_PASSENGER' | 'POLICE_PATROL' | 'ARTISAN' | 'AMBIENT_PEDESTRIAN';
+
+export interface NPCEntityDefinition {
+  id: string;
+  nameBn: string;
+  nameEn: string;
+  role: NPCRoleType;
+  spawnPosition: WorldPosition;
+  spawnHeadingRadians: number;
+  dialogueTreeId?: string;
+  associatedMissionId?: string;
+  isBoardablePassenger?: boolean;
+}
+
+/**
+ * Milestone 7 — Autonomous Traffic Agent
+ */
+export interface TrafficVehicleAgent {
+  id: string;
+  currentEdgeId: string;
+  edgeProgressPercent: number; // 0.0 to 1.0 along current road edge
+  speedMps: number;
+  position: WorldPosition;
+  headingRadians: number;
+  isHalted: boolean;
+}
+
+/**
+ * Milestone 8 — Authentication & Cloud Save Contracts
+ */
+export interface GoogleAuthDto {
+  code?: string;
+  idToken?: string;
+  redirectUri?: string;
+  state?: string;
+}
+
+export interface AuthUserIdentity {
+  id: string;
+  googleSub: string;
+  email: string;
+  name?: string;
+  picture?: string;
+}
+
+export interface AuthResponseDto {
+  sessionToken: string;
+  user: AuthUserIdentity;
+}
+
+export type CloudSyncStatus =
+  | 'UNCONFIGURED'
+  | 'LOCAL_ONLY'
+  | 'OFFLINE'
+  | 'SYNCED'
+  | 'PENDING_UPLOAD'
+  | 'SYNCING'
+  | 'LOCKED_BY_OTHER_TAB'
+  | 'CONFLICT'
+  | 'SYNC_ERROR';
+
+export interface CloudSaveMetadata {
+  found: boolean;
+  fileName: string;
+  slotName: string;
+  version: string | null;
+  checksumSha256: string | null;
+  updatedAtIso: string | null;
+  sizeBytes?: number;
+}
+
+export interface SaveLeaseDto {
+  slotName: string;
+  leaseToken: string;
+  acquiredAtMs: number;
+  expiresAtMs: number;
+}
+
+export interface CloudSaveSyncResult {
+  success: boolean;
+  fileId?: string;
+  fileName?: string;
+  version: string;
+  checksumSha256: string;
+  modifiedTime: string;
+}
+
+

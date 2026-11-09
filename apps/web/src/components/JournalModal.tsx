@@ -1,0 +1,266 @@
+import React, { useState } from 'react';
+import { useUIStore } from '../state/useUIStore.js';
+import { useGameStore } from '../state/useGameStore.js';
+import { PHASE_1_MISSIONS } from '@dhamrai/game-core';
+
+export const JournalModal: React.FC = () => {
+  const isJournalOpen = useUIStore((s) => s.isJournalOpen);
+  const toggleJournal = useUIStore((s) => s.toggleJournal);
+  const allMissions = useGameStore((s) => s.allMissions);
+
+  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'COMPLETED' | 'LANDMARKS'>('ACTIVE');
+
+  if (!isJournalOpen) return null;
+
+  const activeMissionList = Object.entries(PHASE_1_MISSIONS).filter(([id]) => {
+    const inst = allMissions[id];
+    return inst ? inst.state === 'ACTIVE' || inst.state === 'AVAILABLE' : true;
+  });
+
+  const completedMissionList = Object.entries(PHASE_1_MISSIONS).filter(([id]) => {
+    const inst = allMissions[id];
+    return inst && inst.state === 'COMPLETED';
+  });
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        backdropFilter: 'blur(6px)',
+      }}
+      onClick={toggleJournal}
+    >
+      <div
+        style={{
+          width: '90%',
+          maxWidth: '680px',
+          maxHeight: '80vh',
+          backgroundColor: '#0d1117',
+          border: '1px solid #30363d',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8)',
+          color: '#c9d1d9',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderBottom: '1px solid #21262d',
+            backgroundColor: '#161b22',
+          }}
+        >
+          <div>
+            <h2 style={{ margin: 0, fontSize: '18px', color: '#f0f6fc' }}>
+              ডায়েরি ও কর্মতালিকা (Journal & Tasks)
+            </h2>
+            <div style={{ fontSize: '12px', color: '#8b949e', marginTop: 2 }}>
+              ধামরাই পৌরসভা জীবনযাত্রা
+            </div>
+          </div>
+          <button
+            onClick={toggleJournal}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#8b949e',
+              cursor: 'pointer',
+              fontSize: '18px',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', borderBottom: '1px solid #21262d', backgroundColor: '#0d1117' }}>
+          <button
+            onClick={() => setActiveTab('ACTIVE')}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              backgroundColor: activeTab === 'ACTIVE' ? '#161b22' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'ACTIVE' ? '2px solid #58a6ff' : 'none',
+              color: activeTab === 'ACTIVE' ? '#58a6ff' : '#8b949e',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
+          >
+            চলতি দায়িত্ব ({activeMissionList.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('COMPLETED')}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              backgroundColor: activeTab === 'COMPLETED' ? '#161b22' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'COMPLETED' ? '2px solid #58a6ff' : 'none',
+              color: activeTab === 'COMPLETED' ? '#58a6ff' : '#8b949e',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
+          >
+            সম্পন্ন কাজ ({completedMissionList.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('LANDMARKS')}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              backgroundColor: activeTab === 'LANDMARKS' ? '#161b22' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'LANDMARKS' ? '2px solid #58a6ff' : 'none',
+              color: activeTab === 'LANDMARKS' ? '#58a6ff' : '#8b949e',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
+          >
+            ধামরাই পরিচিতি
+          </button>
+        </div>
+
+        {/* Content Body */}
+        <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {activeTab === 'ACTIVE' && (
+            <>
+              {activeMissionList.map(([id, def]) => {
+                const inst = allMissions[id];
+                const completedIds = inst?.completedObjectiveIds ?? [];
+                return (
+                  <div
+                    key={id}
+                    style={{
+                      backgroundColor: '#161b22',
+                      border: '1px solid #30363d',
+                      borderRadius: '8px',
+                      padding: '14px 16px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#f0f6fc' }}>
+                          {def.bengaliTitle}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#8b949e' }}>
+                          {def.englishTitle}
+                        </div>
+                      </div>
+                      <div style={{ backgroundColor: '#238636', color: '#fff', fontSize: '12px', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                        ৳{(def.rewardMinorUnits / 100).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '13px', color: '#c9d1d9', marginTop: 8, lineHeight: '1.4' }}>
+                      {def.description}
+                    </div>
+
+                    {/* Objectives Checklist */}
+                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {def.objectives.map((obj) => {
+                        const isDone = completedIds.includes(obj.id);
+                        return (
+                          <div
+                            key={obj.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              fontSize: '13px',
+                              color: isDone ? '#7ee787' : '#8b949e',
+                            }}
+                          >
+                            <span>{isDone ? '✓' : '○'}</span>
+                            <span>{obj.bengaliTitle}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+
+          {activeTab === 'COMPLETED' && (
+            <>
+              {completedMissionList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8b949e' }}>
+                  এখনো কোনো কাজ সম্পন্ন হয়নি। রথখোলা থেকে ফারহানাকে হার্ডিঞ্জ স্কুলে পৌঁছে দিন!
+                </div>
+              ) : (
+                completedMissionList.map(([id, def]) => (
+                  <div
+                    key={id}
+                    style={{
+                      backgroundColor: '#161b22',
+                      border: '1px solid #238636',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#f0f6fc' }}>
+                        ✓ {def.bengaliTitle}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#7ee787', marginTop: 2 }}>
+                        পুরস্কার গৃহীত: ৳{(def.rewardMinorUnits / 100).toFixed(2)} BDT (+{def.reputationDelta} সুনাম)
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
+          {activeTab === 'LANDMARKS' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ backgroundColor: '#161b22', padding: '12px 14px', borderRadius: '8px', border: '1px solid #30363d' }}>
+                <strong style={{ color: '#58a6ff' }}>রথখোলা মোড় (Rathkhola Stand):</strong>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8b949e' }}>
+                  ধামরাইয়ের ঐতিহাসিক রথযাত্রার মূল চত্বর। এখানে প্রতিদিন শত শত রিকশা ও যাত্রী সমবেত হন।
+                </p>
+              </div>
+              <div style={{ backgroundColor: '#161b22', padding: '12px 14px', borderRadius: '8px', border: '1px solid #30363d' }}>
+                <strong style={{ color: '#58a6ff' }}>হার্ডিঞ্জ উচ্চ বিদ্যালয় (Hardinge High School):</strong>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8b949e' }}>
+                  ১৯১৪ সালে প্রতিষ্ঠিত শতবর্ষী বিদ্যাপীঠ। রথখোলা থেকে সোজা উত্তরমুখী পাকা সড়ক বরাবর অবস্থিত।
+                </p>
+              </div>
+              <div style={{ backgroundColor: '#161b22', padding: '12px 14px', borderRadius: '8px', border: '1px solid #30363d' }}>
+                <strong style={{ color: '#58a6ff' }}>কায়েতপাড়া কাঁসা পল্লী (Kayetpara Metal Craft):</strong>
+                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8b949e' }}>
+                  শতবর্ষের ঐতিহ্যবাহী কাঁসা-পিতল কারিগরদের কর্মশালা। এখানে নিখুঁত হাতের কাজে ঘণ্টা ও তৈজসপত্র তৈরি হয়।
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -8,4 +8,5 @@ export * from './inventory.js';
 export * from './missions.js';
 export * from './roles.js';
 export * from './engine.js';
+export * from './dialogue.js';
 //# sourceMappingURL=index.d.ts.map

@@ -20,7 +20,7 @@ export const PerformanceOverlay: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          top: 12,
+          top: 72,
           left: 12,
           padding: '10px 14px',
           backgroundColor: 'rgba(13, 17, 23, 0.85)',
@@ -63,7 +63,7 @@ export const PerformanceOverlay: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          top: 12,
+          top: 124,
           right: 12,
           padding: '10px 14px',
           backgroundColor: 'rgba(13, 17, 23, 0.85)',

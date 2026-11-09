@@ -9,9 +9,13 @@ export interface InputState {
   right: boolean;
   sprint: boolean;
   jump: boolean;
-  interact: boolean;     // 'F' key pressed this frame
+  interact: boolean;     // 'F' key pressed this frame (Vehicle mount/dismount)
+  talkInteract: boolean; // 'E' key pressed this frame (Talk to NPC / Trigger)
   cameraToggle: boolean; // 'V' key pressed this frame
   bell: boolean;         // 'Space' pressed this frame
+  toggleJournal: boolean;   // 'J' key pressed this frame
+  toggleInventory: boolean; // 'I' key pressed this frame
+  toggleDebug: boolean;     // 'F3' key pressed this frame
   mouseDeltaX: number;
   mouseDeltaY: number;
 }
@@ -52,12 +56,33 @@ export class InputManager {
     this.justPressed.clear();
   }
 
+  private normalizeCode(e: KeyboardEvent): string {
+    if (e.code && e.code.length > 0) return e.code;
+    const k = e.key.toLowerCase();
+    if (k === 'w') return 'KeyW';
+    if (k === 'a') return 'KeyA';
+    if (k === 's') return 'KeyS';
+    if (k === 'd') return 'KeyD';
+    if (k === 'e') return 'KeyE';
+    if (k === 'f') return 'KeyF';
+    if (k === 'j') return 'KeyJ';
+    if (k === 'i') return 'KeyI';
+    if (k === 'v') return 'KeyV';
+    if (k === ' ') return 'Space';
+    if (e.key === 'F3') return 'F3';
+    return e.key;
+  }
+
   private onKeyDown(e: KeyboardEvent): void {
-    const code = e.code;
+    const code = this.normalizeCode(e);
     if (!this.keysDown.has(code)) {
       this.justPressed.add(code);
     }
     this.keysDown.add(code);
+    if (e.code && e.code !== code) {
+      if (!this.keysDown.has(e.code)) this.justPressed.add(e.code);
+      this.keysDown.add(e.code);
+    }
 
     // Prevent default browser scrolling on space and arrow keys
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(code)) {
@@ -66,7 +91,9 @@ export class InputManager {
   }
 
   private onKeyUp(e: KeyboardEvent): void {
-    this.keysDown.delete(e.code);
+    const code = this.normalizeCode(e);
+    this.keysDown.delete(code);
+    if (e.code) this.keysDown.delete(e.code);
   }
 
   private onMouseMove(e: MouseEvent): void {
@@ -95,8 +122,12 @@ export class InputManager {
     const jump = this.isDown('Space');
 
     const interact = this.justPressed.has('KeyF');
+    const talkInteract = this.justPressed.has('KeyE');
     const cameraToggle = this.justPressed.has('KeyV');
     const bell = this.justPressed.has('Space');
+    const toggleJournal = this.justPressed.has('KeyJ');
+    const toggleInventory = this.justPressed.has('KeyI');
+    const toggleDebug = this.justPressed.has('F3');
 
     const state: InputState = {
       forward,
@@ -106,8 +137,12 @@ export class InputManager {
       sprint,
       jump,
       interact,
+      talkInteract,
       cameraToggle,
       bell,
+      toggleJournal,
+      toggleInventory,
+      toggleDebug,
       mouseDeltaX: this.mouseDeltaX,
       mouseDeltaY: this.mouseDeltaY,
     };

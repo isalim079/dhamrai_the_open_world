@@ -20,7 +20,16 @@ export async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.setGlobalPrefix('api');
     app.enableCors({
-        origin: process.env['BROWSER_ORIGIN'] ?? 'http://localhost:5173',
+        origin: (requestOrigin, callback) => {
+            if (!requestOrigin)
+                return callback(null, true);
+            const configuredOrigin = process.env['BROWSER_ORIGIN'] ?? 'http://localhost:5173';
+            if (requestOrigin === configuredOrigin ||
+                /^http:\/\/(localhost|127\.0\.0\.1):(517[3-9]|3000)$/.test(requestOrigin)) {
+                return callback(null, true);
+            }
+            return callback(null, true);
+        },
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
     });

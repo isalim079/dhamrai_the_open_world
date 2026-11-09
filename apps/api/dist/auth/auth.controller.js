@@ -10,10 +10,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Res, Req, Post, Body, BadRequestException, Inject, } from '@nestjs/common';
+import { Controller, Get, Res, Req, Post, Body, BadRequestException, Inject, UseGuards, } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { GoogleAuthService } from './google-auth.service.js';
 import { SessionService } from './session.service.js';
+import { AuthGuard } from './auth.guard.js';
 import { AesGcmService } from '../crypto/aes-gcm.service.js';
 import { USER_REPOSITORY_TOKEN, } from '../database/user.repository.interface.js';
 let AuthController = class AuthController {
@@ -32,6 +33,9 @@ let AuthController = class AuthController {
         res.cookie('dhamrai_oauth', started.cookie, { httpOnly: true, secure: process.env['NODE_ENV'] === 'production',
             sameSite: 'lax', path: '/api/auth', maxAge: 600_000 });
         return { authorizationUrl: started.authorizationUrl };
+    }
+    async getMe(req) {
+        return { user: req.user };
     }
     async authenticateGoogle(body, req) {
         if (!body || (!body.idToken && !body.code)) {
@@ -130,6 +134,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "beginGoogle", null);
+__decorate([
+    Get('me'),
+    UseGuards(AuthGuard),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getMe", null);
 __decorate([
     Post('google'),
     __param(0, Body()),
