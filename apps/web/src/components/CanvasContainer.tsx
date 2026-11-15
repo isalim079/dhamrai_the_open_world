@@ -27,7 +27,9 @@ export const CanvasContainer: React.FC = () => {
     engine
       .init(canvas)
       .then(() => {
-        (window as any).__dhamrai_engine = engine;
+        if (import.meta.env.DEV && typeof window !== 'undefined') {
+          (window as any).__dhamrai_engine = engine;
+        }
         engine.start();
       })
       .catch((err) => {

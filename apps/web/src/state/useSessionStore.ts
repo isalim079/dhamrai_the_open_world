@@ -11,6 +11,15 @@ export interface PerformanceStats {
   activeColliders: number;
 }
 
+export interface DynamicNPCPosition {
+  id: string;
+  nameBn: string;
+  nameEn: string;
+  position: WorldPosition;
+  role: string;
+  isBoarded: boolean;
+}
+
 export interface SessionState {
   playerPosition: WorldPosition;
   playerHeading: number;
@@ -24,6 +33,8 @@ export interface SessionState {
   webGLErrorMessage: string | null;
   bellRinging: boolean;
   statusMessage: string;
+  npcPositions: DynamicNPCPosition[];
+  isAudioMuted: boolean;
 
   setPlayerPosition: (pos: WorldPosition) => void;
   setPlayerHeading: (heading: number) => void;
@@ -37,6 +48,8 @@ export interface SessionState {
   setWebGLSupport: (supported: boolean, error?: string | null) => void;
   triggerBell: () => void;
   setStatusMessage: (msg: string) => void;
+  setNpcPositions: (positions: DynamicNPCPosition[]) => void;
+  setIsAudioMuted: (muted: boolean) => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -58,6 +71,8 @@ export const useSessionStore = create<SessionState>((set) => ({
   webGLErrorMessage: null,
   bellRinging: false,
   statusMessage: 'Ready — Dhamrai Rathkhola Stand',
+  npcPositions: [],
+  isAudioMuted: false,
 
   setPlayerPosition: (pos) => set({ playerPosition: pos }),
   setPlayerHeading: (heading) => set({ playerHeading: heading }),
@@ -79,4 +94,6 @@ export const useSessionStore = create<SessionState>((set) => ({
     setTimeout(() => set({ bellRinging: false }), 400);
   },
   setStatusMessage: (msg) => set({ statusMessage: msg }),
+  setNpcPositions: (positions) => set({ npcPositions: positions }),
+  setIsAudioMuted: (muted) => set({ isAudioMuted: muted }),
 }));

@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { EconomyDomain } from '../src/economy.js';
-import { MissionDomain, PHASE_1_MISSIONS } from '../src/missions.js';
+import {
+  MissionDomain,
+  PHASE_1_MISSIONS,
+  calculateFarePoisha,
+  createRepeatableFareDefinition,
+} from '../src/missions.js';
 
 describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () => {
   it('initializes with all three Phase 1 missions in AVAILABLE state', () => {
@@ -124,8 +129,42 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
     expect(missions.getInstance('mission_1_first_fare')!.state).toBe('ACTIVE');
   });
 
-  it('handles Mission 2 police checkpoint: awards civic reputation with 0 cash payout', () => {
+  it('enforces prerequisites: Mission 2 and Mission 3 cannot be activated before Mission 1 completes', () => {
     const missions = new MissionDomain();
+
+    // Mission 1 is AVAILABLE, not COMPLETED
+    expect(missions.getInstance('mission_1_first_fare')!.state).toBe('AVAILABLE');
+
+    // Attempting to activate Mission 2 throws prerequisite error
+    expect(() => {
+      missions.activateMission('mission_2_police_checkpoint');
+    }).toThrow(/prerequisite "mission_1_first_fare" is not COMPLETED/);
+
+    // Attempting to activate Mission 3 throws prerequisite error
+    expect(() => {
+      missions.activateMission('mission_3_artisan_order');
+    }).toThrow(/prerequisite "mission_1_first_fare" is not COMPLETED/);
+
+    // Now complete Mission 1
+    const economy = new EconomyDomain([], 25000);
+    missions.activateMission('mission_1_first_fare');
+    missions.completeObjective('mission_1_first_fare', 'obj_m1_pickup');
+    missions.completeObjective('mission_1_first_fare', 'obj_m1_dropoff');
+    missions.completeMission('mission_1_first_fare', economy);
+
+    expect(missions.getInstance('mission_1_first_fare')!.state).toBe('COMPLETED');
+
+    // Now activating Mission 2 succeeds
+    expect(() => {
+      missions.activateMission('mission_2_police_checkpoint');
+    }).not.toThrow();
+    expect(missions.getInstance('mission_2_police_checkpoint')!.state).toBe('ACTIVE');
+  });
+
+  it('handles Mission 2 police checkpoint: awards civic reputation with 0 cash payout', () => {
+    const missions = new MissionDomain(undefined, {
+      mission_1_first_fare: { state: 'COMPLETED' },
+    });
     const economy = new EconomyDomain([], 25000);
     let civicRep = 0;
 
@@ -149,7 +188,9 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
   });
 
   it('handles Mission 3 brass artisan order: awards ৳75 and artisan guild trust', () => {
-    const missions = new MissionDomain();
+    const missions = new MissionDomain(undefined, {
+      mission_1_first_fare: { state: 'COMPLETED' },
+    });
     const economy = new EconomyDomain([], 25000);
     let artisanRep = 0;
 
@@ -171,5 +212,49 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
     expect(artisanRep).toBe(10);
     expect(economy.balanceMinorUnits).toBe(32500); // 25000 + 7500 = 32500 (৳325.00)
     expect(economy.verifyIntegrity()).toBe(true);
+  });
+
+  it('calculates repeatable fare distance formula and enforces min/max clamping (AC-M9-05)', () => {
+    // Short distance (100m -> 800 poisha, clamped to min 2000 = ৳20)
+    expect(calculateFarePoisha(100)).toBe(2000);
+
+    // Medium distance (500m -> 4000 poisha = ৳40)
+    expect(calculateFarePoisha(500)).toBe(4000);
+
+    // Long distance (1500m -> 12000 poisha, clamped to max 8000 = ৳80)
+    expect(calculateFarePoisha(1500)).toBe(8000);
+  });
+
+  it('registers dynamic repeatable fare trip and executes idempotent payout (AC-M9-04, AC-M9-05)', () => {
+    const missions = new MissionDomain();
+    const economy = new EconomyDomain([], 25000);
+
+    const tripDef = createRepeatableFareDefinition(
+      'fare_trip_test_01',
+      'কামাল মিয়া',
+      'Kamal Mia',
+      { x: 0, y: 0, z: 0 },
+      { x: 100, y: 0, z: 100 },
+      250 // ~৳20 BDT min
+    );
+
+    missions.registerDefinition(tripDef);
+    expect(missions.getDefinition('fare_trip_test_01')).toBeDefined();
+
+    missions.activateMission('fare_trip_test_01', 1000);
+    missions.completeObjective('fare_trip_test_01', 'obj_fare_dropoff');
+
+    let repGained = 0;
+    const res = missions.completeMission('fare_trip_test_01', economy, (rep) => { repGained += rep; }, 2000);
+    expect(res.success).toBe(true);
+    expect(res.payoutApplied).toBe(true);
+    expect(res.payoutMinorUnits).toBe(2000); // ৳20
+    expect(economy.balanceMinorUnits).toBe(27000);
+    expect(repGained).toBe(2);
+
+    // Payout is strictly idempotent: second call does not re-credit
+    const res2 = missions.completeMission('fare_trip_test_01', economy, (rep) => { repGained += rep; }, 3000);
+    expect(res2.payoutApplied).toBe(false);
+    expect(economy.balanceMinorUnits).toBe(27000);
   });
 });

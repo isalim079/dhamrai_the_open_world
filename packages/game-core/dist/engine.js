@@ -116,6 +116,14 @@ export class GameCoreEngine {
     setInVehicle(inVehicle) {
         this._player.isInVehicle = inVehicle;
     }
+    updateVehicleState(speedMps, steeringAngleRad, damagePercent) {
+        if (speedMps !== undefined)
+            this._player.vehicleState.speedMps = speedMps;
+        if (steeringAngleRad !== undefined)
+            this._player.vehicleState.steeringAngleRad = steeringAngleRad;
+        if (damagePercent !== undefined)
+            this._player.vehicleState.damagePercent = damagePercent;
+    }
     setWorldFlag(key, value) {
         this._worldFlags.set(key, value);
     }
@@ -137,10 +145,12 @@ export class GameCoreEngine {
      */
     completeMission(missionId, timestampMs = Date.now()) {
         return this._missions.completeMission(missionId, this._economy, (repDelta) => {
-            if (missionId.includes('artisan')) {
+            const def = this._missions.getDefinition(missionId);
+            const category = def?.reputationCategory;
+            if (category === 'artisan' || (!category && missionId.includes('artisan'))) {
                 this._player.reputations.artisanGuildTrust += repDelta;
             }
-            else if (missionId.includes('police')) {
+            else if (category === 'civic' || (!category && missionId.includes('police'))) {
                 this._player.reputations.civicTrust += repDelta;
             }
             else {

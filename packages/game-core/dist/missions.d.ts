@@ -24,11 +24,22 @@ export interface MissionCompletionResult {
     reputationDelta?: number;
     reason?: string;
 }
+export declare function calculateFarePoisha(distanceM: number): number;
+export declare function createRepeatableFareDefinition(tripId: string, passengerNameBn: string, passengerNameEn: string, _pickupPos: {
+    x: number;
+    y: number;
+    z: number;
+}, dropoffPos: {
+    x: number;
+    y: number;
+    z: number;
+}, distanceM: number): MissionDefinition;
 export declare const PHASE_1_MISSIONS: Record<string, MissionDefinition>;
 export declare class MissionDomain {
     private readonly _definitions;
     private readonly _instances;
     constructor(definitions?: Record<string, MissionDefinition>, initialInstances?: Record<string, Partial<MissionInstance>>);
+    registerDefinition(definition: MissionDefinition): void;
     getDefinition(missionId: string): MissionDefinition | undefined;
     getInstance(missionId: string): MissionInstance | undefined;
     getAllInstances(): Record<string, MissionInstance>;

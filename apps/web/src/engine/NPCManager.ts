@@ -14,6 +14,7 @@ import {
   WorldPosition,
 } from '@dhamrai/shared-contracts';
 import { PhysicsWorld } from './PhysicsWorld.js';
+import type { DynamicNPCPosition } from '../state/useSessionStore.js';
 
 export interface NPCInstance {
   definition: NPCEntityDefinition;
@@ -105,6 +106,67 @@ export class NPCManager {
         { x: -10.0, y: 0.0, z: -15.0 },
       ]
     );
+  }
+
+  public spawnFareNPC(def: NPCEntityDefinition): NPCInstance {
+    if (this.npcs.has(def.id)) {
+      return this.npcs.get(def.id)!;
+    }
+    this.spawnNPC(def);
+    return this.npcs.get(def.id)!;
+  }
+
+  public despawnFarePassenger(npcId: string): boolean {
+    const npc = this.npcs.get(npcId);
+    if (!npc) return false;
+
+    // 1. Remove Rapier collider & body cleanly
+    if (npc.collider && this.physics.ready) {
+      this.physics.removeCollider(npc.collider);
+      npc.collider = null;
+    }
+    if (npc.body && this.physics.ready) {
+      this.physics.world.removeRigidBody(npc.body);
+      npc.body = null;
+    }
+
+    // 2. Detach mesh from parent (rickshaw chassis or world scene)
+    if (npc.mesh.parent) {
+      npc.mesh.parent.remove(npc.mesh);
+    } else {
+      this.scene.remove(npc.mesh);
+    }
+
+    // 3. Dispose geometry and materials
+    npc.mesh.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((m) => m.dispose());
+        } else if (mesh.material) {
+          mesh.material.dispose();
+        }
+      }
+    });
+
+    this.npcs.delete(npcId);
+    return true;
+  }
+
+  public getDynamicNPCPositions(): DynamicNPCPosition[] {
+    const out: DynamicNPCPosition[] = [];
+    for (const [id, npc] of this.npcs.entries()) {
+      out.push({
+        id,
+        nameBn: npc.definition.nameBn,
+        nameEn: npc.definition.nameEn,
+        position: { ...npc.currentPosition },
+        role: npc.definition.role,
+        isBoarded: npc.isBoarded,
+      });
+    }
+    return out;
   }
 
   private spawnNPC(def: NPCEntityDefinition): void {

@@ -4,6 +4,33 @@
  * Strict, deterministic mission lifecycle with guaranteed idempotent payouts.
  */
 import { PHASE_1_ANCHORS, CURRENCY_CODE_BDT, } from '@dhamrai/shared-contracts';
+export function calculateFarePoisha(distanceM) {
+    return Math.round(Math.max(2000, Math.min(8000, distanceM * 8)));
+}
+export function createRepeatableFareDefinition(tripId, passengerNameBn, passengerNameEn, _pickupPos, dropoffPos, distanceM) {
+    const farePoisha = calculateFarePoisha(distanceM);
+    return {
+        id: tripId,
+        bengaliTitle: `${passengerNameBn}-এর ট্রিপ`,
+        englishTitle: `Fare: ${passengerNameEn}`,
+        description: `Transport ${passengerNameEn} safely to their destination in Dhamrai.`,
+        rewardMinorUnits: farePoisha,
+        currency: CURRENCY_CODE_BDT,
+        reputationDelta: 2,
+        repeatPolicy: 'repeatable',
+        reputationCategory: 'transport',
+        objectives: [
+            {
+                id: 'obj_fare_dropoff',
+                bengaliTitle: 'গন্তব্যে নামিয়ে দিন',
+                description: `Transport ${passengerNameEn} safely to their destination.`,
+                targetPosition: dropoffPos,
+                completionRadiusM: 15.0,
+                isCompleted: false,
+            },
+        ],
+    };
+}
 export const PHASE_1_MISSIONS = {
     mission_1_first_fare: {
         id: 'mission_1_first_fare',
@@ -13,6 +40,8 @@ export const PHASE_1_MISSIONS = {
         rewardMinorUnits: 3000, // ৳30.00 BDT
         currency: CURRENCY_CODE_BDT,
         reputationDelta: 5,
+        repeatPolicy: 'once',
+        reputationCategory: 'transport',
         objectives: [
             {
                 id: 'obj_m1_pickup',
@@ -40,6 +69,9 @@ export const PHASE_1_MISSIONS = {
         rewardMinorUnits: 0, // Civic duty: purely reputation gain
         currency: CURRENCY_CODE_BDT,
         reputationDelta: 5,
+        prerequisites: ['mission_1_first_fare'],
+        repeatPolicy: 'once',
+        reputationCategory: 'civic',
         objectives: [
             {
                 id: 'obj_m2_approach',
@@ -67,6 +99,9 @@ export const PHASE_1_MISSIONS = {
         rewardMinorUnits: 7500, // ৳75.00 BDT
         currency: CURRENCY_CODE_BDT,
         reputationDelta: 10,
+        prerequisites: ['mission_1_first_fare'],
+        repeatPolicy: 'once',
+        reputationCategory: 'artisan',
         objectives: [
             {
                 id: 'obj_m3_collect_cargo',
@@ -105,9 +140,63 @@ export class MissionDomain {
                 payoutTxId: initial?.payoutTxId,
             });
         }
+        // Preserve any initialInstances not present in static definitions (e.g. restored dynamic repeatable trips)
+        if (initialInstances) {
+            for (const [id, initial] of Object.entries(initialInstances)) {
+                if (!this._instances.has(id) && initial) {
+                    this._instances.set(id, {
+                        missionId: id,
+                        state: initial.state ?? 'AVAILABLE',
+                        completedObjectiveIds: initial.completedObjectiveIds ? [...initial.completedObjectiveIds] : [],
+                        startedAtMs: initial.startedAtMs,
+                        completedAtMs: initial.completedAtMs,
+                        payoutClaimed: initial.payoutClaimed ?? (initial.state === 'COMPLETED'),
+                        payoutTxId: initial.payoutTxId,
+                    });
+                }
+            }
+        }
+    }
+    registerDefinition(definition) {
+        this._definitions[definition.id] = definition;
+        if (!this._instances.has(definition.id)) {
+            this._instances.set(definition.id, {
+                missionId: definition.id,
+                state: 'AVAILABLE',
+                completedObjectiveIds: [],
+                payoutClaimed: false,
+            });
+        }
     }
     getDefinition(missionId) {
-        return this._definitions[missionId];
+        if (this._definitions[missionId]) {
+            return this._definitions[missionId];
+        }
+        // Reconstruct dynamic fallback definition if this is a repeatable fare trip from a restored save
+        if (missionId.startsWith('fare_trip_')) {
+            return {
+                id: missionId,
+                bengaliTitle: 'যাত্রী পরিবহন ট্রিপ',
+                englishTitle: 'Passenger Fare Trip',
+                description: 'Repeatable passenger transport trip.',
+                rewardMinorUnits: 3000,
+                currency: CURRENCY_CODE_BDT,
+                reputationDelta: 2,
+                repeatPolicy: 'repeatable',
+                reputationCategory: 'transport',
+                objectives: [
+                    {
+                        id: 'obj_fare_dropoff',
+                        bengaliTitle: 'গন্তব্যে নামিয়ে দিন',
+                        description: 'Transport passenger safely to destination.',
+                        targetPosition: PHASE_1_ANCHORS.HARDINGE_HIGH_SCHOOL,
+                        completionRadiusM: 15.0,
+                        isCompleted: true,
+                    },
+                ],
+            };
+        }
+        return undefined;
     }
     getInstance(missionId) {
         const inst = this._instances.get(missionId);
@@ -127,6 +216,15 @@ export class MissionDomain {
         }
         if (inst.state === 'COMPLETED') {
             throw new Error(`Cannot activate already completed mission: ${missionId}`);
+        }
+        const def = this._definitions[missionId];
+        if (def?.prerequisites && def.prerequisites.length > 0) {
+            for (const prereqId of def.prerequisites) {
+                const prereqInst = this._instances.get(prereqId);
+                if (!prereqInst || prereqInst.state !== 'COMPLETED') {
+                    throw new Error(`Cannot activate mission "${missionId}": prerequisite "${prereqId}" is not COMPLETED.`);
+                }
+            }
         }
         if (inst.state === 'ACTIVE') {
             return; // Already active, no-op
@@ -206,7 +304,9 @@ export class MissionDomain {
         // Apply financial payout if reward > 0 and not previously claimed
         let txApplied = false;
         if (def.rewardMinorUnits > 0 && !inst.payoutClaimed) {
-            const category = missionId.includes('artisan') ? 'DELIVERY_PAYMENT' : 'FARE_PAYMENT';
+            const category = def.reputationCategory === 'artisan' || missionId.includes('artisan')
+                ? 'DELIVERY_PAYMENT'
+                : 'FARE_PAYMENT';
             economy.credit(def.rewardMinorUnits, category, `Reward for completing "${def.bengaliTitle}" (${def.englishTitle})`, timestampMs, payoutTxId);
             txApplied = true;
             inst.payoutClaimed = true;

@@ -1,8 +1,13 @@
 import React, { useEffect, useCallback } from 'react';
 import { useUIStore } from '../state/useUIStore.js';
 import { useGameStore } from '../state/useGameStore.js';
-import { PHASE_1_DIALOGUE_TREES } from '@dhamrai/game-core';
-import type { DialogueChoice } from '@dhamrai/shared-contracts';
+import {
+  PHASE_1_DIALOGUE_TREES,
+  BRASS_BELLS_CARGO_ITEM,
+  createRepeatableFareDefinition,
+} from '@dhamrai/game-core';
+import { PHASE_1_ANCHORS, type DialogueChoice } from '@dhamrai/shared-contracts';
+import { getActiveGameEngine } from '../engine/GameEngine.js';
 
 export const DialogueBox: React.FC = () => {
   const isDialogueOpen = useUIStore((s) => s.isDialogueOpen);
@@ -13,18 +18,100 @@ export const DialogueBox: React.FC = () => {
 
   const activateMission = useGameStore((s) => s.activateMission);
   const completeObjective = useGameStore((s) => s.completeObjective);
+  const finishMission = useGameStore((s) => s.finishMission);
+  const showToast = useGameStore((s) => s.showToast);
 
   const tree = currentTreeId ? PHASE_1_DIALOGUE_TREES[currentTreeId] : null;
   const activeNodeId = currentNodeId ?? (tree ? tree.initialNodeId : '');
   const node = tree ? tree.nodes[activeNodeId] : null;
 
   const handleChoice = useCallback((choice: DialogueChoice) => {
-    // Execute action triggers
+    const engine = useGameStore.getState().engine;
+    const gameEngine = getActiveGameEngine();
+
+    // 1. Mission 1: Board Student Farhana
     if (choice.actionTrigger === 'BOARD_PASSENGER') {
       activateMission('mission_1_first_fare');
       completeObjective('mission_1_first_fare', 'obj_m1_pickup');
-      if (typeof window !== 'undefined' && (window as any).__dhamrai_engine) {
-        (window as any).__dhamrai_engine.boardPassengerFarhana();
+      gameEngine?.boardPassengerFarhana();
+    }
+
+    // 2. Mission 2: Inspect Rickshaw License Documents
+    if (choice.actionTrigger === 'INSPECT_DOCUMENTS') {
+      const hasLicense = engine?.inventory.hasItem('rickshaw_license_slip');
+      if (hasLicense) {
+        try {
+          const m2Inst = useGameStore.getState().allMissions['mission_2_police_checkpoint'];
+          if (!m2Inst || m2Inst.state === 'AVAILABLE') {
+            activateMission('mission_2_police_checkpoint');
+          }
+          completeObjective('mission_2_police_checkpoint', 'obj_m2_approach');
+          completeObjective('mission_2_police_checkpoint', 'obj_m2_show_docs');
+          finishMission('mission_2_police_checkpoint');
+          engine?.setWorldFlag('isMission2Done', true);
+          showToast('কাগজপত্র যাচাই সম্পন্ন! (+৫ নাগরিক আস্থা)', 3500);
+          if (choice.nextNodeId) {
+            setDialogueNode(choice.nextNodeId);
+          }
+          return;
+        } catch (err) {
+          console.warn('Failed completing mission 2:', err);
+        }
+      } else {
+        showToast('কাগজপত্র পাওয়া যায়নি! (No valid license in inventory)', 3500);
+        setDialogueNode('node_strict_warning');
+        return;
+      }
+    }
+
+    // 3. Mission 3: Pick up Brass Cargo from Gouranga
+    if (choice.actionTrigger === 'PICKUP_CARGO') {
+      try {
+        const m3Inst = useGameStore.getState().allMissions['mission_3_artisan_order'];
+        if (!m3Inst || m3Inst.state === 'AVAILABLE') {
+          activateMission('mission_3_artisan_order');
+        }
+        completeObjective('mission_3_artisan_order', 'obj_m3_collect_cargo');
+        if (engine && !engine.inventory.hasItem('brass_bells_cargo')) {
+          engine.inventory.addItem(BRASS_BELLS_CARGO_ITEM);
+          useGameStore.getState().syncFromEngine();
+        }
+        showToast('কাঁসার চালান তোলা হয়েছে! রথখোলায় নিয়ে যান (Cargo loaded)', 3500);
+      } catch (err) {
+        console.warn('Failed starting mission 3 cargo pickup:', err);
+      }
+    }
+
+    // 4. Repeatable Fares: Board Kamal or Sufia
+    if (choice.actionTrigger === 'START_FARE') {
+      const isKamal = currentTreeId === 'dialogue_fare_kamal';
+      const passengerId = isKamal ? 'npc_passenger_kamal' : 'npc_passenger_sufia';
+      const passengerNameBn = isKamal ? 'কামাল মিয়া' : 'সুফিয়া বেগম';
+      const passengerNameEn = isKamal ? 'Kamal Mia' : 'Sufia Begum';
+      const dropoffPos = isKamal
+        ? PHASE_1_ANCHORS.THANA_JUNCTION_CHECKPOINT
+        : PHASE_1_ANCHORS.KAYETPARA_METAL_WORKSHOP;
+      const distanceM = isKamal ? 120 : 295;
+
+      // Board passenger into vehicle 3D seat
+      gameEngine?.boardPassenger(passengerId);
+
+      // Create and register stable repeatable trip
+      if (engine) {
+        const tripId = `fare_trip_${Date.now()}`;
+        const pickupPos = engine.player.position;
+        const tripDef = createRepeatableFareDefinition(
+          tripId,
+          passengerNameBn,
+          passengerNameEn,
+          pickupPos,
+          dropoffPos,
+          distanceM
+        );
+        engine.missions.registerDefinition(tripDef);
+        activateMission(tripId);
+        useGameStore.getState().syncFromEngine();
+        showToast(`${passengerNameBn} রিকশায় উঠেছেন! গন্তব্যে চলুন`, 3500);
       }
     }
 
@@ -38,7 +125,7 @@ export const DialogueBox: React.FC = () => {
     } else {
       closeDialogue();
     }
-  }, [activateMission, completeObjective, closeDialogue, setDialogueNode]);
+  }, [activateMission, completeObjective, finishMission, showToast, closeDialogue, setDialogueNode, currentTreeId]);
 
   // Keyboard shortcut support: [1], [2], [Escape]
   useEffect(() => {

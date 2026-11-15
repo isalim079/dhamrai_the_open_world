@@ -16,6 +16,7 @@ export interface InputState {
   toggleJournal: boolean;   // 'J' key pressed this frame
   toggleInventory: boolean; // 'I' key pressed this frame
   toggleDebug: boolean;     // 'F3' key pressed this frame
+  toggleMute: boolean;      // 'M' key pressed this frame
   mouseDeltaX: number;
   mouseDeltaY: number;
 }
@@ -68,6 +69,7 @@ export class InputManager {
     if (k === 'j') return 'KeyJ';
     if (k === 'i') return 'KeyI';
     if (k === 'v') return 'KeyV';
+    if (k === 'm') return 'KeyM';
     if (k === ' ') return 'Space';
     if (e.key === 'F3') return 'F3';
     return e.key;
@@ -128,6 +130,7 @@ export class InputManager {
     const toggleJournal = this.justPressed.has('KeyJ');
     const toggleInventory = this.justPressed.has('KeyI');
     const toggleDebug = this.justPressed.has('F3');
+    const toggleMute = this.justPressed.has('KeyM');
 
     const state: InputState = {
       forward,
@@ -143,6 +146,7 @@ export class InputManager {
       toggleJournal,
       toggleInventory,
       toggleDebug,
+      toggleMute,
       mouseDeltaX: this.mouseDeltaX,
       mouseDeltaY: this.mouseDeltaY,
     };

@@ -152,6 +152,11 @@ export class CharacterController {
     );
   }
 
+  public resetTransform(pos: WorldPosition, heading: number = 0.0): void {
+    this.heading = heading;
+    this.resetPosition(pos);
+  }
+
   public dispose(): void {
     if (this.controller) {
       this.physics.world.removeCharacterController(this.controller);

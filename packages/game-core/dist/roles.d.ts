@@ -4,7 +4,7 @@
  * Declares the initial archetype state, vehicle rental rules,
  * starting documents, and starting inventory for the Rickshaw Driver.
  */
-import { WorldPosition } from '@dhamrai/shared-contracts';
+import { WorldPosition, NPCEntityDefinition } from '@dhamrai/shared-contracts';
 import { InventoryItem } from './inventory.js';
 export declare const RICKSHAW_STARTING_CASH_TAKAS = 250;
 export declare const RICKSHAW_STARTING_CASH_MINOR_UNITS = 25000;
@@ -12,6 +12,9 @@ export declare const RICKSHAW_STARTING_CASH_POISHA = 25000;
 export declare const RICKSHAW_DAILY_RENT_MINOR_UNITS = 5000;
 export declare const RICKSHAW_DAILY_RENT_POISHA = 5000;
 export declare const RICKSHAW_LICENSE_SLIP_ITEM: InventoryItem;
+export declare const BRASS_BELLS_CARGO_ITEM: InventoryItem;
+export declare const FARE_PASSENGER_KAMAL: NPCEntityDefinition;
+export declare const FARE_PASSENGER_SUFIA: NPCEntityDefinition;
 export interface PlayerReputationScores {
     transportReputation: number;
     civicTrust: number;

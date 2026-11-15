@@ -14,6 +14,7 @@ export const Minimap: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const playerPosition = useSessionStore((s) => s.playerPosition);
   const playerHeading = useSessionStore((s) => s.playerHeading);
+  const npcPositions = useSessionStore((s) => s.npcPositions);
   const currentMissionId = useGameStore((s) => s.currentActiveMissionId);
   const allMissions = useGameStore((s) => s.allMissions);
 
@@ -144,18 +145,25 @@ export const Minimap: React.FC = () => {
       }
     }
 
-    // Draw Story NPCs
-    // Farhana: (15, -10)
-    ctx.beginPath();
-    ctx.arc(toRadarX(15.0), toRadarY(-10.0), 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#58a6ff';
-    ctx.fill();
-
-    // Rafiq: (-61, 66.5)
-    ctx.beginPath();
-    ctx.arc(toRadarX(-61.0), toRadarY(66.5), 3.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#e3b341';
-    ctx.fill();
+    // Draw Dynamic NPCs
+    for (const npc of npcPositions) {
+      if (npc.isBoarded) continue; // Do not draw boarded NPCs on foot
+      const dist = Math.hypot(npc.position.x - playerPosition.x, npc.position.z - playerPosition.z);
+      if (dist <= radarRadiusM) {
+        ctx.beginPath();
+        ctx.arc(toRadarX(npc.position.x), toRadarY(npc.position.z), 3.5, 0, Math.PI * 2);
+        if (npc.role === 'POLICE_PATROL') {
+          ctx.fillStyle = '#e3b341'; // Gold badge for police
+        } else if (npc.role === 'ARTISAN') {
+          ctx.fillStyle = '#f0883e'; // Orange for brass artisan
+        } else if (npc.role === 'STORY_PASSENGER') {
+          ctx.fillStyle = '#58a6ff'; // Cyan for passengers
+        } else {
+          ctx.fillStyle = '#8b949e'; // Gray for ambient pedestrians
+        }
+        ctx.fill();
+      }
+    }
 
     // Player Blip (Center of radar)
     ctx.save();

@@ -130,6 +130,10 @@ export interface MissionDefinition {
   currency: CurrencyCode;
   reputationDelta: number;
   objectives: MissionObjective[];
+  prerequisites?: string[];
+  repeatPolicy?: 'once' | 'cooldown' | 'repeatable';
+  cooldownMs?: number;
+  reputationCategory?: 'transport' | 'civic' | 'artisan';
 }
 
 /**
@@ -339,7 +343,13 @@ export interface DialogueChoice {
   textBn: string;
   textEn: string;
   nextNodeId?: string;
-  actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'CLOSE_DIALOGUE';
+  actionTrigger?:
+    | 'START_MISSION_1'
+    | 'BOARD_PASSENGER'
+    | 'INSPECT_DOCUMENTS'
+    | 'PICKUP_CARGO'
+    | 'START_FARE'
+    | 'CLOSE_DIALOGUE';
 }
 
 export interface DialogueNode {

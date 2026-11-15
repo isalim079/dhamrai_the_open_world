@@ -31,6 +31,7 @@ export declare class GameCoreEngine {
     get worldFlags(): Record<string, boolean | number | string>;
     updatePlayerPosition(newPos: WorldPosition, headingRad?: number): void;
     setInVehicle(inVehicle: boolean): void;
+    updateVehicleState(speedMps?: number, steeringAngleRad?: number, damagePercent?: number): void;
     setWorldFlag(key: string, value: boolean | number | string): void;
     getWorldFlag<T extends boolean | number | string>(key: string): T | undefined;
     /**

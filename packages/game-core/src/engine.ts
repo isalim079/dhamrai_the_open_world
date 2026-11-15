@@ -152,6 +152,12 @@ export class GameCoreEngine {
     this._player.isInVehicle = inVehicle;
   }
 
+  public updateVehicleState(speedMps?: number, steeringAngleRad?: number, damagePercent?: number): void {
+    if (speedMps !== undefined) this._player.vehicleState.speedMps = speedMps;
+    if (steeringAngleRad !== undefined) this._player.vehicleState.steeringAngleRad = steeringAngleRad;
+    if (damagePercent !== undefined) this._player.vehicleState.damagePercent = damagePercent;
+  }
+
   public setWorldFlag(key: string, value: boolean | number | string): void {
     this._worldFlags.set(key, value);
   }
@@ -184,9 +190,11 @@ export class GameCoreEngine {
       missionId,
       this._economy,
       (repDelta) => {
-        if (missionId.includes('artisan')) {
+        const def = this._missions.getDefinition(missionId);
+        const category = def?.reputationCategory;
+        if (category === 'artisan' || (!category && missionId.includes('artisan'))) {
           this._player.reputations.artisanGuildTrust += repDelta;
-        } else if (missionId.includes('police')) {
+        } else if (category === 'civic' || (!category && missionId.includes('police'))) {
           this._player.reputations.civicTrust += repDelta;
         } else {
           this._player.reputations.transportReputation += repDelta;

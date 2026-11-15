@@ -271,6 +271,17 @@ export class RickshawVehicle {
     this.body.setTranslation({ x: pos.x, y: pos.y + 0.4, z: pos.z }, true);
   }
 
+  public resetTransform(pos: WorldPosition, heading: number = 0.0): void {
+    this.speedMps = 0.0;
+    this.steeringAngle = 0.0;
+    this.heading = heading;
+    this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    this.body.setTranslation({ x: pos.x, y: pos.y + 0.4, z: pos.z }, true);
+    const halfH = heading * 0.5;
+    this.body.setRotation({ x: 0, y: Math.sin(halfH), z: 0, w: Math.cos(halfH) }, true);
+  }
+
   public dispose(): void {
     if (this.collider) {
       this.physics.removeCollider(this.collider);

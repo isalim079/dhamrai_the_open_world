@@ -8,6 +8,7 @@
  */
 
 import { PHASE_1_ANCHORS, WorldManifest, WorldPosition } from '@dhamrai/shared-contracts';
+import { FARE_PASSENGER_KAMAL, FARE_PASSENGER_SUFIA } from '@dhamrai/game-core';
 import { WebGLRendererManager } from './Renderer.js';
 import { SceneManager } from './SceneManager.js';
 import { PhysicsWorld } from './PhysicsWorld.js';
@@ -22,6 +23,11 @@ import { TrafficManager } from './TrafficManager.js';
 import { useSessionStore } from '../state/useSessionStore.js';
 import { useGameStore } from '../state/useGameStore.js';
 import { useUIStore } from '../state/useUIStore.js';
+
+let activeGameEngineInstance: GameEngine | null = null;
+export function getActiveGameEngine(): GameEngine | null {
+  return activeGameEngineInstance;
+}
 
 export class GameEngine {
   public rendererManager!: WebGLRendererManager;
@@ -46,11 +52,14 @@ export class GameEngine {
   public isInVehicle = false;
 
   public async init(canvas: HTMLCanvasElement): Promise<void> {
-    // 1. Expose engine & store instances on window for UI triggers & live debugging
-    if (typeof window !== 'undefined') {
+    activeGameEngineInstance = this;
+
+    // 1. Expose engine & store instances on window for DEV debugging
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
       (window as any).__dhamrai_engine = this;
       (window as any).__dhamrai_useUIStore = useUIStore;
       (window as any).__dhamrai_useGameStore = useGameStore;
+      (window as any).__dhamrai_useSessionStore = useSessionStore;
     }
 
     // 2. Initialize Renderer & Scene
@@ -83,7 +92,10 @@ export class GameEngine {
     // 9. Initialize Domain Game State & Dexie Local Persistence
     await useGameStore.getState().initGame();
 
-    // 10. Initialize Chunk Streaming
+    // 10. Reconcile restored domain player transform and vehicle occupancy
+    this.applyDomainToRuntime();
+
+    // 11. Initialize Chunk Streaming
     this.chunkLoader = new ChunkLoader(this.physics);
     this.chunkStreamer = new ChunkStreamer(this.chunkLoader, this.sceneManager.scene);
 
@@ -92,13 +104,14 @@ export class GameEngine {
       useSessionStore.getState().setLoadedChunkCount(count);
     };
 
-    // 11. Load World Manifest & Start Initial Chunk Streaming
+    // 12. Load World Manifest & Start Initial Chunk Streaming
     await this.loadWorldManifest();
 
-    // 12. Initial position stream around Rathkhola Stand
-    await this.chunkStreamer.updatePlayerPosition({ x: 0.0, y: 0.0, z: 0.0 });
+    // 13. Initial position stream around restored player coordinates
+    const initialPos = this.isInVehicle ? this.rickshaw.getPosition() : this.character.getPosition();
+    await this.chunkStreamer.updatePlayerPosition(initialPos);
 
-    // 13. Window resize listener
+    // 14. Window resize listener
     window.addEventListener('resize', this.onResize);
     this.onResize();
   }
@@ -126,20 +139,77 @@ export class GameEngine {
   }
 
   /**
-   * Action trigger invoked when Farhana agrees to board the rickshaw during dialogue.
+   * Boards any passenger NPC into the rickshaw passenger seat.
    */
-  public boardPassengerFarhana(): boolean {
+  public boardPassenger(npcId: string): boolean {
     const seatPos = this.rickshaw.getPassengerSeatPosition();
-    const boarded = this.npcManager.boardPassenger(
-      'npc_student_farhana',
+    return this.npcManager.boardPassenger(
+      npcId,
       this.sceneManager.rickshawMesh,
       seatPos
     );
+  }
+
+  /**
+   * Action trigger invoked when Farhana agrees to board the rickshaw during dialogue.
+   */
+  public boardPassengerFarhana(): boolean {
+    const boarded = this.boardPassenger('npc_student_farhana');
     if (boarded) {
       useSessionStore.getState().setStatusMessage('ফারহানা উঠেছে! (Farhana boarded — Drive to Hardinge School Gate)');
       useGameStore.getState().showToast('ফারহানা রিকশায় উঠেছে। গন্তব্য: হরগোবিন্দ স্কুল গেট।', 3500);
     }
     return boarded;
+  }
+
+  /**
+   * Synchronizes actual 3D runtime transforms and vehicle state into the domain engine.
+   * MUST be called before saving or creating save envelopes.
+   */
+  public syncRuntimeToDomain(): void {
+    const engine = useGameStore.getState().engine;
+    if (!engine) return;
+
+    const curPos = this.isInVehicle ? this.rickshaw.getPosition() : this.character.getPosition();
+    const curHeading = this.isInVehicle ? this.rickshaw.heading : this.character.heading;
+
+    engine.updatePlayerPosition(curPos, curHeading);
+    engine.setInVehicle(this.isInVehicle);
+    engine.updateVehicleState(
+      this.rickshaw.speedMps,
+      this.rickshaw.steeringAngle,
+      0
+    );
+  }
+
+  /**
+   * Reconciles domain player transform and vehicle state to the 3D runtime entities.
+   * MUST be called after save hydration (local load, cloud restore, conflict resolution).
+   */
+  public applyDomainToRuntime(): void {
+    const engine = useGameStore.getState().engine;
+    if (!engine) return;
+
+    const p = engine.player;
+    if (p.isInVehicle) {
+      this.isInVehicle = true;
+      this.rickshaw.isOccupied = true;
+      this.rickshaw.resetTransform(p.position, p.headingRadians);
+      this.character.resetTransform(this.rickshaw.getDriverSeatPosition(), p.headingRadians);
+      useSessionStore.getState().setIsInVehicle(true);
+    } else {
+      this.isInVehicle = false;
+      this.rickshaw.isOccupied = false;
+      this.character.resetTransform(p.position, p.headingRadians);
+      useSessionStore.getState().setIsInVehicle(false);
+    }
+
+    useSessionStore.getState().setPlayerPosition(p.position);
+    useSessionStore.getState().setPlayerHeading(p.headingRadians);
+
+    if (this.chunkStreamer) {
+      this.chunkStreamer.updatePlayerPosition(p.position);
+    }
   }
 
   public start(): void {
@@ -343,6 +413,7 @@ export class GameEngine {
     // 10. Update NPCs and Ambient Traffic AI
     this.npcManager.update(dt);
     this.trafficManager.update(dt, curPos, this.rickshaw.getPosition());
+    useSessionStore.getState().setNpcPositions(this.npcManager.getDynamicNPCPositions());
 
     // 11. Mission 1 Drop-off Detection (Hardinge High School Gate)
     const farhana = this.npcManager.npcs.get('npc_student_farhana');
@@ -366,7 +437,104 @@ export class GameEngine {
       }
     }
 
-    // 12. Contextual Interaction Prompts
+    // 12. Mission 2 Checkpoint Arrival Detection (Thana Junction, 12m)
+    const m2Inst = useGameStore.getState().allMissions['mission_2_police_checkpoint'];
+    if (
+      m2Inst &&
+      m2Inst.state === 'ACTIVE' &&
+      !m2Inst.completedObjectiveIds.includes('obj_m2_approach')
+    ) {
+      const distToCheckpoint = Math.hypot(
+        curPos.x - PHASE_1_ANCHORS.THANA_JUNCTION_CHECKPOINT.x,
+        curPos.z - PHASE_1_ANCHORS.THANA_JUNCTION_CHECKPOINT.z
+      );
+      if (distToCheckpoint <= 12.0) {
+        useGameStore.getState().completeObjective('mission_2_police_checkpoint', 'obj_m2_approach');
+        useSessionStore.getState().setStatusMessage('থানা মোড় চেকপোস্টে পৌঁছেছেন। [E] কথা বলুন');
+      }
+    }
+
+    // 13. Mission 3 Cargo Delivery Detection (Rathkhola Origin, 15m)
+    const m3Inst = useGameStore.getState().allMissions['mission_3_artisan_order'];
+    if (
+      m3Inst &&
+      m3Inst.state === 'ACTIVE' &&
+      m3Inst.completedObjectiveIds.includes('obj_m3_collect_cargo') &&
+      !m3Inst.completedObjectiveIds.includes('obj_m3_deliver_cargo')
+    ) {
+      const distToRathkhola = Math.hypot(
+        curPos.x - PHASE_1_ANCHORS.RATHKHOLA_ORIGIN.x,
+        curPos.z - PHASE_1_ANCHORS.RATHKHOLA_ORIGIN.z
+      );
+      if (distToRathkhola <= 15.0) {
+        useGameStore.getState().completeObjective('mission_3_artisan_order', 'obj_m3_deliver_cargo');
+        useGameStore.getState().finishMission('mission_3_artisan_order');
+        const eng = useGameStore.getState().engine;
+        if (eng) {
+          eng.inventory.removeItem('brass_bells_cargo', 1);
+        }
+        useGameStore.getState().syncFromEngine();
+        useSessionStore.getState().setStatusMessage('🎉 কাঁসার মালামাল খালাস সম্পন্ন! ৳৭৫ অর্জিত (+১০ কারিগর আস্থা)');
+      }
+    }
+
+    // 14. Repeatable Fare Drop-off Detection (Kamal at Thana, Sufia at Kayetpara)
+    const kamal = this.npcManager.npcs.get('npc_passenger_kamal');
+    const sufia = this.npcManager.npcs.get('npc_passenger_sufia');
+    const activeFareNpc = (kamal && kamal.isBoarded) ? kamal : (sufia && sufia.isBoarded) ? sufia : null;
+
+    if (activeFareNpc) {
+      const dropoffAnchor = activeFareNpc.definition.id === 'npc_passenger_kamal'
+        ? PHASE_1_ANCHORS.THANA_JUNCTION_CHECKPOINT
+        : PHASE_1_ANCHORS.KAYETPARA_METAL_WORKSHOP;
+
+      const distToDropoff = Math.hypot(
+        curPos.x - dropoffAnchor.x,
+        curPos.z - dropoffAnchor.z
+      );
+
+      if (distToDropoff <= 15.0) {
+        // Despawn boarded fare passenger cleanly
+        this.npcManager.despawnFarePassenger(activeFareNpc.definition.id);
+
+        // Find active repeatable fare trip ID
+        const activeMissions = useGameStore.getState().activeMissions;
+        const fareTripEntry = Object.entries(activeMissions).find(([id]) => id.startsWith('fare_trip_'));
+        if (fareTripEntry) {
+          const tripId = fareTripEntry[0];
+          useGameStore.getState().completeObjective(tripId, 'obj_fare_dropoff');
+          useGameStore.getState().finishMission(tripId);
+        }
+
+        const eng = useGameStore.getState().engine;
+        if (eng) {
+          const now = Date.now();
+          eng.setWorldFlag('fareNpcCooldownMs', now + 60000); // 60s cooldown
+          const totalFares = ((eng.getWorldFlag<number>('totalFaresCompleted') as number) ?? 0) + 1;
+          eng.setWorldFlag('totalFaresCompleted', totalFares);
+        }
+
+        useSessionStore.getState().setStatusMessage('🎉 যাত্রী নামানো হয়েছে! ভাড়া পরিশোধ করা হয়েছে।');
+      }
+    }
+
+    // 15. Repeatable Fare Spawner: spawns Kamal or Sufia after Mission 1 completes and cooldown passes
+    const m1Inst = useGameStore.getState().allMissions['mission_1_first_fare'];
+    if (m1Inst && m1Inst.state === 'COMPLETED') {
+      const eng = useGameStore.getState().engine;
+      const cooldownEnd = (eng?.getWorldFlag<number>('fareNpcCooldownMs') as number) ?? 0;
+      const hasKamal = this.npcManager.npcs.has('npc_passenger_kamal');
+      const hasSufia = this.npcManager.npcs.has('npc_passenger_sufia');
+
+      if (!hasKamal && !hasSufia && Date.now() >= cooldownEnd) {
+        const totalFares = (eng?.getWorldFlag<number>('totalFaresCompleted') as number) ?? 0;
+        const fareDef = totalFares % 2 === 0 ? FARE_PASSENGER_KAMAL : FARE_PASSENGER_SUFIA;
+        this.npcManager.spawnFareNPC(fareDef);
+        useSessionStore.getState().setStatusMessage(`নতুন যাত্রী (${fareDef.nameEn}) রথখোলা স্ট্যান্ডে অপেক্ষা করছেন [E]`);
+      }
+    }
+
+    // 16. Contextual Interaction Prompts
     if (!isUIBlocking) {
       const nearbyNPC = this.npcManager.getNearbyInteractiveNPC(curPos, 2.5);
       if (nearbyNPC && !nearbyNPC.isBoarded) {
@@ -397,6 +565,9 @@ export class GameEngine {
   }
 
   public dispose(): void {
+    if (activeGameEngineInstance === this) {
+      activeGameEngineInstance = null;
+    }
     this.stop();
     window.removeEventListener('resize', this.onResize);
     if (typeof window !== 'undefined' && (window as any).__dhamrai_engine === this) {

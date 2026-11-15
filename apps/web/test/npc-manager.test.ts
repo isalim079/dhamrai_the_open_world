@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { NPCManager, STORY_NPCS } from '../src/engine/NPCManager.js';
 import { PhysicsWorld } from '../src/engine/PhysicsWorld.js';
 import { PHASE_1_ANCHORS } from '@dhamrai/shared-contracts';
+import { FARE_PASSENGER_KAMAL, FARE_PASSENGER_SUFIA } from '@dhamrai/game-core';
 
 describe('NPCManager — Spawning, Proximity & Passenger Transitions', () => {
   let scene: THREE.Scene;
@@ -70,5 +71,33 @@ describe('NPCManager — Spawning, Proximity & Passenger Transitions', () => {
     expect(farhana?.isBoarded).toBe(false);
     expect(farhana?.mesh.parent).toBe(scene);
     expect(farhana?.currentPosition.x).toBeCloseTo(dropoffPos.x);
+  });
+
+  it('should spawn repeatable fare NPC (Kamal, Sufia) and cleanly despawn without body accumulation (AC-M9-04)', () => {
+    // Spawn Kamal
+    const initialColliderCount = physics.world.colliders.len();
+    const kamalInst = npcManager.spawnFareNPC(FARE_PASSENGER_KAMAL);
+    expect(kamalInst).toBeDefined();
+    expect(npcManager.npcs.has('npc_passenger_kamal')).toBe(true);
+    expect(physics.world.colliders.len()).toBe(initialColliderCount + 1);
+
+    // Dynamic projection includes Kamal
+    const dynamicPositions = npcManager.getDynamicNPCPositions();
+    const kamalEntry = dynamicPositions.find((p) => p.id === 'npc_passenger_kamal');
+    expect(kamalEntry).toBeDefined();
+    expect(kamalEntry?.nameBn).toBe('কামাল মিয়া (যাত্রী)');
+
+    // Despawn Kamal: collider is removed cleanly
+    const despawned = npcManager.despawnFarePassenger('npc_passenger_kamal');
+    expect(despawned).toBe(true);
+    expect(npcManager.npcs.has('npc_passenger_kamal')).toBe(false);
+    expect(physics.world.colliders.len()).toBe(initialColliderCount);
+
+    // Spawn Sufia
+    const sufiaInst = npcManager.spawnFareNPC(FARE_PASSENGER_SUFIA);
+    expect(sufiaInst).toBeDefined();
+    expect(npcManager.npcs.has('npc_passenger_sufia')).toBe(true);
+    npcManager.despawnFarePassenger('npc_passenger_sufia');
+    expect(physics.world.colliders.len()).toBe(initialColliderCount);
   });
 });

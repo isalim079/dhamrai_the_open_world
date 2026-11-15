@@ -26,6 +26,42 @@ export const RICKSHAW_LICENSE_SLIP_ITEM = {
         isValid: true,
     },
 };
+export const BRASS_BELLS_CARGO_ITEM = {
+    id: 'brass_bells_cargo',
+    nameBn: 'পিতলের ঘণ্টা ও পাত্রের চালান',
+    nameEn: 'Brass Bells & Vessels Consignment',
+    category: 'CARGO',
+    quantity: 1,
+    isStackable: false,
+    maxStackSize: 1,
+    descriptionBn: 'গৌরাঙ্গ কর্মকারের কর্মশালা থেকে রথখোলা স্ট্যান্ডে পৌঁছে দেওয়ার ঐতিহ্যবাহী কাঁসা-পিতলের তৈরি ঘণ্টা।',
+    descriptionEn: 'Traditional brass craft bells and ritual vessels from Gouranga Karmakar workshop for Rathkhola stand.',
+    metadata: {
+        origin: 'Kayetpara Metal Workshop',
+        destination: 'Rathkhola Stand',
+        weightKg: 12,
+    },
+};
+export const FARE_PASSENGER_KAMAL = {
+    id: 'npc_passenger_kamal',
+    nameBn: 'কামাল মিয়া (যাত্রী)',
+    nameEn: 'Kamal Mia (Passenger)',
+    role: 'STORY_PASSENGER',
+    spawnPosition: { x: 8.0, y: 0.0, z: -5.0 },
+    spawnHeadingRadians: Math.PI * 0.5,
+    dialogueTreeId: 'dialogue_fare_kamal',
+    isBoardablePassenger: true,
+};
+export const FARE_PASSENGER_SUFIA = {
+    id: 'npc_passenger_sufia',
+    nameBn: 'সুফিয়া বেগম (যাত্রী)',
+    nameEn: 'Sufia Begum (Passenger)',
+    role: 'STORY_PASSENGER',
+    spawnPosition: { x: -12.0, y: 0.0, z: 8.0 },
+    spawnHeadingRadians: Math.PI * 0.25,
+    dialogueTreeId: 'dialogue_fare_sufia',
+    isBoardablePassenger: true,
+};
 export function createInitialRickshawDriverState() {
     return {
         roleId: 'rickshaw_driver',

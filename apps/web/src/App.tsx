@@ -22,7 +22,7 @@ export const App: React.FC = () => {
   const isDebugOverlayVisible = useUIStore((s) => s.isDebugOverlayVisible);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (import.meta.env.DEV && typeof window !== 'undefined') {
       (window as any).__useAuthStore = useAuthStore;
       (window as any).__cloudSaveService = cloudSaveService;
       (window as any).addEventListener('dhamrai_test_conflict', (e: any) => {

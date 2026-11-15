@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GameCoreEngine } from '../src/engine.js';
+import { createRepeatableFareDefinition } from '../src/missions.js';
 import { PHASE_1_ANCHORS } from '@dhamrai/shared-contracts';
 
 describe('GameCoreEngine — Aggregate Root & Save Envelope Hydration', () => {
@@ -111,5 +112,84 @@ describe('GameCoreEngine — Aggregate Root & Save Envelope Hydration', () => {
     expect(doubleRewardAttempt.payoutApplied).toBe(false);
     expect(restoredEngine.economy.balanceMinorUnits).toBe(23000); // Balance remains exactly 23,000!
     expect(restoredEngine.player.reputations.transportReputation).toBe(15);
+  });
+
+  it('determines reputation routing deterministically across M1, M2, and M3 (AC-M9-18)', () => {
+    const engine = GameCoreEngine.createNewGame(1000);
+
+    // Initial baseline reputations
+    expect(engine.player.reputations.transportReputation).toBe(10);
+    expect(engine.player.reputations.civicTrust).toBe(10);
+    expect(engine.player.reputations.artisanGuildTrust).toBe(0);
+
+    // 1. Mission 1 completes -> increments transportReputation (+5)
+    engine.missions.activateMission('mission_1_first_fare', 2000);
+    engine.missions.completeObjective('mission_1_first_fare', 'obj_m1_pickup');
+    engine.missions.completeObjective('mission_1_first_fare', 'obj_m1_dropoff');
+    engine.completeMission('mission_1_first_fare', 3000);
+
+    expect(engine.player.reputations.transportReputation).toBe(15);
+    expect(engine.player.reputations.civicTrust).toBe(10);
+    expect(engine.player.reputations.artisanGuildTrust).toBe(0);
+
+    // 2. Mission 2 activates and completes -> increments civicTrust (+5)
+    engine.missions.activateMission('mission_2_police_checkpoint', 4000);
+    engine.missions.completeObjective('mission_2_police_checkpoint', 'obj_m2_approach');
+    engine.missions.completeObjective('mission_2_police_checkpoint', 'obj_m2_show_docs');
+    engine.completeMission('mission_2_police_checkpoint', 5000);
+
+    expect(engine.player.reputations.transportReputation).toBe(15);
+    expect(engine.player.reputations.civicTrust).toBe(15);
+    expect(engine.player.reputations.artisanGuildTrust).toBe(0);
+
+    // 3. Mission 3 activates and completes -> increments artisanGuildTrust (+10)
+    engine.missions.activateMission('mission_3_artisan_order', 6000);
+    engine.missions.completeObjective('mission_3_artisan_order', 'obj_m3_collect_cargo');
+    engine.missions.completeObjective('mission_3_artisan_order', 'obj_m3_deliver_cargo');
+    engine.completeMission('mission_3_artisan_order', 7000);
+
+    expect(engine.player.reputations.transportReputation).toBe(15);
+    expect(engine.player.reputations.civicTrust).toBe(15);
+    expect(engine.player.reputations.artisanGuildTrust).toBe(10);
+  });
+
+  it('supports full mission progression chain and repeatable fare persistence across save/load', () => {
+    const engine = GameCoreEngine.createNewGame(1000);
+
+    // Complete M1
+    engine.missions.activateMission('mission_1_first_fare');
+    engine.missions.completeObjective('mission_1_first_fare', 'obj_m1_pickup');
+    engine.missions.completeObjective('mission_1_first_fare', 'obj_m1_dropoff');
+    engine.completeMission('mission_1_first_fare');
+
+    // Register & complete a repeatable fare trip
+    const fareDef = createRepeatableFareDefinition(
+      'fare_trip_001',
+      'কামাল মিয়া',
+      'Kamal Mia',
+      { x: 0, y: 0, z: 0 },
+      { x: 200, y: 0, z: 200 },
+      280
+    );
+    engine.missions.registerDefinition(fareDef);
+    engine.missions.activateMission('fare_trip_001');
+    engine.missions.completeObjective('fare_trip_001', 'obj_fare_dropoff');
+    const fareRes = engine.completeMission('fare_trip_001');
+
+    expect(fareRes.success).toBe(true);
+    expect(fareRes.payoutApplied).toBe(true);
+    expect(fareRes.payoutMinorUnits).toBe(2240); // 280 * 8 = 2240
+
+    // Save and hydrate
+    const save = engine.toSaveEnvelope('slot_rep', 'Repeatable Test');
+    expect(save.missions['fare_trip_001']?.state).toBe('COMPLETED');
+
+    const loaded = GameCoreEngine.fromSaveEnvelope(save);
+    expect(loaded.missions.getInstance('fare_trip_001')?.state).toBe('COMPLETED');
+    expect(loaded.economy.balanceMinorUnits).toBe(engine.economy.balanceMinorUnits);
+
+    // Payout cannot be reclaimed on loaded engine
+    const reloadPayout = loaded.completeMission('fare_trip_001');
+    expect(reloadPayout.payoutApplied).toBe(false);
   });
 });

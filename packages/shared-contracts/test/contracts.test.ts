@@ -227,4 +227,53 @@ describe('Shared Contracts & Spatial Reference System', () => {
       expect(fs.existsSync(glbPath)).toBe(true);
     }
   });
+
+  it('validates MissionDefinition contract extensions (prerequisites, repeatPolicy, reputationCategory)', () => {
+    const missionDef: import('../src/index.js').MissionDefinition = {
+      id: 'test_mission',
+      bengaliTitle: 'টেস্ট মিশন',
+      englishTitle: 'Test Mission',
+      description: 'Test mission description',
+      rewardMinorUnits: 3000,
+      currency: 'BDT',
+      reputationDelta: 5,
+      prerequisites: ['mission_1_first_fare'],
+      repeatPolicy: 'cooldown',
+      cooldownMs: 60000,
+      reputationCategory: 'civic',
+      objectives: [
+        {
+          id: 'obj_1',
+          bengaliTitle: 'উদ্দেশ্য ১',
+          description: 'Objective 1',
+          targetPosition: { x: 10, y: 0, z: 10 },
+          completionRadiusM: 5,
+          isCompleted: false,
+        },
+      ],
+    };
+
+    expect(missionDef.prerequisites).toEqual(['mission_1_first_fare']);
+    expect(missionDef.repeatPolicy).toBe('cooldown');
+    expect(missionDef.reputationCategory).toBe('civic');
+    expect(missionDef.cooldownMs).toBe(60000);
+  });
+
+  it('validates DialogueChoice actionTrigger union extensions (PICKUP_CARGO, START_FARE)', () => {
+    const choice1: import('../src/index.js').DialogueChoice = {
+      id: 'c1',
+      textBn: 'পণ্য নিন',
+      textEn: 'Pick up cargo',
+      actionTrigger: 'PICKUP_CARGO',
+    };
+    const choice2: import('../src/index.js').DialogueChoice = {
+      id: 'c2',
+      textBn: 'যাত্রী তুলুন',
+      textEn: 'Pick up passenger',
+      actionTrigger: 'START_FARE',
+    };
+
+    expect(choice1.actionTrigger).toBe('PICKUP_CARGO');
+    expect(choice2.actionTrigger).toBe('START_FARE');
+  });
 });

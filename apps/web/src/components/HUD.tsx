@@ -28,8 +28,11 @@ export const HUD: React.FC = () => {
   const openSaveManager = useAuthStore((s) => s.openSaveManager);
   const openConflictModal = useAuthStore((s) => s.openConflictModal);
 
-  // Derive active mission definition & current objective
-  const missionDef = currentMissionId ? PHASE_1_MISSIONS[currentMissionId] : null;
+  // Derive active mission definition & current objective (supporting dynamic repeatable fare trips)
+  const engine = useGameStore((s) => s.engine);
+  const missionDef = currentMissionId && currentMissionId !== 'repeatable_fares'
+    ? (engine?.missions.getDefinition(currentMissionId) || PHASE_1_MISSIONS[currentMissionId] || null)
+    : null;
   const missionInst = currentMissionId ? allMissions[currentMissionId] : null;
 
   let currentObjective = null;
@@ -272,7 +275,32 @@ export const HUD: React.FC = () => {
         )}
 
         {/* Mission & Objective Tracker */}
-        {missionDef && (
+        {currentMissionId === 'repeatable_fares' ? (
+          <div
+            style={{
+              padding: '10px 16px',
+              backgroundColor: 'rgba(13, 17, 23, 0.9)',
+              border: '1px solid rgba(88, 166, 255, 0.5)',
+              borderRadius: '10px',
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              color: '#c9d1d9',
+              pointerEvents: 'none',
+              textAlign: 'right',
+              maxWidth: '320px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <div style={{ fontSize: '11px', color: '#58a6ff', fontWeight: 'bold', textTransform: 'uppercase' }}>
+              উন্মুক্ত শহর (Open World)
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#7ee787', marginTop: 2 }}>
+              যাত্রী পরিবহন চালু (Repeatable Fares)
+            </div>
+            <div style={{ marginTop: 4, fontSize: '12px', color: '#e3b341' }}>
+              রথখোলা স্ট্যান্ডে যাত্রীর সাথে কথা বলুন [E]
+            </div>
+          </div>
+        ) : missionDef ? (
           <div
             style={{
               padding: '10px 16px',
@@ -308,7 +336,7 @@ export const HUD: React.FC = () => {
               </div>
             )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Center Bottom: Contextual Action Prompt */}
@@ -375,7 +403,7 @@ export const HUD: React.FC = () => {
           pointerEvents: 'none',
         }}
       >
-        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে · [F3] ডিবাগ
+        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে{import.meta.env.DEV ? ' · [F3] ডিবাগ' : ''}
       </div>
     </>
   );

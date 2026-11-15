@@ -14,6 +14,7 @@ import type {
   InventoryItem,
 } from '@dhamrai/shared-contracts';
 import { cloudSaveService } from '../services/CloudSaveService.js';
+import { getActiveGameEngine } from '../engine/GameEngine.js';
 
 export interface GameState {
   engine: GameCoreEngine | null;
@@ -82,6 +83,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // 2. Hydrate engine from provided envelope, existing autosave, or create new game
     let engine: GameCoreEngine;
+    let isFresh = false;
     if (customEnvelope) {
       engine = GameCoreEngine.fromSaveEnvelope(customEnvelope);
     } else {
@@ -92,10 +94,31 @@ export const useGameStore = create<GameState>((set, get) => ({
           engine = await orchestrator.restoreEngine('Autosave');
         } else {
           engine = GameCoreEngine.createNewGame();
+          isFresh = true;
         }
       } catch {
         engine = GameCoreEngine.createNewGame();
+        isFresh = true;
       }
+    }
+
+    // 3. Process Daily Vehicle Rent on session resume for non-fresh saves
+    if (!isFresh) {
+      const lastRentMs = (engine.getWorldFlag<number>('lastRentChargedMs') as number) ?? 0;
+      const now = Date.now();
+      const TWENTY_HOURS_MS = 20 * 60 * 60 * 1000;
+      if (now - lastRentMs >= TWENTY_HOURS_MS) {
+        if (engine.economy.balanceMinorUnits >= 5000) {
+          engine.processDailyVehicleRent(now);
+          engine.setWorldFlag('lastRentChargedMs', now);
+          get().showToast('দৈনিক রিকশা ভাড়া: ৳৫০ কর্তন করা হয়েছে (Daily rent ৳50 paid)', 4000);
+        } else {
+          get().showToast('ভাড়া দেওয়ার মতো টাকা নেই! (Insufficient funds for daily rent)', 4000);
+        }
+      }
+    } else {
+      // Mark fresh game rent timestamp
+      engine.setWorldFlag('lastRentChargedMs', Date.now());
     }
 
     const slots = await orchestrator.listSlots();
@@ -108,6 +131,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     get().syncFromEngine();
+
+    // Reconcile 3D entities if GameEngine is mounted
+    getActiveGameEngine()?.applyDomainToRuntime();
   },
 
   syncFromEngine: () => {
@@ -127,8 +153,23 @@ export const useGameStore = create<GameState>((set, get) => ({
         if (!curActive) curActive = id;
       }
     }
-    // Default to first fare if none currently active
-    if (!curActive) curActive = 'mission_1_first_fare';
+
+    // Progression transition when no mission is currently ACTIVE
+    if (!curActive) {
+      if (allM['mission_1_first_fare']?.state === 'AVAILABLE') {
+        curActive = 'mission_1_first_fare';
+      } else if (allM['mission_2_police_checkpoint']?.state === 'AVAILABLE') {
+        curActive = 'mission_2_police_checkpoint';
+      } else if (allM['mission_3_artisan_order']?.state === 'AVAILABLE') {
+        curActive = 'mission_3_artisan_order';
+      } else if (
+        allM['mission_1_first_fare']?.state === 'COMPLETED' &&
+        allM['mission_2_police_checkpoint']?.state === 'COMPLETED' &&
+        allM['mission_3_artisan_order']?.state === 'COMPLETED'
+      ) {
+        curActive = 'repeatable_fares';
+      }
+    }
 
     set({
       cashMinorUnits: cash,
@@ -144,6 +185,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   saveGame: async (slotName = 'Autosave') => {
     const { engine, orchestrator } = get();
     if (!engine || !orchestrator) return false;
+
+    // Capture actual 3D runtime transforms and vehicle state before persisting
+    getActiveGameEngine()?.syncRuntimeToDomain();
 
     set({ isSaving: true });
     try {
@@ -176,6 +220,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       const engine = await orchestrator.restoreEngine(slotName);
       set({ engine });
       get().syncFromEngine();
+
+      // Reconcile 3D entities to restored domain state
+      getActiveGameEngine()?.applyDomainToRuntime();
+
       get().showToast(`লোড সম্পন্ন (Loaded: ${slotName})`, 2500);
       return true;
     } catch (err) {
@@ -205,6 +253,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       const slots = await orchestrator.listSlots();
       set({ saveSlots: slots });
       get().syncFromEngine();
+
+      // Reconcile 3D entities to imported domain state
+      getActiveGameEngine()?.applyDomainToRuntime();
+
       get().showToast('সংরক্ষণ ফাইল ইম্পোর্ট সম্পন্ন (Save Imported)', 3000);
       return true;
     } catch (err) {
@@ -242,9 +294,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     try {
       const res = engine.completeMission(missionId);
       get().syncFromEngine();
-      if (res.payoutApplied) {
+      if (res.payoutApplied || res.success) {
         const taka = (res.payoutMinorUnits ?? 0) / 100;
-        get().showToast(`🎉 মিশন সম্পন্ন! +৳${taka.toFixed(2)} | +${res.reputationDelta ?? 0} সুনাম`, 4000);
+        get().showToast(
+          `🎉 মিশন সম্পন্ন! +৳${taka.toFixed(2)} | +${res.reputationDelta ?? 0} সুনাম`,
+          4000
+        );
+
+        // Mission unlock notification for player guidance
+        if (missionId === 'mission_1_first_fare') {
+          setTimeout(() => {
+            get().showToast('নতুন মিশন উন্মুক্ত: চেকপোস্ট ও মালামাল পরিবহন! [J] ডায়েরি দেখুন', 4000);
+          }, 1500);
+        }
+
         // Trigger autosave on mission completion
         get().saveGame('Autosave').catch(() => {});
       }

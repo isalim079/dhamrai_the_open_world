@@ -7,17 +7,28 @@ export const JournalModal: React.FC = () => {
   const isJournalOpen = useUIStore((s) => s.isJournalOpen);
   const toggleJournal = useUIStore((s) => s.toggleJournal);
   const allMissions = useGameStore((s) => s.allMissions);
+  const engine = useGameStore((s) => s.engine);
 
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'COMPLETED' | 'LANDMARKS'>('ACTIVE');
 
   if (!isJournalOpen) return null;
 
-  const activeMissionList = Object.entries(PHASE_1_MISSIONS).filter(([id]) => {
+  const allMissionDefs: Record<string, import('@dhamrai/shared-contracts').MissionDefinition> = { ...PHASE_1_MISSIONS };
+  if (engine) {
+    for (const id of Object.keys(allMissions)) {
+      if (!allMissionDefs[id]) {
+        const def = engine.missions.getDefinition(id);
+        if (def) allMissionDefs[id] = def;
+      }
+    }
+  }
+
+  const activeMissionList = Object.entries(allMissionDefs).filter(([id]) => {
     const inst = allMissions[id];
     return inst ? inst.state === 'ACTIVE' || inst.state === 'AVAILABLE' : true;
   });
 
-  const completedMissionList = Object.entries(PHASE_1_MISSIONS).filter(([id]) => {
+  const completedMissionList = Object.entries(allMissionDefs).filter(([id]) => {
     const inst = allMissions[id];
     return inst && inst.state === 'COMPLETED';
   });

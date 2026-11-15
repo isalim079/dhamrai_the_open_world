@@ -63,4 +63,74 @@ describe('useGameStore & Persistence Bridge', () => {
     expect(updated.cashFormattedBdt).toBe('৳280.00');
     expect(updated.reputation).toBe(15);
   });
+
+  it('charges daily rent once per session on resume when > 20h elapsed (AC-M9-06, AC-M9-07)', async () => {
+    const store = useGameStore.getState();
+    const engine = store.engine!;
+
+    // Create save envelope where last rent was charged 25 hours ago
+    const envelope = engine.toSaveEnvelope('slot_rent_test', 'Rent Test');
+    envelope.worldFlags['lastRentChargedMs'] = Date.now() - 25 * 3600 * 1000;
+
+    // Resuming this non-fresh save triggers rent debit of exactly 5,000 Poisha (৳50.00)
+    await store.initGame(envelope);
+    const restored = useGameStore.getState();
+    expect(restored.cashMinorUnits).toBe(20000); // 25000 - 5000 = 20000 (৳200.00)
+    const rentTx = restored.engine?.economy.ledger.find((t) => t.category === 'VEHICLE_RENTAL');
+    expect(rentTx).toBeDefined();
+    expect(rentTx?.deltaMinorUnits).toBe(-5000);
+
+    // Immediate second resume within 20 hours does NOT debit rent again
+    const currentEnvelope = restored.engine!.toSaveEnvelope('slot_rent_test2', 'Rent Guard Test');
+    await store.initGame(currentEnvelope);
+    expect(useGameStore.getState().cashMinorUnits).toBe(20000); // Still 20000!
+  });
+
+  it('defers daily rent without going negative when balance is below ৳50', async () => {
+    const store = useGameStore.getState();
+    const engine = store.engine!;
+
+    // Debit most cash so balance is only ৳30 (3000 Poisha)
+    engine.economy.debit(22000, 'MAINTENANCE_COST', 'Drain cash for test');
+    expect(engine.economy.balanceMinorUnits).toBe(3000);
+
+    const envelope = engine.toSaveEnvelope('low_balance', 'Low Balance');
+    envelope.worldFlags['lastRentChargedMs'] = Date.now() - 25 * 3600 * 1000;
+
+    await store.initGame(envelope);
+    // Balance remains 3000 — NOT negative!
+    expect(useGameStore.getState().cashMinorUnits).toBe(3000);
+  });
+
+  it('transitions currentActiveMissionId from M1 -> M2/M3 -> repeatable fares (AC-M9-08)', () => {
+    const store = useGameStore.getState();
+    expect(store.currentActiveMissionId).toBe('mission_1_first_fare');
+
+    // Complete M1
+    store.activateMission('mission_1_first_fare');
+    store.completeObjective('mission_1_first_fare', 'obj_m1_pickup');
+    store.completeObjective('mission_1_first_fare', 'obj_m1_dropoff');
+    store.finishMission('mission_1_first_fare');
+
+    // Transitions to next available mission (M2)
+    expect(useGameStore.getState().currentActiveMissionId).toBe('mission_2_police_checkpoint');
+
+    // Complete M2
+    store.activateMission('mission_2_police_checkpoint');
+    store.completeObjective('mission_2_police_checkpoint', 'obj_m2_approach');
+    store.completeObjective('mission_2_police_checkpoint', 'obj_m2_show_docs');
+    store.finishMission('mission_2_police_checkpoint');
+
+    // Transitions to M3
+    expect(useGameStore.getState().currentActiveMissionId).toBe('mission_3_artisan_order');
+
+    // Complete M3
+    store.activateMission('mission_3_artisan_order');
+    store.completeObjective('mission_3_artisan_order', 'obj_m3_collect_cargo');
+    store.completeObjective('mission_3_artisan_order', 'obj_m3_deliver_cargo');
+    store.finishMission('mission_3_artisan_order');
+
+    // When all 3 core missions are complete, transitions to repeatable fares loop prompt!
+    expect(useGameStore.getState().currentActiveMissionId).toBe('repeatable_fares');
+  });
 });
