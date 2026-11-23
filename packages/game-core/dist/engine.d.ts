@@ -11,6 +11,7 @@ import { MissionDomain, MissionCompletionResult } from './missions.js';
 import { RickshawDriverArchetype } from './roles.js';
 import { RepairServiceId, SpeedModifiers, TravelWearResult } from './vehicle-condition.js';
 import { ConsumableItemId, StaminaTickResult } from './stamina.js';
+import { Infraction, PoliceStopState, InfractionContext } from './civic-enforcement.js';
 export interface PurchaseResult {
     success: boolean;
     reason?: 'INSUFFICIENT_FUNDS' | 'UNKNOWN_ITEM' | 'UNKNOWN_SERVICE';
@@ -20,12 +21,20 @@ export interface PurchaseResult {
     tirePressurePercent?: number;
     isPunctured?: boolean;
 }
+export interface FinePaymentResult {
+    success: boolean;
+    reason?: 'NO_ACTIVE_STOP' | 'ALREADY_PAID' | 'INSUFFICIENT_FUNDS';
+    transaction?: EconomyTransaction;
+    policeHeat?: number;
+    fineMinorUnits?: number;
+}
 export declare class GameCoreEngine {
     private readonly _economy;
     private readonly _inventory;
     private readonly _missions;
     private _player;
     private readonly _worldFlags;
+    private _activePoliceStop;
     constructor(economy: EconomyDomain, inventory: InventoryDomain, missions: MissionDomain, player: RickshawDriverArchetype, worldFlags?: Record<string, boolean | number | string>);
     /**
      * Initializes a brand new game session for the Rickshaw Driver role.
@@ -48,6 +57,31 @@ export declare class GameCoreEngine {
     get staminaPercent(): number;
     get tirePressurePercent(): number;
     get isPunctured(): boolean;
+    get policeHeat(): number;
+    get civicTrust(): number;
+    get activePoliceStop(): Readonly<PoliceStopState> | null;
+    get unpaidFineMinorUnits(): number;
+    /**
+     * Evaluate traffic infractions (speeding / flee). Does not mutate state.
+     */
+    evaluateInfraction(ctx: Omit<InfractionContext, 'hasActiveStop' | 'activeStop' | 'policeHeat' | 'lastStopMs'>): Infraction | null;
+    /**
+     * Open a police stop from an infraction; applies heat immediately.
+     */
+    beginPoliceStop(infraction: Infraction, stopPos: {
+        x: number;
+        z: number;
+    }, timestampMs?: number): PoliceStopState;
+    applyLicenseDiscountToStop(): PoliceStopState | null;
+    payFine(timestampMs?: number, customId?: string): FinePaymentResult;
+    markStopFleeing(): PoliceStopState | null;
+    /**
+     * Apply flee penalties onto the active stop (extra fine + heat).
+     */
+    applyFleePenalty(extraFineMinor: number, heatDelta: number, nowMs?: number): PoliceStopState | null;
+    clearPoliceStop(): void;
+    applyPoliceHeatDelta(delta: number): number;
+    decayPoliceHeat(dtSec: number): number;
     get isTeaBuffActive(): boolean;
     canSprint(): boolean;
     getSpeedModifiers(): SpeedModifiers;

@@ -15,6 +15,7 @@ import {
 } from '@dhamrai/shared-contracts';
 import { PhysicsWorld } from './PhysicsWorld.js';
 import type { DynamicNPCPosition } from '../state/useSessionStore.js';
+import { presenceForRole, type SchedulePhase } from './npcSchedules.js';
 
 export interface NPCInstance {
   definition: NPCEntityDefinition;
@@ -25,6 +26,9 @@ export interface NPCInstance {
   currentPosition: WorldPosition;
   waypoints?: WorldPosition[];
   waypointIndex?: number;
+  /** Milestone 16 — schedule-driven interactability */
+  scheduleInteractable?: boolean;
+  scheduleWalkMult?: number;
 }
 
 export const STORY_NPCS: NPCEntityDefinition[] = [
@@ -88,10 +92,32 @@ export class NPCManager {
   private readonly scene: THREE.Scene;
   private readonly physics: PhysicsWorld;
   public npcs: Map<string, NPCInstance> = new Map();
+  private currentPhase: SchedulePhase = 'day';
 
   constructor(scene: THREE.Scene, physics: PhysicsWorld) {
     this.scene = scene;
     this.physics = physics;
+  }
+
+  /**
+   * Milestone 16 — apply day-phase presence (visibility / walk / interact).
+   */
+  public applyDayPhase(phase: SchedulePhase): void {
+    this.currentPhase = phase;
+    for (const npc of this.npcs.values()) {
+      if (npc.isBoarded) continue;
+      const rule = presenceForRole(npc.definition.role as Parameters<typeof presenceForRole>[0], phase);
+      npc.mesh.visible = rule.visible;
+      npc.scheduleInteractable = rule.interactable;
+      npc.scheduleWalkMult = rule.walkSpeedMult;
+      if (npc.collider && this.physics.ready) {
+        // Soft: keep collider even if hidden so respawn is simple; mesh hide is enough
+      }
+    }
+  }
+
+  public get dayPhase(): SchedulePhase {
+    return this.currentPhase;
   }
 
   /**
@@ -323,6 +349,8 @@ export class NPCManager {
 
     for (const npc of this.npcs.values()) {
       if (npc.isBoarded) continue; // Cannot interact on foot while boarded in vehicle
+      if (npc.mesh.visible === false) continue;
+      if (npc.scheduleInteractable === false) continue;
 
       const dx = playerPos.x - npc.currentPosition.x;
       const dz = playerPos.z - npc.currentPosition.z;
@@ -409,6 +437,9 @@ export class NPCManager {
 
     for (const npc of this.npcs.values()) {
       if (npc.isBoarded || !npc.waypoints || npc.waypoints.length === 0) continue;
+      if (npc.mesh.visible === false) continue;
+      const speedMult = npc.scheduleWalkMult ?? 1;
+      if (speedMult <= 0.01) continue;
 
       const target = npc.waypoints[npc.waypointIndex ?? 0]!;
       const dx = target.x - npc.currentPosition.x;
@@ -419,7 +450,7 @@ export class NPCManager {
         // Advance to next waypoint in loop
         npc.waypointIndex = ((npc.waypointIndex ?? 0) + 1) % npc.waypoints.length;
       } else {
-        const step = Math.min(dist, walkSpeed * dt);
+        const step = Math.min(dist, walkSpeed * speedMult * dt);
         const heading = Math.atan2(dx, dz);
         npc.currentPosition.x += (dx / dist) * step;
         npc.currentPosition.z += (dz / dist) * step;

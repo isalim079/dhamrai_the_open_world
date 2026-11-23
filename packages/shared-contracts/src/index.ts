@@ -158,6 +158,10 @@ export interface PlayerState {
   cashMinorUnits: number; // Integer Poisha (1 BDT = 100 Poisha)
   currency: CurrencyCode; // Explicitly 'BDT'
   reputation: number;
+  /** Milestone 14 — optional additive V2 field (default 0 on hydrate). */
+  policeHeat?: number;
+  /** Milestone 14 — optional additive V2 field (default 10 on hydrate). */
+  civicTrust?: number;
 }
 
 /**
@@ -360,7 +364,10 @@ export interface DialogueChoice {
     | 'REPAIR_TIRE'
     | 'REPAIR_TUNE_UP'
     | 'REPAIR_FULL'
-    | 'REPAIR_CHAIN_OIL';
+    | 'REPAIR_CHAIN_OIL'
+    | 'PAY_FINE'
+    | 'SHOW_LICENSE_STOP'
+    | 'REFUSE_STOP';
 }
 
 export interface DialogueNode {

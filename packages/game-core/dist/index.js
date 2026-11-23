@@ -11,4 +11,5 @@ export * from './engine.js';
 export * from './dialogue.js';
 export * from './vehicle-condition.js';
 export * from './stamina.js';
+export * from './civic-enforcement.js';
 //# sourceMappingURL=index.js.map

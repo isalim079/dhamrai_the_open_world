@@ -419,4 +419,67 @@ export const PHASE_1_DIALOGUE_TREES: Record<string, DialogueTree> = {
       },
     },
   },
+
+  /** Milestone 14 — traffic stop / fine payment */
+  dialogue_police_stop: {
+    id: 'dialogue_police_stop',
+    initialNodeId: 'node_stop',
+    nodes: {
+      node_stop: {
+        id: 'node_stop',
+        speakerId: 'npc_police_rafiq',
+        speakerNameBn: 'এসআই রফিক (থানা পুলিশ)',
+        speakerNameEn: 'SI Rafiq (Police Patrol)',
+        textBn: 'রিকশা থামান! ট্রাফিক নিয়ম ভাঙা হয়েছে। জরিমানা পরিশোধ করবেন, নাকি লাইসেন্স দেখাবেন?',
+        textEn: 'Halt the rickshaw! Traffic rules broken. Will you pay the fine, or show your license?',
+        choices: [
+          {
+            id: 'choice_pay_fine',
+            textBn: 'জরিমানা পরিশোধ করি',
+            textEn: 'Pay the fine',
+            nextNodeId: 'node_paid',
+            actionTrigger: 'PAY_FINE',
+          },
+          {
+            id: 'choice_show_license',
+            textBn: 'লাইসেন্স দেখাই (−৳১০)',
+            textEn: 'Show license (−৳10)',
+            nextNodeId: 'node_stop',
+            actionTrigger: 'SHOW_LICENSE_STOP',
+          },
+          {
+            id: 'choice_refuse',
+            textBn: 'পরে দেখব (প্রত্যাখ্যান)',
+            textEn: 'Not now (refuse)',
+            nextNodeId: 'node_refused',
+            actionTrigger: 'REFUSE_STOP',
+          },
+        ],
+      },
+      node_paid: {
+        id: 'node_paid',
+        speakerId: 'npc_police_rafiq',
+        speakerNameBn: 'এসআই রফিক (থানা পুলিশ)',
+        speakerNameEn: 'SI Rafiq (Police Patrol)',
+        textBn: 'ঠিক আছে, জরিমানা নেওয়া হলো। এবার সাবধানে চালান।',
+        textEn: 'Fine received. Drive carefully from now on.',
+      },
+      node_refused: {
+        id: 'node_refused',
+        speakerId: 'npc_police_rafiq',
+        speakerNameBn: 'এসআই রফিক (থানা পুলিশ)',
+        speakerNameEn: 'SI Rafiq (Police Patrol)',
+        textBn: 'চলে যাবেন? থানা এলাকায় নজর থাকবে।',
+        textEn: 'Leaving? We will be watching near the Thana.',
+      },
+      node_no_funds: {
+        id: 'node_no_funds',
+        speakerId: 'npc_police_rafiq',
+        speakerNameBn: 'এসআই রফিক (থানা পুলিশ)',
+        speakerNameEn: 'SI Rafiq (Police Patrol)',
+        textBn: 'টাকা নেই? জরিমানা বাকি থাকল — হিট বাড়বে।',
+        textEn: 'No cash? Fine remains unpaid — heat will rise.',
+      },
+    },
+  },
 };

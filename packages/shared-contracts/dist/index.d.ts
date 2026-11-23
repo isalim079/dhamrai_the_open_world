@@ -126,6 +126,10 @@ export interface PlayerState {
     cashMinorUnits: number;
     currency: CurrencyCode;
     reputation: number;
+    /** Milestone 14 — optional additive V2 field (default 0 on hydrate). */
+    policeHeat?: number;
+    /** Milestone 14 — optional additive V2 field (default 10 on hydrate). */
+    civicTrust?: number;
 }
 /**
  * Legacy V1 Player State (Milestone 2 Schema).
@@ -301,7 +305,7 @@ export interface DialogueChoice {
     textBn: string;
     textEn: string;
     nextNodeId?: string;
-    actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'PICKUP_CARGO' | 'START_FARE' | 'CLOSE_DIALOGUE' | 'BUY_CHA' | 'BUY_BISCUITS' | 'REPAIR_TIRE' | 'REPAIR_TUNE_UP' | 'REPAIR_FULL' | 'REPAIR_CHAIN_OIL';
+    actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'PICKUP_CARGO' | 'START_FARE' | 'CLOSE_DIALOGUE' | 'BUY_CHA' | 'BUY_BISCUITS' | 'REPAIR_TIRE' | 'REPAIR_TUNE_UP' | 'REPAIR_FULL' | 'REPAIR_CHAIN_OIL' | 'PAY_FINE' | 'SHOW_LICENSE_STOP' | 'REFUSE_STOP';
 }
 export interface DialogueNode {
     id: string;

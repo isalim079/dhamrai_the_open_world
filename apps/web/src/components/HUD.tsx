@@ -59,6 +59,12 @@ export const HUD: React.FC = () => {
   const tirePressurePercent = useSessionStore((s) => s.tirePressurePercent);
   const isPunctured = useSessionStore((s) => s.isPunctured);
   const sprintBlocked = useSessionStore((s) => s.sprintBlocked);
+  const policeHeat = useSessionStore((s) => s.policeHeat);
+  const activeFineMinorUnits = useSessionStore((s) => s.activeFineMinorUnits);
+  const policeStopActive = useSessionStore((s) => s.policeStopActive);
+  const objectiveBearingDeg = useSessionStore((s) => s.objectiveBearingDeg);
+  const objectiveDistanceM = useSessionStore((s) => s.objectiveDistanceM);
+  const hasActiveObjective = useSessionStore((s) => s.hasActiveObjective);
 
   const cashFormatted = useGameStore((s) => s.cashFormattedBdt);
   const reputation = useGameStore((s) => s.reputation);
@@ -123,6 +129,63 @@ export const HUD: React.FC = () => {
           }}
         >
           {toastMessage}
+        </div>
+      )}
+
+      {/* Milestone 15 — Compass / bearing to objective */}
+      {hasActiveObjective && !isModalOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: toastMessage ? 58 : 18,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            zIndex: 35,
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              backgroundColor: 'rgba(13, 17, 23, 0.88)',
+              border: '2px solid #f1c40f',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.45)',
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-block',
+                fontSize: 22,
+                color: '#f1c40f',
+                transform: `rotate(${objectiveBearingDeg}deg)`,
+                lineHeight: 1,
+              }}
+            >
+              ▲
+            </span>
+          </div>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#f1c40f',
+              backgroundColor: 'rgba(13,17,23,0.85)',
+              padding: '2px 10px',
+              borderRadius: 10,
+              fontFamily: 'monospace',
+            }}
+          >
+            {Math.round(objectiveDistanceM)}m
+          </div>
         </div>
       )}
 
@@ -238,6 +301,23 @@ export const HUD: React.FC = () => {
           {sprintBlocked && !isPunctured && (
             <div style={{ fontSize: 11, color: '#d29922', fontWeight: 600 }}>
               স্প্রিন্ট বন্ধ — চা খান (Sprint blocked)
+            </div>
+          )}
+
+          {/* Milestone 14 — Police heat / fine */}
+          {(policeHeat >= 15 || policeStopActive) && (
+            <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <MeterRow
+                label="হিট"
+                labelEn="Police heat"
+                value={policeHeat}
+                color={policeHeat >= 70 ? '#f85149' : policeHeat >= 40 ? '#d29922' : '#e3b341'}
+              />
+              {policeStopActive && (
+                <div style={{ fontSize: 11, color: '#f85149', fontWeight: 700 }}>
+                  জরিমানা ৳{(activeFineMinorUnits / 100).toFixed(0)} — [E] স্টপ
+                </div>
+              )}
             </div>
           )}
         </div>

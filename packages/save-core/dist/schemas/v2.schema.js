@@ -33,6 +33,8 @@ export const playerStateSchemaV2 = z.object({
         errorMap: () => ({ message: 'Player currency must explicitly be BDT' }),
     }),
     reputation: z.number(),
+    policeHeat: z.number().min(0).max(100).optional(),
+    civicTrust: z.number().optional(),
 });
 export const itemCategorySchemaV2 = z.enum([
     'DOCUMENT',

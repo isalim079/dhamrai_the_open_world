@@ -8,7 +8,11 @@
  */
 
 import { PHASE_1_ANCHORS, WorldManifest, WorldPosition } from '@dhamrai/shared-contracts';
-import { FARE_PASSENGER_KAMAL, FARE_PASSENGER_SUFIA } from '@dhamrai/game-core';
+import {
+  FARE_PASSENGER_KAMAL,
+  FARE_PASSENGER_SUFIA,
+  PHASE_1_MISSIONS,
+} from '@dhamrai/game-core';
 import { WebGLRendererManager } from './Renderer.js';
 import { SceneManager } from './SceneManager.js';
 import { PhysicsWorld } from './PhysicsWorld.js';
@@ -30,6 +34,8 @@ import { StreetLampSystem } from './atmosphere/StreetLampSystem.js';
 import { RickshawHeadlight } from './atmosphere/RickshawHeadlight.js';
 import { WeatherSystem } from './atmosphere/WeatherSystem.js';
 import { EconomyInteractables } from './EconomyInteractables.js';
+import { CivicEnforcementBridge } from './CivicEnforcementBridge.js';
+import { ObjectiveMarker, bearingToTargetDeg, distanceToTargetM } from './ObjectiveMarker.js';
 import { useSessionStore } from '../state/useSessionStore.js';
 import { useGameStore } from '../state/useGameStore.js';
 import { useUIStore } from '../state/useUIStore.js';
@@ -60,9 +66,13 @@ export class GameEngine {
   public rickshawHeadlight!: RickshawHeadlight;
   public weatherSystem!: WeatherSystem;
   public economyInteractables!: EconomyInteractables;
+  public civicBridge!: CivicEnforcementBridge;
+  public objectiveMarker!: ObjectiveMarker;
   private atmosphereHudAccum = 0;
   private lastWearPos: WorldPosition | null = null;
   private conditionHudAccum = 0;
+  private civicHudAccum = 0;
+  private wayfindingAccum = 0;
 
   private isRunning = false;
   private animFrameId: number | null = null;
@@ -109,6 +119,12 @@ export class GameEngine {
 
     // 7.5 Milestone 13 — tea stall / mistri proximity volumes
     this.economyInteractables = new EconomyInteractables();
+
+    // 7.6 Milestone 14 — civic enforcement bridge
+    this.civicBridge = new CivicEnforcementBridge();
+
+    // 7.7 Milestone 15 — mission objective beacon
+    this.objectiveMarker = new ObjectiveMarker(this.sceneManager.scene);
 
     // 8. Initialize Autonomous Road Traffic AI
     this.trafficManager = new TrafficManager(this.sceneManager.scene, this.physics);
@@ -363,7 +379,12 @@ export class GameEngine {
       if (nearbyNPC && !nearbyNPC.isBoarded) {
         ui.openDialogue(nearbyNPC.definition.dialogueTreeId || 'dialogue_farhana_student');
       } else {
-        const econ = this.economyInteractables?.findNearest(activePos, 2.5);
+        const phase = (this.dayNightCycle?.phase ?? 'day') as
+          | 'dawn'
+          | 'day'
+          | 'dusk'
+          | 'night';
+        const econ = this.economyInteractables?.findNearest(activePos, 2.5, phase);
         if (econ) {
           ui.openDialogue(econ.item.dialogueTreeId);
         }
@@ -669,7 +690,12 @@ export class GameEngine {
           .setStatusMessage(`[E] কথা বলুন (Talk to ${nearbyNPC.definition.nameEn})`);
         economyPrompt = `[E] ${nearbyNPC.definition.nameBn}`;
       } else {
-        const econ = this.economyInteractables?.findNearest(curPos, 2.5);
+        const phase = (this.dayNightCycle?.phase ?? 'day') as
+          | 'dawn'
+          | 'day'
+          | 'dusk'
+          | 'night';
+        const econ = this.economyInteractables?.findNearest(curPos, 2.5, phase);
         if (econ) {
           useSessionStore
             .getState()
@@ -728,6 +754,35 @@ export class GameEngine {
           economyPrompt,
         });
       }
+
+      // Milestone 14 — civic enforcement tick + heat decay
+      domainEngine.decayPoliceHeat(dt);
+      this.civicHudAccum += dt;
+      if (this.civicHudAccum >= 0.35 && this.civicBridge && !isUIBlocking) {
+        this.civicHudAccum = 0;
+        const phase = this.dayNightCycle?.phase ?? 'day';
+        const civic = this.civicBridge.tick(domainEngine, {
+          playerPos: curPos,
+          speedKph: this.rickshaw.speedMps * 3.6,
+          inVehicle: this.isInVehicle,
+          dayPhase: phase,
+        });
+        if (civic.stopOpened || civic.fled) {
+          if (civic.messageBn) {
+            useSessionStore.getState().setStatusMessage(`${civic.messageBn} (${civic.messageEn})`);
+          }
+          if (civic.shouldOpenDialogue) {
+            useUIStore.getState().openDialogue('dialogue_police_stop');
+          }
+          useGameStore.getState().syncFromEngine();
+        }
+        const stop = domainEngine.activePoliceStop;
+        useSessionStore.getState().setCivicHud({
+          policeHeat: domainEngine.policeHeat,
+          activeFineMinorUnits: stop && !stop.paid ? stop.currentFineMinorUnits : 0,
+          policeStopActive: !!(stop && !stop.paid),
+        });
+      }
     }
 
     // 12b. Milestone 12 — Weather particles, lighting, lamps, headlight (clock already advanced)
@@ -744,6 +799,8 @@ export class GameEngine {
         useSessionStore
           .getState()
           .setAtmosphereHud(this.dayNightCycle.clockLabel, wxLabel, this.dayNightCycle.phase);
+        // Milestone 16 — NPC day/night schedules
+        this.npcManager.applyDayPhase(this.dayNightCycle.phase as 'dawn' | 'day' | 'dusk' | 'night');
       }
     }
 
@@ -759,6 +816,42 @@ export class GameEngine {
     useSessionStore.getState().setPlayerPosition(curPos);
     useSessionStore.getState().setPlayerHeading(curHeading);
     useSessionStore.getState().setVehicleSpeedKph(this.rickshaw.speedMps * 3.6);
+
+    // 16. Milestone 15 — objective beacon + compass
+    if (this.objectiveMarker) {
+      this.objectiveMarker.update(dt);
+      this.wayfindingAccum += dt;
+      if (this.wayfindingAccum >= 0.2) {
+        this.wayfindingAccum = 0;
+        const missionId = useGameStore.getState().currentActiveMissionId;
+        const allM = useGameStore.getState().allMissions;
+        const eng = useGameStore.getState().engine;
+        let target: WorldPosition | null = null;
+        if (missionId && missionId !== 'repeatable_fares') {
+          const def =
+            eng?.missions.getDefinition(missionId) || PHASE_1_MISSIONS[missionId] || null;
+          const inst = allM[missionId];
+          if (def && inst) {
+            const obj = def.objectives.find((o) => !inst.completedObjectiveIds.includes(o.id));
+            if (obj) target = obj.targetPosition;
+          }
+        }
+        this.objectiveMarker.setTarget(target);
+        if (target) {
+          useSessionStore.getState().setWayfindingHud({
+            objectiveBearingDeg: bearingToTargetDeg(curPos, target, curHeading),
+            objectiveDistanceM: distanceToTargetM(curPos, target),
+            hasActiveObjective: true,
+          });
+        } else {
+          useSessionStore.getState().setWayfindingHud({
+            objectiveBearingDeg: 0,
+            objectiveDistanceM: 0,
+            hasActiveObjective: false,
+          });
+        }
+      }
+    }
   }
 
   public render(): void {
@@ -780,6 +873,7 @@ export class GameEngine {
     if (this.streetLamps) this.streetLamps.dispose();
     if (this.rickshawHeadlight) this.rickshawHeadlight.dispose();
     if (this.atmosphereController) this.atmosphereController.dispose();
+    if (this.objectiveMarker) this.objectiveMarker.dispose();
     if (this.propManager) this.propManager.dispose();
     if (this.materialBinder) this.materialBinder.dispose();
     if (this.npcManager) this.npcManager.dispose();

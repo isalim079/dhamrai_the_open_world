@@ -54,7 +54,10 @@ export class TrafficManager {
   private eligibleEdges: NavGraphEdge[] = [];
 
   public agents: TrafficAgentInstance[] = [];
-  public readonly poolSize = 3; // Fixed pool of 3 ambient traffic vehicles
+  /** Milestone 17 — expanded pool (was 3). */
+  public readonly poolSize = 5;
+  /** Soft junction approach speed multiplier. */
+  public junctionSpeedMult = 0.45;
 
   // Scratch vectors to eliminate GC in the 60 Hz simulation loop
   private readonly _vTemp = new THREE.Vector3();
@@ -255,9 +258,20 @@ export class TrafficManager {
       inst.haltTimer = 0;
 
       // 3. Advance progress along current edge
+      // Milestone 17 — slow near destination junction / high progress on short edges
+      const toNode = this.nodesMap.get(edge.toNodeId);
+      const nearJunction = !!(toNode?.isJunction && agent.edgeProgressPercent > 0.72);
+      const speedMult = nearJunction ? this.junctionSpeedMult : 1.0;
+      // Yield: if another agent is also near the same destination junction, halt briefly
+      if (nearJunction && this.junctionCrowded(edge.toNodeId, agent.id)) {
+        agent.isHalted = true;
+        inst.haltTimer += dt;
+        continue;
+      }
+
       const edgeLength = edge.distanceMeters || this.calculateEdgeLength(edge.waypoints);
       const safeLength = Math.max(edgeLength, 2.0);
-      const deltaProgress = (agent.speedMps * dt) / safeLength;
+      const deltaProgress = (agent.speedMps * speedMult * dt) / safeLength;
       agent.edgeProgressPercent += deltaProgress;
 
       // 4. Edge Transition when reaching 100%
@@ -350,6 +364,27 @@ export class TrafficManager {
     }
 
     return false;
+  }
+
+  /**
+   * Milestone 17 — true when ≥2 agents approach the same junction node.
+   */
+  private junctionCrowded(nodeId: string, selfId: string): boolean {
+    let count = 0;
+    for (const other of this.agents) {
+      if (other.agent.id === selfId) continue;
+      const e = this.edgesMap.get(other.agent.currentEdgeId);
+      if (!e) continue;
+      if (e.toNodeId === nodeId && other.agent.edgeProgressPercent > 0.65) {
+        count += 1;
+        if (count >= 1) return true;
+      }
+    }
+    return false;
+  }
+
+  public get activeAgentCount(): number {
+    return this.agents.length;
   }
 
   /**

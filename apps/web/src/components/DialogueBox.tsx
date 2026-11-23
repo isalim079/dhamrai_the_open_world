@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { useUIStore } from '../state/useUIStore.js';
 import { useGameStore } from '../state/useGameStore.js';
+import { useSessionStore } from '../state/useSessionStore.js';
 import {
   PHASE_1_DIALOGUE_TREES,
   BRASS_BELLS_CARGO_ITEM,
@@ -173,6 +174,63 @@ export const DialogueBox: React.FC = () => {
       audio?.ui.playCoinPayout();
       useGameStore.getState().syncFromEngine();
       showToast('মেরামত সম্পন্ন! (Repair done)', 3000);
+    }
+
+    // 7. Milestone 14 — Police fine stop
+    if (choice.actionTrigger === 'PAY_FINE') {
+      if (!engine) {
+        showToast('গেম লোড হয়নি (Game not ready)', 2500);
+        return;
+      }
+      const result = engine.payFine(Date.now());
+      if (!result.success) {
+        audio?.ui.playDialogueClick();
+        if (result.reason === 'INSUFFICIENT_FUNDS') {
+          showToast('টাকা নেই! জরিমানা বাকি (Insufficient funds)', 3500);
+          setDialogueNode('node_no_funds');
+          return;
+        }
+        showToast('জরিমানা পরিশোধ ব্যর্থ', 2500);
+        closeDialogue();
+        return;
+      }
+      audio?.ui.playCoinPayout();
+      engine.clearPoliceStop();
+      useGameStore.getState().syncFromEngine();
+      useSessionStore.getState().setCivicHud({
+        policeHeat: engine.policeHeat,
+        activeFineMinorUnits: 0,
+        policeStopActive: false,
+      });
+      showToast(`জরিমানা পরিশোধ: ৳${((result.fineMinorUnits ?? 0) / 100).toFixed(0)}`, 3500);
+    }
+
+    if (choice.actionTrigger === 'SHOW_LICENSE_STOP') {
+      if (!engine) return;
+      const hasLicense = engine.inventory.hasItem('rickshaw_license_slip');
+      if (!hasLicense) {
+        showToast('লাইসেন্স নেই! (No license)', 3000);
+        return;
+      }
+      engine.applyLicenseDiscountToStop();
+      useGameStore.getState().syncFromEngine();
+      const fine = engine.activePoliceStop?.currentFineMinorUnits ?? 0;
+      useSessionStore.getState().setCivicHud({
+        policeHeat: engine.policeHeat,
+        activeFineMinorUnits: fine,
+        policeStopActive: true,
+      });
+      showToast(`লাইসেন্স ছাড় — বাকি ৳${(fine / 100).toFixed(0)}`, 3000);
+      audio?.ui.playDialogueClick();
+      if (choice.nextNodeId) {
+        setDialogueNode(choice.nextNodeId);
+      }
+      return;
+    }
+
+    if (choice.actionTrigger === 'REFUSE_STOP') {
+      engine?.markStopFleeing();
+      showToast('স্টপ প্রত্যাখ্যান — হিট বাড়তে পারে', 3000);
     }
 
     if (choice.actionTrigger === 'CLOSE_DIALOGUE') {

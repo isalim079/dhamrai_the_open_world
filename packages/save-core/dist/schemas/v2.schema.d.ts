@@ -79,6 +79,8 @@ export declare const playerStateSchemaV2: z.ZodObject<{
     cashMinorUnits: z.ZodNumber;
     currency: z.ZodLiteral<"BDT">;
     reputation: z.ZodNumber;
+    policeHeat: z.ZodOptional<z.ZodNumber>;
+    civicTrust: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     roleId: "rickshaw_driver";
     position: {
@@ -99,6 +101,8 @@ export declare const playerStateSchemaV2: z.ZodObject<{
         damagePercent: number;
         tirePressurePercent?: number | undefined;
     } | undefined;
+    policeHeat?: number | undefined;
+    civicTrust?: number | undefined;
 }, {
     roleId: "rickshaw_driver";
     position: {
@@ -119,6 +123,8 @@ export declare const playerStateSchemaV2: z.ZodObject<{
         damagePercent: number;
         tirePressurePercent?: number | undefined;
     } | undefined;
+    policeHeat?: number | undefined;
+    civicTrust?: number | undefined;
 }>;
 export declare const itemCategorySchemaV2: z.ZodEnum<["DOCUMENT", "TOOL", "CARGO", "VALUABLE", "CONSUMABLE"]>;
 export declare const inventoryItemSchemaV2: z.ZodObject<{
@@ -245,6 +251,8 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
         cashMinorUnits: z.ZodNumber;
         currency: z.ZodLiteral<"BDT">;
         reputation: z.ZodNumber;
+        policeHeat: z.ZodOptional<z.ZodNumber>;
+        civicTrust: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         roleId: "rickshaw_driver";
         position: {
@@ -265,6 +273,8 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
             damagePercent: number;
             tirePressurePercent?: number | undefined;
         } | undefined;
+        policeHeat?: number | undefined;
+        civicTrust?: number | undefined;
     }, {
         roleId: "rickshaw_driver";
         position: {
@@ -285,6 +295,8 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
             damagePercent: number;
             tirePressurePercent?: number | undefined;
         } | undefined;
+        policeHeat?: number | undefined;
+        civicTrust?: number | undefined;
     }>;
     inventory: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
@@ -389,6 +401,8 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
             damagePercent: number;
             tirePressurePercent?: number | undefined;
         } | undefined;
+        policeHeat?: number | undefined;
+        civicTrust?: number | undefined;
     };
     inventory: {
         id: string;
@@ -445,6 +459,8 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
             damagePercent: number;
             tirePressurePercent?: number | undefined;
         } | undefined;
+        policeHeat?: number | undefined;
+        civicTrust?: number | undefined;
     };
     inventory: {
         id: string;

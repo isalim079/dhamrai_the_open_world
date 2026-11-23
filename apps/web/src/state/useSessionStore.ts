@@ -46,6 +46,14 @@ export interface SessionState {
   isPunctured: boolean;
   sprintBlocked: boolean;
   economyPrompt: string;
+  /** Milestone 14 civic HUD */
+  policeHeat: number;
+  activeFineMinorUnits: number;
+  policeStopActive: boolean;
+  /** Milestone 15 wayfinding */
+  objectiveBearingDeg: number;
+  objectiveDistanceM: number;
+  hasActiveObjective: boolean;
 
   setPlayerPosition: (pos: WorldPosition) => void;
   setPlayerHeading: (heading: number) => void;
@@ -69,6 +77,16 @@ export interface SessionState {
     isPunctured: boolean;
     sprintBlocked: boolean;
     economyPrompt?: string;
+  }) => void;
+  setCivicHud: (stats: {
+    policeHeat: number;
+    activeFineMinorUnits: number;
+    policeStopActive: boolean;
+  }) => void;
+  setWayfindingHud: (stats: {
+    objectiveBearingDeg: number;
+    objectiveDistanceM: number;
+    hasActiveObjective: boolean;
   }) => void;
 }
 
@@ -102,6 +120,12 @@ export const useSessionStore = create<SessionState>((set) => ({
   isPunctured: false,
   sprintBlocked: false,
   economyPrompt: '',
+  policeHeat: 0,
+  activeFineMinorUnits: 0,
+  policeStopActive: false,
+  objectiveBearingDeg: 0,
+  objectiveDistanceM: 0,
+  hasActiveObjective: false,
 
   setPlayerPosition: (pos) => set({ playerPosition: pos }),
   setPlayerHeading: (heading) => set({ playerHeading: heading }),
@@ -135,5 +159,17 @@ export const useSessionStore = create<SessionState>((set) => ({
       isPunctured: stats.isPunctured,
       sprintBlocked: stats.sprintBlocked,
       economyPrompt: stats.economyPrompt ?? '',
+    }),
+  setCivicHud: (stats) =>
+    set({
+      policeHeat: stats.policeHeat,
+      activeFineMinorUnits: stats.activeFineMinorUnits,
+      policeStopActive: stats.policeStopActive,
+    }),
+  setWayfindingHud: (stats) =>
+    set({
+      objectiveBearingDeg: stats.objectiveBearingDeg,
+      objectiveDistanceM: stats.objectiveDistanceM,
+      hasActiveObjective: stats.hasActiveObjective,
     }),
 }));

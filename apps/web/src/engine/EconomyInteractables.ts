@@ -3,6 +3,7 @@
  */
 
 import { PHASE_1_ANCHORS, type WorldPosition } from '@dhamrai/shared-contracts';
+import { isEconomyKindOpen, type SchedulePhase } from './npcSchedules.js';
 
 export type EconomyInteractKind = 'tea_stall' | 'mistri' | 'chain_oil';
 
@@ -83,10 +84,12 @@ export class EconomyInteractables {
 
   public findNearest(
     pos: WorldPosition,
-    maxRadius = 2.5
+    maxRadius = 2.5,
+    phase: SchedulePhase = 'day'
   ): { item: EconomyInteractable; distanceM: number } | null {
     let best: { item: EconomyInteractable; distanceM: number } | null = null;
     for (const item of this.items) {
+      if (!isEconomyKindOpen(item.kind, phase)) continue;
       const d = Math.hypot(pos.x - item.position.x, pos.z - item.position.z);
       if (d <= Math.min(maxRadius, item.radiusM)) {
         if (!best || d < best.distanceM) {

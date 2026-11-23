@@ -40,6 +40,19 @@ import {
   TEA_BUFF_DURATION_MS,
   StaminaTickResult,
 } from './stamina.js';
+import {
+  Infraction,
+  PoliceStopState,
+  evaluateInfraction,
+  openPoliceStop,
+  applyLicenseDiscount,
+  markFleeing,
+  markPaid,
+  applyPoliceHeat,
+  decayPoliceHeat,
+  InfractionContext,
+  HEAT_ON_PAY,
+} from './civic-enforcement.js';
 
 export interface PurchaseResult {
   success: boolean;
@@ -51,12 +64,21 @@ export interface PurchaseResult {
   isPunctured?: boolean;
 }
 
+export interface FinePaymentResult {
+  success: boolean;
+  reason?: 'NO_ACTIVE_STOP' | 'ALREADY_PAID' | 'INSUFFICIENT_FUNDS';
+  transaction?: EconomyTransaction;
+  policeHeat?: number;
+  fineMinorUnits?: number;
+}
+
 export class GameCoreEngine {
   private readonly _economy: EconomyDomain;
   private readonly _inventory: InventoryDomain;
   private readonly _missions: MissionDomain;
   private _player: RickshawDriverArchetype;
   private readonly _worldFlags: Map<string, boolean | number | string> = new Map();
+  private _activePoliceStop: PoliceStopState | null = null;
 
   constructor(
     economy: EconomyDomain,
@@ -77,7 +99,11 @@ export class GameCoreEngine {
         tirePressurePercent: player.vehicleState.tirePressurePercent ?? 100,
         isPunctured: player.vehicleState.isPunctured ?? false,
       },
-      reputations: { ...player.reputations },
+      reputations: {
+        ...player.reputations,
+        policeHeat: player.reputations.policeHeat ?? 0,
+        civicTrust: player.reputations.civicTrust ?? 10,
+      },
     };
 
     for (const [k, v] of Object.entries(worldFlags)) {
@@ -155,8 +181,8 @@ export class GameCoreEngine {
       },
       reputations: {
         transportReputation: save.player.reputation,
-        civicTrust: 10,
-        policeHeat: 0,
+        civicTrust: save.player.civicTrust ?? 10,
+        policeHeat: save.player.policeHeat ?? 0,
         artisanGuildTrust: 0,
       },
     };
@@ -226,6 +252,149 @@ export class GameCoreEngine {
 
   public get isPunctured(): boolean {
     return this._player.vehicleState.isPunctured;
+  }
+
+  public get policeHeat(): number {
+    return this._player.reputations.policeHeat;
+  }
+
+  public get civicTrust(): number {
+    return this._player.reputations.civicTrust;
+  }
+
+  public get activePoliceStop(): Readonly<PoliceStopState> | null {
+    return this._activePoliceStop;
+  }
+
+  public get unpaidFineMinorUnits(): number {
+    return (this.getWorldFlag<number>('unpaidFineMinorUnits') as number) ?? 0;
+  }
+
+  /**
+   * Evaluate traffic infractions (speeding / flee). Does not mutate state.
+   */
+  public evaluateInfraction(
+    ctx: Omit<InfractionContext, 'hasActiveStop' | 'activeStop' | 'policeHeat' | 'lastStopMs'>
+  ): Infraction | null {
+    const lastStopMs = (this.getWorldFlag<number>('lastPoliceStopMs') as number) ?? 0;
+    return evaluateInfraction({
+      ...ctx,
+      policeHeat: this._player.reputations.policeHeat,
+      lastStopMs,
+      hasActiveStop: this._activePoliceStop !== null && !this._activePoliceStop.paid,
+      activeStop: this._activePoliceStop,
+    });
+  }
+
+  /**
+   * Open a police stop from an infraction; applies heat immediately.
+   */
+  public beginPoliceStop(
+    infraction: Infraction,
+    stopPos: { x: number; z: number },
+    timestampMs: number = Date.now()
+  ): PoliceStopState {
+    const hasLicense = this._inventory.hasItem('rickshaw_license_slip');
+    const { stop, heatDelta } = openPoliceStop(infraction, timestampMs, hasLicense, stopPos);
+    this._activePoliceStop = stop;
+    this._player.reputations.policeHeat = applyPoliceHeat(
+      this._player.reputations.policeHeat,
+      heatDelta
+    );
+    this._worldFlags.set('lastPoliceStopMs', timestampMs);
+    this._worldFlags.set('activePoliceStopId', stop.id);
+    this._worldFlags.set('unpaidFineMinorUnits', stop.currentFineMinorUnits);
+    return stop;
+  }
+
+  public applyLicenseDiscountToStop(): PoliceStopState | null {
+    if (!this._activePoliceStop || this._activePoliceStop.paid) return null;
+    if (!this._inventory.hasItem('rickshaw_license_slip')) return this._activePoliceStop;
+    this._activePoliceStop = applyLicenseDiscount(this._activePoliceStop);
+    this._worldFlags.set('unpaidFineMinorUnits', this._activePoliceStop.currentFineMinorUnits);
+    return this._activePoliceStop;
+  }
+
+  public payFine(timestampMs: number = Date.now(), customId?: string): FinePaymentResult {
+    const stop = this._activePoliceStop;
+    if (!stop) return { success: false, reason: 'NO_ACTIVE_STOP' };
+    if (stop.paid) return { success: false, reason: 'ALREADY_PAID' };
+
+    const amount = stop.currentFineMinorUnits;
+    if (!this._economy.hasSufficientFunds(amount)) {
+      return { success: false, reason: 'INSUFFICIENT_FUNDS' };
+    }
+
+    const tx = this._economy.debit(
+      amount,
+      'FINE_PENALTY',
+      `Police fine: ${stop.primaryCode}`,
+      timestampMs,
+      customId ?? `tx_fine_${stop.id}`
+    );
+
+    this._activePoliceStop = markPaid(stop);
+    this._player.reputations.policeHeat = applyPoliceHeat(
+      this._player.reputations.policeHeat,
+      HEAT_ON_PAY
+    );
+    this._worldFlags.set('unpaidFineMinorUnits', 0);
+    this._worldFlags.set('activePoliceStopId', '');
+
+    return {
+      success: true,
+      transaction: tx,
+      policeHeat: this._player.reputations.policeHeat,
+      fineMinorUnits: amount,
+    };
+  }
+
+  public markStopFleeing(): PoliceStopState | null {
+    if (!this._activePoliceStop || this._activePoliceStop.paid) return null;
+    this._activePoliceStop = markFleeing(this._activePoliceStop);
+    return this._activePoliceStop;
+  }
+
+  /**
+   * Apply flee penalties onto the active stop (extra fine + heat).
+   */
+  public applyFleePenalty(extraFineMinor: number, heatDelta: number, nowMs: number = Date.now()): PoliceStopState | null {
+    if (!this._activePoliceStop || this._activePoliceStop.paid) return null;
+    this._activePoliceStop = {
+      ...markFleeing(this._activePoliceStop),
+      currentFineMinorUnits: this._activePoliceStop.currentFineMinorUnits + extraFineMinor,
+      baseFineMinorUnits: this._activePoliceStop.baseFineMinorUnits + extraFineMinor,
+    };
+    this._player.reputations.policeHeat = applyPoliceHeat(
+      this._player.reputations.policeHeat,
+      heatDelta
+    );
+    this._worldFlags.set('unpaidFineMinorUnits', this._activePoliceStop.currentFineMinorUnits);
+    this._worldFlags.set('lastPoliceStopMs', nowMs);
+    return this._activePoliceStop;
+  }
+
+  public clearPoliceStop(): void {
+    this._activePoliceStop = null;
+    this._worldFlags.set('activePoliceStopId', '');
+  }
+
+  public applyPoliceHeatDelta(delta: number): number {
+    this._player.reputations.policeHeat = applyPoliceHeat(
+      this._player.reputations.policeHeat,
+      delta
+    );
+    return this._player.reputations.policeHeat;
+  }
+
+  public decayPoliceHeat(dtSec: number): number {
+    const fleeing = this._activePoliceStop?.fleeing === true;
+    this._player.reputations.policeHeat = decayPoliceHeat(
+      this._player.reputations.policeHeat,
+      dtSec,
+      fleeing
+    );
+    return this._player.reputations.policeHeat;
   }
 
   public get isTeaBuffActive(): boolean {
@@ -486,6 +655,8 @@ export class GameCoreEngine {
       cashMinorUnits: this._economy.balanceMinorUnits,
       currency: CURRENCY_CODE_BDT,
       reputation: this._player.reputations.transportReputation,
+      policeHeat: this._player.reputations.policeHeat,
+      civicTrust: this._player.reputations.civicTrust,
     };
 
     return {

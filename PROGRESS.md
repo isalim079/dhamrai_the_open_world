@@ -1,15 +1,15 @@
 # Dhamrai Life — Progress Tracker
 
 **Last updated:** 23 November 2026  
-**Overall status:** Milestone 13 COMPLETE. Milestone 14 Planning COMPLETE — awaiting implementation auth. Canonical tracker: `guideFiles/PROGRESS.md`.
+**Overall status:** Milestone 14 COMPLETE (verified). Canonical tracker: `guideFiles/PROGRESS.md`.
 
 ## Current milestone focus
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
 | Milestone 13: Maintenance & Tea Economy | COMPLETE | `guideFiles/milestone_13_implementation_report.md` |
-| Milestone 14: Police Fine & Wanted | PLANNING COMPLETE — AWAITING AUTH | `guideFiles/milestone_14_planning_report.md` |
-| Next task | WAITING | Explicit authorization to implement Milestone 14 |
+| Milestone 14: Police Fine & Wanted | COMPLETE | `guideFiles/milestone_14_implementation_report.md`; CDP 10/10; 60 FPS |
+| Next task | READY | Milestone 15 Discovery & Planning (await “next”) |
 
 ## Historical phase and evidence (Sprints / earlier milestones)
 
