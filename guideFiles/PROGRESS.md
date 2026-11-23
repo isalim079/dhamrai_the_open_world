@@ -1,17 +1,17 @@
 # Dhamrai Life — Progress Tracker
 
 **Last updated:** 23 November 2026  
-**Overall status:** Milestone 13 COMPLETE (verified). Yarn Classic 1.22.22 preserved. Save schema remains `SaveEnvelopeV2` with additive optional fields. Zero new npm dependencies through M13.
+**Overall status:** Milestone 13 COMPLETE (verified). Milestone 14 Planning COMPLETE — awaiting implementation auth. Yarn Classic 1.22.22 preserved. Save schema remains `SaveEnvelopeV2`. Zero new npm dependencies through M13.
 
 ## Current milestone focus
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
-| Milestone 12: Dynamic Day–Night Cycle & Atmospheric Weather | COMPLETE | `guideFiles/milestone_12_implementation_report.md` |
 | Milestone 13: Vehicle Maintenance, Driver Stamina & Tea Stall Economy | COMPLETE | `guideFiles/milestone_13_implementation_report.md`; CDP 11/11; 60 FPS; schema v2 |
-| Baseline regression (23 Nov 2026 post-M13) | MOSTLY GREEN | typecheck 0; Python 23/23; Vitest 306 passed / 4 skipped; Neon PG offline |
+| Milestone 14: Police Fine, Wanted Heat & Checkpoint Enforcement | PLANNING COMPLETE — AWAITING AUTH | `guideFiles/milestone_14_planning_report.md`; activates `FINE_PENALTY` / `policeHeat`; Phase 2 opener; additive V2 fields (no V3) |
+| Baseline regression (23 Nov 2026) | MOSTLY GREEN | typecheck 0; Python 23/23; Vitest 306 passed / 4 skipped; Neon PG offline |
 | Dependency lockfile | CLEAN | `yarn.lock` unchanged |
-| Next task | READY | Milestone 14 Discovery & Planning (await “next”) |
+| Next task | WAITING | Explicit authorization to implement Milestone 14 |
 
 ## Historical phase and evidence (Sprints / earlier milestones)
 
