@@ -36,10 +36,21 @@ export class AmbientSoundscape {
   private globalBedFilter: BiquadFilterNode | null = null;
   private globalBedGain: GainNode | null = null;
 
+  // Milestone 12 — night insect bed + rain layer
+  private nightBedSource: AudioBufferSourceNode | null = null;
+  private nightBedFilter: BiquadFilterNode | null = null;
+  private nightBedGain: GainNode | null = null;
+  private rainSource: AudioBufferSourceNode | null = null;
+  private rainFilter: BiquadFilterNode | null = null;
+  private rainGain: GainNode | null = null;
+  private nightFactor = 0;
+  private rainFactor = 0;
+
   // Zone timers
   private kayetparaHammerTimer = 0.0;
   private rathkholaTeaTimer = 0.0;
   private thanaTrafficTimer = 0.0;
+  private cricketTimer = 0.0;
 
   // Emitter anchors
   public static readonly EMITTERS: Record<string, SpatialEmitterConfig> = {
@@ -100,6 +111,35 @@ export class AmbientSoundscape {
 
       this.globalBedSource.start();
 
+      // Night insect / quiet bed (high-pass sparse noise)
+      this.nightBedSource = ctx.createBufferSource();
+      this.nightBedSource.buffer = pinkNoise;
+      this.nightBedSource.loop = true;
+      this.nightBedFilter = ctx.createBiquadFilter();
+      this.nightBedFilter.type = 'bandpass';
+      this.nightBedFilter.frequency.setValueAtTime(4200, ctx.currentTime);
+      this.nightBedFilter.Q.setValueAtTime(0.8, ctx.currentTime);
+      this.nightBedGain = ctx.createGain();
+      this.nightBedGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      this.nightBedSource.connect(this.nightBedFilter);
+      this.nightBedFilter.connect(this.nightBedGain);
+      this.nightBedGain.connect(ambienceBus);
+      this.nightBedSource.start();
+
+      // Rain bed (broader noise, lowpassed)
+      this.rainSource = ctx.createBufferSource();
+      this.rainSource.buffer = pinkNoise;
+      this.rainSource.loop = true;
+      this.rainFilter = ctx.createBiquadFilter();
+      this.rainFilter.type = 'lowpass';
+      this.rainFilter.frequency.setValueAtTime(1800, ctx.currentTime);
+      this.rainGain = ctx.createGain();
+      this.rainGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      this.rainSource.connect(this.rainFilter);
+      this.rainFilter.connect(this.rainGain);
+      this.rainGain.connect(ambienceBus);
+      this.rainSource.start();
+
       // 2. Setup 3D Spatial Panners for each landmark
       for (const key of Object.keys(AmbientSoundscape.EMITTERS)) {
         const config = AmbientSoundscape.EMITTERS[key]!;
@@ -134,10 +174,51 @@ export class AmbientSoundscape {
   }
 
   /**
+   * Crossfades day/night beds and rain layer. Factors are clamped 0..1.
+   */
+  public setAtmosphere(nightFactor: number, rainFactor: number): void {
+    this.nightFactor = Math.max(0, Math.min(1, nightFactor));
+    this.rainFactor = Math.max(0, Math.min(1, rainFactor));
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    if (this.globalBedGain) {
+      const dayGain = 0.08 * (1 - this.nightFactor * 0.75);
+      this.globalBedGain.gain.setTargetAtTime(Math.max(0.0001, dayGain), now, 0.25);
+    }
+    if (this.nightBedGain) {
+      const nGain = 0.045 * this.nightFactor;
+      this.nightBedGain.gain.setTargetAtTime(Math.max(0.0001, nGain), now, 0.3);
+    }
+    if (this.rainGain) {
+      const rGain = 0.12 * this.rainFactor;
+      this.rainGain.gain.setTargetAtTime(Math.max(0.0001, rGain), now, 0.2);
+    }
+  }
+
+  public getNightFactor(): number {
+    return this.nightFactor;
+  }
+
+  public getRainFactor(): number {
+    return this.rainFactor;
+  }
+
+  /**
    * Updates periodic zone audio events based on distance to player/camera position.
    */
   public update(dt: number, listenerPos: { x: number; y: number; z: number }): void {
     if (!this.ctx || !this.ambienceBus || this.ctx.state !== 'running' || !this.isInitialized) return;
+
+    // Sparse cricket chirps at night
+    if (this.nightFactor > 0.4) {
+      this.cricketTimer += dt;
+      if (this.cricketTimer >= 1.8 + Math.random()) {
+        this.cricketTimer = 0;
+        this.triggerCricketChirp();
+      }
+    } else {
+      this.cricketTimer = 0;
+    }
 
     // 1. Kayetpara Metal Workshop (Anvil Hammering & Brass Shaping)
     const kayetparaCfg = AmbientSoundscape.EMITTERS.KAYETPARA!;
@@ -296,29 +377,68 @@ export class AmbientSoundscape {
     } catch {}
   }
 
+  /** Short high chirp for night ambience. */
+  public triggerCricketChirp(): void {
+    if (!this.ctx || !this.ambienceBus || this.nightFactor < 0.3) return;
+    try {
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(4800 + Math.random() * 800, now);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.03 * this.nightFactor, now + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+      osc.connect(g);
+      g.connect(this.ambienceBus);
+      osc.start(now);
+      osc.stop(now + 0.1);
+      osc.onended = () => {
+        try {
+          osc.disconnect();
+          g.disconnect();
+        } catch {}
+      };
+    } catch {}
+  }
+
   /**
    * Disposes all ambient nodes and panners cleanly.
    */
   public dispose(): void {
-    if (this.globalBedSource) {
-      try {
-        this.globalBedSource.stop();
-        this.globalBedSource.disconnect();
-      } catch {}
-      this.globalBedSource = null;
-    }
-    if (this.globalBedFilter) {
-      try {
-        this.globalBedFilter.disconnect();
-      } catch {}
-      this.globalBedFilter = null;
-    }
-    if (this.globalBedGain) {
-      try {
-        this.globalBedGain.disconnect();
-      } catch {}
-      this.globalBedGain = null;
-    }
+    const stopSrc = (src: AudioBufferSourceNode | null, filter: BiquadFilterNode | null, gain: GainNode | null) => {
+      if (src) {
+        try {
+          src.stop();
+          src.disconnect();
+        } catch {}
+      }
+      if (filter) {
+        try {
+          filter.disconnect();
+        } catch {}
+      }
+      if (gain) {
+        try {
+          gain.disconnect();
+        } catch {}
+      }
+    };
+
+    stopSrc(this.globalBedSource, this.globalBedFilter, this.globalBedGain);
+    this.globalBedSource = null;
+    this.globalBedFilter = null;
+    this.globalBedGain = null;
+
+    stopSrc(this.nightBedSource, this.nightBedFilter, this.nightBedGain);
+    this.nightBedSource = null;
+    this.nightBedFilter = null;
+    this.nightBedGain = null;
+
+    stopSrc(this.rainSource, this.rainFilter, this.rainGain);
+    this.rainSource = null;
+    this.rainFilter = null;
+    this.rainGain = null;
 
     for (const entry of this.panners.values()) {
       try {

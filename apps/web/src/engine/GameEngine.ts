@@ -22,6 +22,14 @@ import { ChunkStreamer } from './ChunkStreamer.js';
 import { NPCManager } from './NPCManager.js';
 import { TrafficManager } from './TrafficManager.js';
 import { AudioManager } from '../audio/index.js';
+import { WorldMaterialBinder } from './materials/WorldMaterialBinder.js';
+import { PropManager } from './PropManager.js';
+import { DayNightCycle } from './atmosphere/DayNightCycle.js';
+import { AtmosphereController } from './atmosphere/AtmosphereController.js';
+import { StreetLampSystem } from './atmosphere/StreetLampSystem.js';
+import { RickshawHeadlight } from './atmosphere/RickshawHeadlight.js';
+import { WeatherSystem } from './atmosphere/WeatherSystem.js';
+import { EconomyInteractables } from './EconomyInteractables.js';
 import { useSessionStore } from '../state/useSessionStore.js';
 import { useGameStore } from '../state/useGameStore.js';
 import { useUIStore } from '../state/useUIStore.js';
@@ -44,6 +52,17 @@ export class GameEngine {
   public npcManager!: NPCManager;
   public trafficManager!: TrafficManager;
   public audioManager!: AudioManager;
+  public materialBinder!: WorldMaterialBinder;
+  public propManager!: PropManager;
+  public dayNightCycle!: DayNightCycle;
+  public atmosphereController!: AtmosphereController;
+  public streetLamps!: StreetLampSystem;
+  public rickshawHeadlight!: RickshawHeadlight;
+  public weatherSystem!: WeatherSystem;
+  public economyInteractables!: EconomyInteractables;
+  private atmosphereHudAccum = 0;
+  private lastWearPos: WorldPosition | null = null;
+  private conditionHudAccum = 0;
 
   private isRunning = false;
   private animFrameId: number | null = null;
@@ -88,6 +107,9 @@ export class GameEngine {
     this.npcManager = new NPCManager(this.sceneManager.scene, this.physics);
     this.npcManager.init();
 
+    // 7.5 Milestone 13 — tea stall / mistri proximity volumes
+    this.economyInteractables = new EconomyInteractables();
+
     // 8. Initialize Autonomous Road Traffic AI
     this.trafficManager = new TrafficManager(this.sceneManager.scene, this.physics);
     await this.trafficManager.init();
@@ -98,8 +120,29 @@ export class GameEngine {
     // 10. Reconcile restored domain player transform and vehicle occupancy
     this.applyDomainToRuntime();
 
-    // 11. Initialize Chunk Streaming
+    // 11. Initialize Milestone 11 visual materials + street props (before chunk load)
+    this.materialBinder = new WorldMaterialBinder();
+    this.propManager = new PropManager(this.sceneManager.propsRoot);
+    this.propManager.init();
+
+    // 11b. Milestone 12 atmosphere stack
+    this.dayNightCycle = new DayNightCycle();
+    this.atmosphereController = new AtmosphereController(
+      this.sceneManager,
+      this.rendererManager,
+      this.dayNightCycle
+    );
+    this.streetLamps = new StreetLampSystem(
+      this.sceneManager.scene,
+      this.propManager.getPoleAnchors()
+    );
+    this.rickshawHeadlight = new RickshawHeadlight(this.sceneManager.rickshawMesh);
+    this.weatherSystem = new WeatherSystem(this.sceneManager.scene);
+    this.atmosphereController.applyNow(this.weatherSystem.rainFactor);
+
+    // 12. Initialize Chunk Streaming (atlas binder applied on each GLB load)
     this.chunkLoader = new ChunkLoader(this.physics);
+    this.chunkLoader.setMaterialBinder(this.materialBinder);
     this.chunkStreamer = new ChunkStreamer(this.chunkLoader, this.sceneManager.scene);
 
     this.chunkStreamer.onActiveChunksChanged = (activeIds, count) => {
@@ -107,18 +150,18 @@ export class GameEngine {
       useSessionStore.getState().setLoadedChunkCount(count);
     };
 
-    // 12. Load World Manifest & Start Initial Chunk Streaming
+    // 13. Load World Manifest & Start Initial Chunk Streaming
     await this.loadWorldManifest();
 
-    // 13. Initial position stream around restored player coordinates
+    // 14. Initial position stream around restored player coordinates
     const initialPos = this.isInVehicle ? this.rickshaw.getPosition() : this.character.getPosition();
     await this.chunkStreamer.updatePlayerPosition(initialPos);
 
-    // 14. Initialize Web Audio Engine
+    // 15. Initialize Web Audio Engine
     this.audioManager = new AudioManager();
     useSessionStore.getState().setIsAudioMuted(this.audioManager.settings.isMuted);
 
-    // 15. Window resize listener
+    // 16. Window resize listener
     window.addEventListener('resize', this.onResize);
     this.onResize();
   }
@@ -182,11 +225,8 @@ export class GameEngine {
 
     engine.updatePlayerPosition(curPos, curHeading);
     engine.setInVehicle(this.isInVehicle);
-    engine.updateVehicleState(
-      this.rickshaw.speedMps,
-      this.rickshaw.steeringAngle,
-      0
-    );
+    // Preserve domain-owned damagePercent (do not overwrite with 0)
+    engine.updateVehicleState(this.rickshaw.speedMps, this.rickshaw.steeringAngle);
   }
 
   /**
@@ -291,6 +331,19 @@ export class GameEngine {
       useSessionStore.getState().setIsAudioMuted(isMuted);
     }
 
+    // 1.6 Weather Toggle ('N' key) — Milestone 12
+    if (input.toggleWeather && !isUIBlocking && this.weatherSystem) {
+      const wx = this.weatherSystem.toggleWeather();
+      useSessionStore.getState().setStatusMessage(
+        wx === 'rain' ? 'বৃষ্টি শুরু (Light rain)' : 'আকাশ পরিষ্কার (Clear skies)'
+      );
+    }
+
+    // 1.7 Advance day/night clock early so audio + lighting share the same t
+    if (this.dayNightCycle) {
+      this.dayNightCycle.update(dt);
+    }
+
     // 2. Camera Toggle ('V' key)
     if (input.cameraToggle && !isUIBlocking) {
       const newMode = this.cameraDirector.toggleMode();
@@ -304,10 +357,16 @@ export class GameEngine {
     }
 
     // 4. Talk / Dialogue Interaction ('E' key)
+    // Priority: dialogue NPC > tea stall / mistri / chain-oil by distance
     if (input.talkInteract && !isUIBlocking) {
       const nearbyNPC = this.npcManager.getNearbyInteractiveNPC(activePos, 2.5);
       if (nearbyNPC && !nearbyNPC.isBoarded) {
         ui.openDialogue(nearbyNPC.definition.dialogueTreeId || 'dialogue_farhana_student');
+      } else {
+        const econ = this.economyInteractables?.findNearest(activePos, 2.5);
+        if (econ) {
+          ui.openDialogue(econ.item.dialogueTreeId);
+        }
       }
     }
 
@@ -353,8 +412,10 @@ export class GameEngine {
       this.cameraDirector.updateMouseLook(input.mouseDeltaX, input.mouseDeltaY);
     }
 
-    // 7. Suppress motion inputs if modal UI is open
-    const effectiveInput = isUIBlocking
+    // 7. Suppress motion inputs if modal UI is open; M13 blocks sprint when stamina critical
+    const domainEngine = useGameStore.getState().engine;
+    const sprintAllowed = domainEngine ? domainEngine.canSprint() : true;
+    const baseInput = isUIBlocking
       ? {
           forward: false,
           backward: false,
@@ -370,10 +431,23 @@ export class GameEngine {
           toggleInventory: false,
           toggleDebug: false,
           toggleMute: false,
+          toggleWeather: false,
           mouseDeltaX: 0,
           mouseDeltaY: 0,
         }
       : input;
+    const effectiveInput = {
+      ...baseInput,
+      sprint: baseInput.sprint && sprintAllowed,
+    };
+
+    // 7.5 Milestone 13 — apply vehicle condition multipliers before physics
+    if (domainEngine) {
+      const mods = domainEngine.getSpeedModifiers();
+      this.rickshaw.topSpeedMult = mods.topSpeedMult;
+      this.rickshaw.steerMult = mods.steerMult;
+      this.rickshaw.limpMode = mods.limpMode;
+    }
 
     // 8. Fixed-Timestep Physics Simulation Step
     this.physics.step(dt, (physicsDt) => {
@@ -400,6 +474,7 @@ export class GameEngine {
           toggleInventory: false,
           toggleDebug: false,
           toggleMute: false,
+          toggleWeather: false,
           mouseDeltaX: 0,
           mouseDeltaY: 0,
         });
@@ -452,6 +527,10 @@ export class GameEngine {
       );
 
       // 10.5.3 Ambient 3D Soundscape Emitters
+      this.audioManager.ambience.setAtmosphere(
+        this.dayNightCycle.nightFactor,
+        this.weatherSystem.rainFactor
+      );
       this.audioManager.ambience.update(dt, curPos);
 
       // 10.5.4 3D Audio Listener (Camera Orientation & Position)
@@ -581,14 +660,90 @@ export class GameEngine {
     }
 
     // 16. Contextual Interaction Prompts
+    let economyPrompt = '';
     if (!isUIBlocking) {
       const nearbyNPC = this.npcManager.getNearbyInteractiveNPC(curPos, 2.5);
       if (nearbyNPC && !nearbyNPC.isBoarded) {
         useSessionStore
           .getState()
           .setStatusMessage(`[E] কথা বলুন (Talk to ${nearbyNPC.definition.nameEn})`);
-      } else if (!this.isInVehicle && this.rickshaw.canEnter(curPos)) {
-        useSessionStore.getState().setStatusMessage('[F] রিকশায় উঠুন (Ride Rickshaw)');
+        economyPrompt = `[E] ${nearbyNPC.definition.nameBn}`;
+      } else {
+        const econ = this.economyInteractables?.findNearest(curPos, 2.5);
+        if (econ) {
+          useSessionStore
+            .getState()
+            .setStatusMessage(`${econ.item.promptBn} / ${econ.item.promptEn}`);
+          economyPrompt = econ.item.promptBn;
+        } else if (!this.isInVehicle && this.rickshaw.canEnter(curPos)) {
+          useSessionStore.getState().setStatusMessage('[F] রিকশায় উঠুন (Ride Rickshaw)');
+        }
+      }
+    }
+
+    // 16.5 Milestone 13 — wear while mounted + stamina tick + condition HUD
+    if (domainEngine) {
+      if (this.isInVehicle) {
+        if (this.lastWearPos) {
+          const dist = Math.hypot(curPos.x - this.lastWearPos.x, curPos.z - this.lastWearPos.z);
+          if (dist > 0.05 && dist < 20) {
+            const wear = domainEngine.applyTravelWear(dist, effectiveInput.sprint);
+            if (wear.punctureTriggered) {
+              useSessionStore
+                .getState()
+                .setStatusMessage('⚠️ পাংচার! মিস্ত্রি গৌতমের কাছে যান (Puncture — see Mistri Gautom)');
+              useGameStore
+                .getState()
+                .showToast('টায়ার পাংচার হয়েছে! রথখোলায় মেরামত করুন।', 4000);
+            }
+          }
+        }
+        this.lastWearPos = { ...curPos };
+      } else {
+        this.lastWearPos = null;
+      }
+
+      const moving =
+        (this.isInVehicle ? Math.abs(this.rickshaw.speedMps) : this.character.currentSpeed) > 0.2;
+      const stam = domainEngine.tickStamina({
+        dtSec: dt,
+        sprinting: baseInput.sprint,
+        inVehicle: this.isInVehicle,
+        moving,
+      });
+
+      if (baseInput.sprint && stam.sprintBlocked && !isUIBlocking) {
+        // Soft warning — throttle via condition HUD accum
+      }
+
+      this.conditionHudAccum += dt;
+      if (this.conditionHudAccum >= 0.25) {
+        this.conditionHudAccum = 0;
+        useSessionStore.getState().setConditionHud({
+          staminaPercent: domainEngine.staminaPercent,
+          damagePercent: domainEngine.player.vehicleState.damagePercent,
+          tirePressurePercent: domainEngine.tirePressurePercent,
+          isPunctured: domainEngine.isPunctured,
+          sprintBlocked: stam.sprintBlocked,
+          economyPrompt,
+        });
+      }
+    }
+
+    // 12b. Milestone 12 — Weather particles, lighting, lamps, headlight (clock already advanced)
+    if (this.dayNightCycle && this.atmosphereController) {
+      this.weatherSystem.update(dt, curPos);
+      this.atmosphereController.update(dt, this.weatherSystem.rainFactor);
+      this.streetLamps.update(curPos, this.dayNightCycle.nightFactor);
+      this.rickshawHeadlight.update(this.isInVehicle, this.dayNightCycle.isNightLike);
+
+      this.atmosphereHudAccum += dt;
+      if (this.atmosphereHudAccum >= 0.5) {
+        this.atmosphereHudAccum = 0;
+        const wxLabel = this.weatherSystem.state === 'rain' ? 'বৃষ্টি / Rain' : 'পরিষ্কার / Clear';
+        useSessionStore
+          .getState()
+          .setAtmosphereHud(this.dayNightCycle.clockLabel, wxLabel, this.dayNightCycle.phase);
       }
     }
 
@@ -621,6 +776,12 @@ export class GameEngine {
     }
     if (this.inputManager) this.inputManager.detach();
     if (this.chunkStreamer) this.chunkStreamer.dispose();
+    if (this.weatherSystem) this.weatherSystem.dispose();
+    if (this.streetLamps) this.streetLamps.dispose();
+    if (this.rickshawHeadlight) this.rickshawHeadlight.dispose();
+    if (this.atmosphereController) this.atmosphereController.dispose();
+    if (this.propManager) this.propManager.dispose();
+    if (this.materialBinder) this.materialBinder.dispose();
     if (this.npcManager) this.npcManager.dispose();
     if (this.trafficManager) this.trafficManager.dispose();
     if (this.character) this.character.dispose();

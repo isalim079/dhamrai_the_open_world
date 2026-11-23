@@ -69,7 +69,7 @@ export type CurrencyCode = typeof CURRENCY_CODE_BDT;
 /**
  * Economy Transaction Event for Append-Only Ledger.
  */
-export type TransactionCategory = 'INITIAL_BALANCE' | 'FARE_PAYMENT' | 'DELIVERY_PAYMENT' | 'VEHICLE_RENTAL' | 'MAINTENANCE_COST' | 'FINE_PENALTY' | 'REPUTATION_BONUS';
+export type TransactionCategory = 'INITIAL_BALANCE' | 'FARE_PAYMENT' | 'DELIVERY_PAYMENT' | 'VEHICLE_RENTAL' | 'MAINTENANCE_COST' | 'FINE_PENALTY' | 'REPUTATION_BONUS' | 'CONSUMABLE_PURCHASE';
 export interface EconomyTransaction {
     id: string;
     timestampMs: number;
@@ -113,11 +113,15 @@ export interface PlayerState {
     position: WorldPosition;
     headingRadians: number;
     isInVehicle: boolean;
+    /** Milestone 13 — optional additive V2 field (default 100 on hydrate). */
+    staminaPercent?: number;
     vehicleState?: {
         id: string;
         speedMps: number;
         steeringAngleRad: number;
         damagePercent: number;
+        /** Milestone 13 — optional additive V2 field (default 100 on hydrate). */
+        tirePressurePercent?: number;
     };
     cashMinorUnits: number;
     currency: CurrencyCode;
@@ -297,7 +301,7 @@ export interface DialogueChoice {
     textBn: string;
     textEn: string;
     nextNodeId?: string;
-    actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'PICKUP_CARGO' | 'START_FARE' | 'CLOSE_DIALOGUE';
+    actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'PICKUP_CARGO' | 'START_FARE' | 'CLOSE_DIALOGUE' | 'BUY_CHA' | 'BUY_BISCUITS' | 'REPAIR_TIRE' | 'REPAIR_TUNE_UP' | 'REPAIR_FULL' | 'REPAIR_CHAIN_OIL';
 }
 export interface DialogueNode {
     id: string;
@@ -318,7 +322,7 @@ export interface DialogueTree {
 /**
  * Milestone 7 — NPC Entity Definitions
  */
-export type NPCRoleType = 'STORY_PASSENGER' | 'POLICE_PATROL' | 'ARTISAN' | 'AMBIENT_PEDESTRIAN';
+export type NPCRoleType = 'STORY_PASSENGER' | 'POLICE_PATROL' | 'ARTISAN' | 'AMBIENT_PEDESTRIAN' | 'VENDOR' | 'MECHANIC';
 export interface NPCEntityDefinition {
     id: string;
     nameBn: string;

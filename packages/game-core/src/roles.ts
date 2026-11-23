@@ -82,6 +82,8 @@ export interface RickshawDriverArchetype {
   position: WorldPosition;
   headingRadians: number;
   isInVehicle: boolean;
+  /** Milestone 13 — driver stamina 0–100 */
+  staminaPercent: number;
   vehicleState: {
     id: string;
     model: string;
@@ -92,6 +94,10 @@ export interface RickshawDriverArchetype {
     speedMps: number;
     steeringAngleRad: number;
     damagePercent: number;
+    /** Milestone 13 — tire pressure 0–100 */
+    tirePressurePercent: number;
+    /** Ephemeral puncture flag (also mirrored in worldFlags for session) */
+    isPunctured: boolean;
   };
   reputations: PlayerReputationScores;
 }
@@ -102,6 +108,7 @@ export function createInitialRickshawDriverState(): RickshawDriverArchetype {
     position: { ...PHASE_1_ANCHORS.RATHKHOLA_ORIGIN },
     headingRadians: 0,
     isInVehicle: false,
+    staminaPercent: 100,
     vehicleState: {
       id: 'rickshaw_rented_01',
       model: 'basic_pedal_rickshaw',
@@ -112,6 +119,8 @@ export function createInitialRickshawDriverState(): RickshawDriverArchetype {
       speedMps: 0,
       steeringAngleRad: 0,
       damagePercent: 0,
+      tirePressurePercent: 100,
+      isPunctured: false,
     },
     reputations: {
       transportReputation: 10,

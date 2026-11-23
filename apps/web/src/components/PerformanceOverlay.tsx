@@ -12,6 +12,9 @@ export const PerformanceOverlay: React.FC = () => {
     performance,
     bellRinging,
     statusMessage,
+    gameClockLabel,
+    weatherLabel,
+    dayPhase,
   } = useSessionStore();
 
   return (
@@ -81,6 +84,10 @@ export const PerformanceOverlay: React.FC = () => {
         <div style={{ color: performance.fps >= 30 ? '#7ee787' : '#f85149', fontWeight: 'bold' }}>
           {performance.fps} FPS ({performance.frameTimeMs.toFixed(1)} ms)
         </div>
+        <div style={{ color: '#f0c674' }}>
+          Time: {gameClockLabel} ({dayPhase})
+        </div>
+        <div style={{ color: '#79c0ff' }}>Weather: {weatherLabel}</div>
         <div>Draw Calls: {performance.drawCalls} / 180 max</div>
         <div>Triangles: {performance.triangles.toLocaleString()} / 120,000 max</div>
         <div>Colliders: {performance.activeColliders} / 200 max</div>

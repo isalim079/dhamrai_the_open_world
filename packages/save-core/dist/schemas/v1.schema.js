@@ -47,6 +47,7 @@ export const transactionCategorySchemaV1 = z.enum([
     'MAINTENANCE_COST',
     'FINE_PENALTY',
     'REPUTATION_BONUS',
+    'CONSUMABLE_PURCHASE',
 ]);
 export const economyTransactionSchemaV1 = z.object({
     id: z.string().min(1),

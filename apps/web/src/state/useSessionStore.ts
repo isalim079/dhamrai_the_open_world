@@ -35,6 +35,17 @@ export interface SessionState {
   statusMessage: string;
   npcPositions: DynamicNPCPosition[];
   isAudioMuted: boolean;
+  /** Milestone 12 atmosphere HUD */
+  gameClockLabel: string;
+  weatherLabel: string;
+  dayPhase: string;
+  /** Milestone 13 resource meters */
+  staminaPercent: number;
+  damagePercent: number;
+  tirePressurePercent: number;
+  isPunctured: boolean;
+  sprintBlocked: boolean;
+  economyPrompt: string;
 
   setPlayerPosition: (pos: WorldPosition) => void;
   setPlayerHeading: (heading: number) => void;
@@ -50,6 +61,15 @@ export interface SessionState {
   setStatusMessage: (msg: string) => void;
   setNpcPositions: (positions: DynamicNPCPosition[]) => void;
   setIsAudioMuted: (muted: boolean) => void;
+  setAtmosphereHud: (clock: string, weather: string, phase: string) => void;
+  setConditionHud: (stats: {
+    staminaPercent: number;
+    damagePercent: number;
+    tirePressurePercent: number;
+    isPunctured: boolean;
+    sprintBlocked: boolean;
+    economyPrompt?: string;
+  }) => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -73,6 +93,15 @@ export const useSessionStore = create<SessionState>((set) => ({
   statusMessage: 'Ready — Dhamrai Rathkhola Stand',
   npcPositions: [],
   isAudioMuted: false,
+  gameClockLabel: '08:24',
+  weatherLabel: 'Clear',
+  dayPhase: 'day',
+  staminaPercent: 100,
+  damagePercent: 0,
+  tirePressurePercent: 100,
+  isPunctured: false,
+  sprintBlocked: false,
+  economyPrompt: '',
 
   setPlayerPosition: (pos) => set({ playerPosition: pos }),
   setPlayerHeading: (heading) => set({ playerHeading: heading }),
@@ -96,4 +125,15 @@ export const useSessionStore = create<SessionState>((set) => ({
   setStatusMessage: (msg) => set({ statusMessage: msg }),
   setNpcPositions: (positions) => set({ npcPositions: positions }),
   setIsAudioMuted: (muted) => set({ isAudioMuted: muted }),
+  setAtmosphereHud: (clock, weather, phase) =>
+    set({ gameClockLabel: clock, weatherLabel: weather, dayPhase: phase }),
+  setConditionHud: (stats) =>
+    set({
+      staminaPercent: stats.staminaPercent,
+      damagePercent: stats.damagePercent,
+      tirePressurePercent: stats.tirePressurePercent,
+      isPunctured: stats.isPunctured,
+      sprintBlocked: stats.sprintBlocked,
+      economyPrompt: stats.economyPrompt ?? '',
+    }),
 }));

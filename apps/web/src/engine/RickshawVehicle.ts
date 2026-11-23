@@ -35,6 +35,11 @@ export class RickshawVehicle {
   public readonly maxInteractionRadius = 2.5; // m
   public readonly maxExitSpeedMps = 0.5; // m/s (~1.8 km/h)
 
+  /** Milestone 13 — soft gameplay multipliers from vehicle condition */
+  public topSpeedMult = 1.0;
+  public steerMult = 1.0;
+  public limpMode = false;
+
   // 3-Wheel Configuration
   public wheels: WheelInfo[] = [
     // 0: Front steerable wheel (center-forward)
@@ -117,12 +122,13 @@ export class RickshawVehicle {
     this.speedMps = linvel.x * forwardX + linvel.z * forwardZ;
 
     if (this.isOccupied) {
-      // 1. Steering with 'A'/'D' (clamped to ±35°)
-      const steerSpeed = 2.5 * dt; // radians per second
+      // 1. Steering with 'A'/'D' (clamped to ±35°); low tire reduces response
+      const steerSpeed = 2.5 * dt * this.steerMult; // radians per second
+      const maxSteer = this.maxSteerAngle * this.steerMult;
       if (input.left) {
-        this.steeringAngle = Math.min(this.steeringAngle + steerSpeed, this.maxSteerAngle);
+        this.steeringAngle = Math.min(this.steeringAngle + steerSpeed, maxSteer);
       } else if (input.right) {
-        this.steeringAngle = Math.max(this.steeringAngle - steerSpeed, -this.maxSteerAngle);
+        this.steeringAngle = Math.max(this.steeringAngle - steerSpeed, -maxSteer);
       } else {
         // Auto-center steering when keys released
         if (this.steeringAngle > 0.01) {
@@ -135,13 +141,15 @@ export class RickshawVehicle {
       }
       this.wheels[0]!.steeringAngle = this.steeringAngle;
 
-      // 2. Pedaling / Acceleration with 'W'
-      const targetSpeed = input.sprint ? this.sprintTargetSpeedMps : this.normalTargetSpeedMps;
+      // 2. Pedaling / Acceleration with 'W' (damage & puncture soft caps)
+      const baseTarget = input.sprint ? this.sprintTargetSpeedMps : this.normalTargetSpeedMps;
+      const limpCap = this.limpMode ? this.normalTargetSpeedMps * 0.35 : baseTarget;
+      const targetSpeed = Math.min(limpCap, baseTarget * this.topSpeedMult);
       let driveForce = 0.0;
 
       if (input.forward) {
         if (this.speedMps < targetSpeed) {
-          driveForce = 350.0; // Newtons
+          driveForce = this.limpMode ? 120.0 : 350.0; // Newtons
         }
       } else if (input.backward) {
         // Braking / reverse

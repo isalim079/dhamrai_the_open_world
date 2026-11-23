@@ -90,7 +90,8 @@ export type TransactionCategory =
   | 'VEHICLE_RENTAL'
   | 'MAINTENANCE_COST'
   | 'FINE_PENALTY'
-  | 'REPUTATION_BONUS';
+  | 'REPUTATION_BONUS'
+  | 'CONSUMABLE_PURCHASE';
 
 export interface EconomyTransaction {
   id: string;
@@ -144,11 +145,15 @@ export interface PlayerState {
   position: WorldPosition;
   headingRadians: number;
   isInVehicle: boolean;
+  /** Milestone 13 — optional additive V2 field (default 100 on hydrate). */
+  staminaPercent?: number;
   vehicleState?: {
     id: string;
     speedMps: number;
     steeringAngleRad: number;
     damagePercent: number;
+    /** Milestone 13 — optional additive V2 field (default 100 on hydrate). */
+    tirePressurePercent?: number;
   };
   cashMinorUnits: number; // Integer Poisha (1 BDT = 100 Poisha)
   currency: CurrencyCode; // Explicitly 'BDT'
@@ -349,7 +354,13 @@ export interface DialogueChoice {
     | 'INSPECT_DOCUMENTS'
     | 'PICKUP_CARGO'
     | 'START_FARE'
-    | 'CLOSE_DIALOGUE';
+    | 'CLOSE_DIALOGUE'
+    | 'BUY_CHA'
+    | 'BUY_BISCUITS'
+    | 'REPAIR_TIRE'
+    | 'REPAIR_TUNE_UP'
+    | 'REPAIR_FULL'
+    | 'REPAIR_CHAIN_OIL';
 }
 
 export interface DialogueNode {
@@ -373,7 +384,13 @@ export interface DialogueTree {
 /**
  * Milestone 7 — NPC Entity Definitions
  */
-export type NPCRoleType = 'STORY_PASSENGER' | 'POLICE_PATROL' | 'ARTISAN' | 'AMBIENT_PEDESTRIAN';
+export type NPCRoleType =
+  | 'STORY_PASSENGER'
+  | 'POLICE_PATROL'
+  | 'ARTISAN'
+  | 'AMBIENT_PEDESTRIAN'
+  | 'VENDOR'
+  | 'MECHANIC';
 
 export interface NPCEntityDefinition {
   id: string;

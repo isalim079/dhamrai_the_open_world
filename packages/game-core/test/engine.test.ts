@@ -192,4 +192,89 @@ describe('GameCoreEngine — Aggregate Root & Save Envelope Hydration', () => {
     const reloadPayout = loaded.completeMission('fare_trip_001');
     expect(reloadPayout.payoutApplied).toBe(false);
   });
+
+  it('M13: travel wear, tea purchase, repair, and save/reload preserve stamina/tire/damage', () => {
+    const engine = GameCoreEngine.createNewGame(1000);
+    expect(engine.player.staminaPercent).toBe(100);
+    expect(engine.player.vehicleState.tirePressurePercent).toBe(100);
+
+    const wear = engine.applyTravelWear(2000, false, () => 1);
+    expect(wear.damagePercent).toBeGreaterThan(0);
+    expect(wear.tirePressurePercent).toBeLessThan(100);
+
+    engine.tickStamina({
+      dtSec: 5,
+      sprinting: true,
+      inVehicle: true,
+      moving: true,
+    });
+    expect(engine.staminaPercent).toBeLessThan(100);
+
+    const tea = engine.purchaseConsumable('cha_cup', 2000, 'tx_tea_test_1');
+    expect(tea.success).toBe(true);
+    expect(tea.transaction?.category).toBe('CONSUMABLE_PURCHASE');
+    expect(tea.transaction?.deltaMinorUnits).toBe(-500);
+    // 5s pedal sprint drains 60 → 40; cha restores +35 → 75
+    expect(engine.staminaPercent).toBe(75);
+
+    // Force damage then full service
+    engine.applyTravelWear(50_000, true, () => 1);
+    const beforeRepair = engine.player.vehicleState.damagePercent;
+    expect(beforeRepair).toBeGreaterThan(10);
+
+    const repair = engine.purchaseRepair('full_service', 3000, 'tx_repair_test_1');
+    expect(repair.success).toBe(true);
+    expect(repair.transaction?.category).toBe('MAINTENANCE_COST');
+    expect(engine.player.vehicleState.damagePercent).toBe(0);
+    expect(engine.player.vehicleState.tirePressurePercent).toBe(100);
+
+    const save = engine.toSaveEnvelope('m13', 'M13');
+    expect(save.saveSchemaVersion).toBe(2);
+    expect(save.player.staminaPercent).toBe(engine.staminaPercent);
+    expect(save.player.vehicleState?.tirePressurePercent).toBe(100);
+    expect(save.player.vehicleState?.damagePercent).toBe(0);
+
+    const loaded = GameCoreEngine.fromSaveEnvelope(save);
+    expect(loaded.staminaPercent).toBe(engine.staminaPercent);
+    expect(loaded.tirePressurePercent).toBe(100);
+    expect(loaded.player.vehicleState.damagePercent).toBe(0);
+  });
+
+  it('M13: insufficient funds rejects consumable and repair', () => {
+    const engine = GameCoreEngine.createNewGame(1000);
+    // Drain nearly all cash via rent loops until < ৳5
+    while (engine.economy.balanceMinorUnits >= 5000) {
+      engine.processDailyVehicleRent(Date.now());
+    }
+    // Spend remaining down below ৳5 if needed
+    const bal = engine.economy.balanceMinorUnits;
+    if (bal > 0 && bal < 500) {
+      // already insolvent for cha
+    } else if (bal >= 500) {
+      engine.economy.debit(bal, 'FINE_PENALTY', 'test drain', Date.now(), 'tx_drain_all');
+    }
+
+    const tea = engine.purchaseConsumable('cha_cup', Date.now(), 'tx_tea_fail');
+    expect(tea.success).toBe(false);
+    expect(tea.reason).toBe('INSUFFICIENT_FUNDS');
+
+    const repair = engine.purchaseRepair('tire_fix', Date.now(), 'tx_repair_fail');
+    expect(repair.success).toBe(false);
+    expect(repair.reason).toBe('INSUFFICIENT_FUNDS');
+  });
+
+  it('M13: old V2 saves without optional stamina/tire hydrate with defaults', () => {
+    const engine = GameCoreEngine.createNewGame(1000);
+    const save = engine.toSaveEnvelope('legacy', 'Legacy');
+    // Simulate pre-M13 envelope
+    delete save.player.staminaPercent;
+    if (save.player.vehicleState) {
+      delete save.player.vehicleState.tirePressurePercent;
+    }
+
+    const loaded = GameCoreEngine.fromSaveEnvelope(save);
+    expect(loaded.staminaPercent).toBe(100);
+    expect(loaded.tirePressurePercent).toBe(100);
+    expect(save.saveSchemaVersion).toBe(2);
+  });
 });

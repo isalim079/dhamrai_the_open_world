@@ -1,9 +1,19 @@
 # Dhamrai Life — Progress Tracker
 
-**Last updated:** 3 November 2026
-**Overall status:** Milestone 4 REMEDIATION VERIFICATION BLOCKED; not approved. Yarn Classic 1.22.22 and browser-first architecture preserved. Final local run: 153 TypeScript tests passed, four real PostgreSQL tests skipped; 13 Python tests passed; typecheck passed. PostgreSQL startup is denied and pg dependency installation/lockfile resolution is blocked by network/cache availability. Milestone 5 not started. No commit or push.
+**Last updated:** 23 November 2026  
+**Overall status:** Milestone 13 COMPLETE (verified). Yarn Classic 1.22.22 preserved. Save schema remains `SaveEnvelopeV2` with additive optional fields. Zero new npm dependencies through M13.
 
-## Current phase and evidence
+## Current milestone focus
+
+| Work item | Status | Evidence / limits |
+|---|---|---|
+| Milestone 12: Dynamic Day–Night Cycle & Atmospheric Weather | COMPLETE | `guideFiles/milestone_12_implementation_report.md` |
+| Milestone 13: Vehicle Maintenance, Driver Stamina & Tea Stall Economy | COMPLETE | `guideFiles/milestone_13_implementation_report.md`; CDP 11/11; 60 FPS; schema v2 |
+| Baseline regression (23 Nov 2026 post-M13) | MOSTLY GREEN | typecheck 0; Python 23/23; Vitest 306 passed / 4 skipped; Neon PG offline |
+| Dependency lockfile | CLEAN | `yarn.lock` unchanged |
+| Next task | READY | Milestone 14 Discovery & Planning (await “next”) |
+
+## Historical phase and evidence (Sprints / earlier milestones)
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
@@ -78,7 +88,7 @@ The counts and completion claims below describe the earlier implementation repor
 
 ## Next task
 
-Resolve Milestone 4 blockers and rerun real database/integration verification. Await explicit Milestone 4 approval; do not start Milestone 5.
+Await explicit authorization to implement **Milestone 13: Vehicle Maintenance, Driver Stamina & Tea Stall Economy** per `guideFiles/milestone_13_planning_report.md`. Historical Milestone 4 real-PostgreSQL / live Drive verification remains environment-gated and off this critical path.
 
 ## 2026-11-03 — Existing web development startup repair
 
@@ -87,3 +97,78 @@ Resolve Milestone 4 blockers and rerun real database/integration verification. A
 - Dev command now loads its configuration; HTTP serving could not be checked because this sandbox denies listening on 127.0.0.1:5173 (EPERM).
 - API port 3000 is held by another project's Arc-One server, PID 74924 at inspection. That process and local credentials were left unchanged. Port 3001 had no listener at inspection; use PORT=3001 yarn start:api to run a second API without disturbing it.
 - This repairs the existing web startup only; it does not approve a milestone or implement additional milestone scope. No commit or push.
+
+## 2026-11-23 — Milestone 11 Discovery & Planning
+
+```text
+Phase: Phase 1 vertical slice polish track
+Task: Milestone 11 Discovery & Planning (Visual World Polish & Street Detailing)
+Status: READY FOR IMPLEMENTATION (awaiting auth)
+Files changed: guideFiles/milestone_11_planning_report.md, guideFiles/PROGRESS.md, PROGRESS.md
+Tests run: yarn test; yarn typecheck; python unittest geo-pipeline
+Test results: typecheck 0 errors; Python 23/23; Vitest 252 passed / 4 skipped; 1 real-PG suite failed offline (ENOTFOUND Neon)
+Manual verification: Code/architecture inspection of SceneManager, ChunkLoader, slice_mesh_generator, performance budgets, PHASE_1_ANCHORS
+Known limitations: Real PostgreSQL integration still environment-gated; day-night deferred to M12
+Open risks: Draw-call/triangle inflation if props are not instanced (mitigated in plan)
+Next task: Explicit user authorization to implement Milestone 11
+```
+
+## 2026-11-23 — Milestone 11 Implementation Complete
+
+```text
+Phase: Phase 1 vertical slice polish track
+Task: Milestone 11 Visual World Polish & Street Detailing
+Status: COMPLETE — VERIFIED
+Files changed: AtlasFactory, WorldMaterialBinder, PropManager, propCatalog, signboardCopy, ChunkLoader, SceneManager, GameEngine, tests, CDP script, reports
+Tests run: yarn test; yarn typecheck; python unittest; scratch/m11_live_verification.cjs
+Test results: typecheck 0; Python 23/23; Vitest 270 passed / 4 skipped; CDP 10/10; 60 FPS / 79 draw calls / 10399 tris
+Manual verification: Live headless Chrome CDP screenshots m11_shot_01..10
+Known limitations: Low-poly procedural props; no prop colliders; Neon PG offline
+Open risks: None blocking M12 planning
+Next task: Milestone 12 Discovery & Planning (Day-Night & Weather)
+```
+
+## 2026-11-23 — Milestone 12 Discovery & Planning
+
+```text
+Phase: Phase 1 atmosphere polish track
+Task: Milestone 12 Discovery & Planning (Day-Night & Atmospheric Weather)
+Status: READY FOR IMPLEMENTATION (awaiting auth)
+Files changed: guideFiles/milestone_12_planning_report.md, guideFiles/PROGRESS.md, PROGRESS.md
+Tests run: yarn test; yarn typecheck; python unittest geo-pipeline
+Test results: typecheck 0; Python 23/23; Vitest 270 passed / 4 skipped; Neon PG offline fail unchanged
+Manual verification: Inspected SceneManager static lighting, Renderer exposure, AmbientSoundscape hooks, PropManager poles, GameEngine update loop
+Known limitations: Neon PG environment-gated
+Open risks: PointLight/rain particle budgets (mitigated in plan with hard caps)
+Next task: Explicit user authorization to implement Milestone 12
+```
+
+## 2026-11-23 — Milestone 12 Implementation Complete
+
+```text
+Phase: Phase 1 atmosphere polish track
+Task: Milestone 12 Day-Night Cycle & Atmospheric Weather
+Status: COMPLETE — VERIFIED
+Files changed: atmosphere/*, GameEngine, SceneManager, PropManager, InputManager, AmbientSoundscape, HUD, SessionStore, tests, CDP
+Tests run: yarn test; yarn typecheck; python unittest; scratch/m12_live_verification.cjs
+Test results: typecheck 0; Python 23/23; Vitest 288 passed / 4 skipped; CDP 11/11; 60 FPS night+rain
+Manual verification: Live CDP screenshots m12_shot_01..10
+Known limitations: Light rain only; Neon PG offline
+Open risks: None blocking M13 planning
+Next task: Milestone 13 Discovery & Planning
+```
+
+## 2026-11-23 — Milestone 13 Discovery & Planning
+
+```text
+Phase: Phase 1 economy closeout
+Task: Milestone 13 Discovery & Planning (Vehicle Maintenance, Stamina & Tea Stall Economy)
+Status: READY FOR IMPLEMENTATION (awaiting auth)
+Files changed: guideFiles/milestone_13_planning_report.md, guideFiles/PROGRESS.md, PROGRESS.md
+Tests run: yarn test; yarn typecheck; python unittest
+Test results: typecheck 0; Python 23/23; Vitest 288 passed / 4 skipped; Neon PG offline
+Manual verification: Inspected damagePercent, MAINTENANCE_COST, CONSUMABLE inventory, tea stall props, SaveEnvelopeV2 vehicleState
+Known limitations: Neon PG environment-gated
+Open risks: Optional V2 field hydrate must keep old saves valid (mitigated in plan)
+Next task: Explicit user authorization to implement Milestone 13
+```

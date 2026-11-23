@@ -6,6 +6,44 @@ import { useAuthStore } from '../state/useAuthStore.js';
 import { PHASE_1_MISSIONS } from '@dhamrai/game-core';
 import { getActiveAudioManager } from '../audio/index.js';
 
+const MeterRow: React.FC<{
+  label: string;
+  labelEn: string;
+  value: number;
+  color: string;
+  invert?: boolean;
+}> = ({ label, labelEn, value, color, invert }) => {
+  const fill = Math.max(0, Math.min(100, invert ? value : value));
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ fontSize: 10, color: '#8b949e', width: 42 }} title={labelEn}>
+        {label}
+      </span>
+      <div
+        style={{
+          flex: 1,
+          height: 6,
+          backgroundColor: '#21262d',
+          borderRadius: 3,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: `${fill}%`,
+            height: '100%',
+            backgroundColor: color,
+            transition: 'width 0.2s linear',
+          }}
+        />
+      </div>
+      <span style={{ fontSize: 10, color: '#c9d1d9', width: 28, textAlign: 'right', fontFamily: 'monospace' }}>
+        {Math.round(value)}
+      </span>
+    </div>
+  );
+};
+
 export const HUD: React.FC = () => {
   const playerPosition = useSessionStore((s) => s.playerPosition);
   const isInVehicle = useSessionStore((s) => s.isInVehicle);
@@ -13,6 +51,14 @@ export const HUD: React.FC = () => {
   const statusMessage = useSessionStore((s) => s.statusMessage);
   const bellRinging = useSessionStore((s) => s.bellRinging);
   const isAudioMuted = useSessionStore((s) => s.isAudioMuted);
+  const gameClockLabel = useSessionStore((s) => s.gameClockLabel);
+  const weatherLabel = useSessionStore((s) => s.weatherLabel);
+  const dayPhase = useSessionStore((s) => s.dayPhase);
+  const staminaPercent = useSessionStore((s) => s.staminaPercent);
+  const damagePercent = useSessionStore((s) => s.damagePercent);
+  const tirePressurePercent = useSessionStore((s) => s.tirePressurePercent);
+  const isPunctured = useSessionStore((s) => s.isPunctured);
+  const sprintBlocked = useSessionStore((s) => s.sprintBlocked);
 
   const cashFormatted = useGameStore((s) => s.cashFormattedBdt);
   const reputation = useGameStore((s) => s.reputation);
@@ -130,6 +176,70 @@ export const HUD: React.FC = () => {
           <span>
             X: {playerPosition.x.toFixed(0)}m, Z: {playerPosition.z.toFixed(0)}m
           </span>
+        </div>
+
+        {/* Milestone 12 — Clock & Weather */}
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: '12px',
+            display: 'flex',
+            gap: 10,
+            alignItems: 'center',
+            borderTop: '1px solid #30363d',
+            paddingTop: 6,
+          }}
+        >
+          <span style={{ color: '#f0c674', fontWeight: 700, fontFamily: 'monospace' }}>
+            🕒 {gameClockLabel}
+          </span>
+          <span style={{ color: '#8b949e', textTransform: 'capitalize' }}>{dayPhase}</span>
+          <span style={{ color: weatherLabel.includes('Rain') || weatherLabel.includes('বৃষ্টি') ? '#79c0ff' : '#7ee787' }}>
+            {weatherLabel} [N]
+          </span>
+        </div>
+
+        {/* Milestone 13 — Stamina & Vehicle Condition */}
+        <div
+          style={{
+            marginTop: 8,
+            borderTop: '1px solid #30363d',
+            paddingTop: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 5,
+            minWidth: 210,
+          }}
+        >
+          <MeterRow
+            label="শক্তি"
+            labelEn="Stamina"
+            value={staminaPercent}
+            color={sprintBlocked ? '#f85149' : staminaPercent < 30 ? '#d29922' : '#3fb950'}
+          />
+          <MeterRow
+            label="ক্ষতি"
+            labelEn="Damage"
+            value={damagePercent}
+            invert
+            color={damagePercent > 60 ? '#f85149' : damagePercent > 30 ? '#d29922' : '#8b949e'}
+          />
+          <MeterRow
+            label="টায়ার"
+            labelEn="Tire"
+            value={tirePressurePercent}
+            color={isPunctured ? '#f85149' : tirePressurePercent < 30 ? '#d29922' : '#58a6ff'}
+          />
+          {isPunctured && (
+            <div style={{ fontSize: 11, color: '#f85149', fontWeight: 700 }}>
+              পাংচার — মিস্ত্রি দেখুন (Puncture)
+            </div>
+          )}
+          {sprintBlocked && !isPunctured && (
+            <div style={{ fontSize: 11, color: '#d29922', fontWeight: 600 }}>
+              স্প্রিন্ট বন্ধ — চা খান (Sprint blocked)
+            </div>
+          )}
         </div>
       </div>
 
@@ -435,7 +545,8 @@ export const HUD: React.FC = () => {
           pointerEvents: 'none',
         }}
       >
-        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে · [M] শব্দ{import.meta.env.DEV ? ' · [F3] ডিবাগ' : ''}
+        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে · [M] শব্দ · [N] আবহাওয়া
+        {import.meta.env.DEV ? ' · [F3] ডিবাগ' : ''}
       </div>
     </>
   );

@@ -9,6 +9,17 @@ import { EconomyDomain } from './economy.js';
 import { InventoryDomain } from './inventory.js';
 import { MissionDomain, MissionCompletionResult } from './missions.js';
 import { RickshawDriverArchetype } from './roles.js';
+import { RepairServiceId, SpeedModifiers, TravelWearResult } from './vehicle-condition.js';
+import { ConsumableItemId, StaminaTickResult } from './stamina.js';
+export interface PurchaseResult {
+    success: boolean;
+    reason?: 'INSUFFICIENT_FUNDS' | 'UNKNOWN_ITEM' | 'UNKNOWN_SERVICE';
+    transaction?: EconomyTransaction;
+    staminaPercent?: number;
+    damagePercent?: number;
+    tirePressurePercent?: number;
+    isPunctured?: boolean;
+}
 export declare class GameCoreEngine {
     private readonly _economy;
     private readonly _inventory;
@@ -34,6 +45,36 @@ export declare class GameCoreEngine {
     updateVehicleState(speedMps?: number, steeringAngleRad?: number, damagePercent?: number): void;
     setWorldFlag(key: string, value: boolean | number | string): void;
     getWorldFlag<T extends boolean | number | string>(key: string): T | undefined;
+    get staminaPercent(): number;
+    get tirePressurePercent(): number;
+    get isPunctured(): boolean;
+    get isTeaBuffActive(): boolean;
+    canSprint(): boolean;
+    getSpeedModifiers(): SpeedModifiers;
+    /**
+     * Apply travel wear while mounted. Returns puncture event details.
+     */
+    applyTravelWear(distanceM: number, sprinting: boolean, rng01?: () => number): TravelWearResult;
+    /**
+     * Tick driver stamina. Returns whether sprint should be blocked for this frame.
+     */
+    tickStamina(params: {
+        dtSec: number;
+        sprinting: boolean;
+        inVehicle: boolean;
+        moving: boolean;
+        nowMs?: number;
+    }): StaminaTickResult;
+    spendStamina(amount: number): number;
+    recoverStamina(amount: number): number;
+    /**
+     * Purchase cha / biscuits at a tea stall. Debits CONSUMABLE_PURCHASE and restores stamina.
+     */
+    purchaseConsumable(itemId: ConsumableItemId, timestampMs?: number, customId?: string): PurchaseResult;
+    /**
+     * Purchase a repair service. Debits MAINTENANCE_COST and mutates vehicle stats.
+     */
+    purchaseRepair(serviceId: RepairServiceId, timestampMs?: number, customId?: string): PurchaseResult;
     /**
      * Processes the daily rental fee for the rented pedal rickshaw (৳50 = 5,000 Poisha BDT).
      */

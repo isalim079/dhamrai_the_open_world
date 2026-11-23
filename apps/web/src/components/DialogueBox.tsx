@@ -123,6 +123,58 @@ export const DialogueBox: React.FC = () => {
       }
     }
 
+    // 5. Milestone 13 — Tea stall consumables
+    if (choice.actionTrigger === 'BUY_CHA' || choice.actionTrigger === 'BUY_BISCUITS') {
+      if (!engine) {
+        showToast('গেম লোড হয়নি (Game not ready)', 2500);
+        return;
+      }
+      const itemId = choice.actionTrigger === 'BUY_CHA' ? 'cha_cup' : 'biscuits';
+      const result = engine.purchaseConsumable(itemId, Date.now());
+      if (!result.success) {
+        audio?.ui.playDialogueClick();
+        showToast('টাকা নেই! (Insufficient funds)', 3000);
+        setDialogueNode('node_no_funds');
+        return;
+      }
+      audio?.ui.playCoinPayout();
+      useGameStore.getState().syncFromEngine();
+      const label = itemId === 'cha_cup' ? 'চা' : 'বিস্কুট';
+      showToast(`${label} কেনা হয়েছে — শক্তি পুনরুদ্ধার`, 3000);
+    }
+
+    // 6. Milestone 13 — Mistri / chain oil repairs
+    if (
+      choice.actionTrigger === 'REPAIR_TIRE' ||
+      choice.actionTrigger === 'REPAIR_TUNE_UP' ||
+      choice.actionTrigger === 'REPAIR_FULL' ||
+      choice.actionTrigger === 'REPAIR_CHAIN_OIL'
+    ) {
+      if (!engine) {
+        showToast('গেম লোড হয়নি (Game not ready)', 2500);
+        return;
+      }
+      const serviceMap = {
+        REPAIR_TIRE: 'tire_fix',
+        REPAIR_TUNE_UP: 'tune_up',
+        REPAIR_FULL: 'full_service',
+        REPAIR_CHAIN_OIL: 'chain_oil',
+      } as const;
+      const serviceId = serviceMap[choice.actionTrigger];
+      const result = engine.purchaseRepair(serviceId, Date.now());
+      if (!result.success) {
+        audio?.ui.playDialogueClick();
+        showToast('টাকা নেই! (Insufficient funds)', 3000);
+        if (choice.actionTrigger !== 'REPAIR_CHAIN_OIL') {
+          setDialogueNode('node_no_funds');
+        }
+        return;
+      }
+      audio?.ui.playCoinPayout();
+      useGameStore.getState().syncFromEngine();
+      showToast('মেরামত সম্পন্ন! (Repair done)', 3000);
+    }
+
     if (choice.actionTrigger === 'CLOSE_DIALOGUE') {
       closeDialogue();
       return;
@@ -148,6 +200,7 @@ export const DialogueBox: React.FC = () => {
         if (e.key === '1' && node.choices[0]) handleChoice(node.choices[0]);
         if (e.key === '2' && node.choices[1]) handleChoice(node.choices[1]);
         if (e.key === '3' && node.choices[2]) handleChoice(node.choices[2]);
+        if (e.key === '4' && node.choices[3]) handleChoice(node.choices[3]);
       } else if (e.key === 'Enter' || e.key === ' ' || e.key === 'e' || e.key === 'E') {
         closeDialogue();
       }

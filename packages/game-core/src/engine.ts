@@ -11,6 +11,7 @@ import {
   SaveEnvelopeV2,
   WorldPosition,
   CURRENCY_CODE_BDT,
+  InventoryItem,
 } from '@dhamrai/shared-contracts';
 import { EconomyDomain } from './economy.js';
 import { InventoryDomain } from './inventory.js';
@@ -21,6 +22,34 @@ import {
   RICKSHAW_LICENSE_SLIP_ITEM,
   RICKSHAW_STARTING_CASH_MINOR_UNITS,
 } from './roles.js';
+import {
+  applyTravelWear,
+  applyRepair,
+  computeSpeedModifiers,
+  RepairServiceId,
+  REPAIR_SERVICES,
+  SpeedModifiers,
+  TravelWearResult,
+} from './vehicle-condition.js';
+import {
+  tickStamina,
+  recoverStamina,
+  canSprint,
+  ConsumableItemId,
+  CONSUMABLES,
+  TEA_BUFF_DURATION_MS,
+  StaminaTickResult,
+} from './stamina.js';
+
+export interface PurchaseResult {
+  success: boolean;
+  reason?: 'INSUFFICIENT_FUNDS' | 'UNKNOWN_ITEM' | 'UNKNOWN_SERVICE';
+  transaction?: EconomyTransaction;
+  staminaPercent?: number;
+  damagePercent?: number;
+  tirePressurePercent?: number;
+  isPunctured?: boolean;
+}
 
 export class GameCoreEngine {
   private readonly _economy: EconomyDomain;
@@ -42,12 +71,22 @@ export class GameCoreEngine {
     this._player = {
       ...player,
       position: { ...player.position },
-      vehicleState: { ...player.vehicleState },
+      staminaPercent: player.staminaPercent ?? 100,
+      vehicleState: {
+        ...player.vehicleState,
+        tirePressurePercent: player.vehicleState.tirePressurePercent ?? 100,
+        isPunctured: player.vehicleState.isPunctured ?? false,
+      },
       reputations: { ...player.reputations },
     };
 
     for (const [k, v] of Object.entries(worldFlags)) {
       this._worldFlags.set(k, v);
+    }
+
+    // Mirror puncture into player state from world flag if present
+    if (this._worldFlags.get('vehiclePunctured') === true) {
+      this._player.vehicleState.isPunctured = true;
     }
   }
 
@@ -63,6 +102,8 @@ export class GameCoreEngine {
     return new GameCoreEngine(economy, inventory, missions, player, {
       tutorialCompleted: false,
       gameStartedAtMs: timestampMs,
+      vehiclePunctured: false,
+      teaBuffExpiresAtMs: 0,
     });
   }
 
@@ -90,21 +131,27 @@ export class GameCoreEngine {
     }
     const missions = new MissionDomain(undefined, missionInstances);
 
+    const damagePercent = save.player.vehicleState?.damagePercent ?? 0;
+    const puncturedFlag = save.worldFlags?.['vehiclePunctured'] === true;
+
     const player: RickshawDriverArchetype = {
       roleId: 'rickshaw_driver',
       position: { ...save.player.position },
       headingRadians: save.player.headingRadians,
       isInVehicle: save.player.isInVehicle,
+      staminaPercent: save.player.staminaPercent ?? 100,
       vehicleState: {
         id: save.player.vehicleState?.id ?? 'rickshaw_01',
         model: 'basic_pedal_rickshaw',
         isRented: true,
         dailyRentMinorUnits: 5000,
         dailyRentPoisha: 5000,
-        conditionPercent: 100 - (save.player.vehicleState?.damagePercent ?? 0),
+        conditionPercent: 100 - damagePercent,
         speedMps: save.player.vehicleState?.speedMps ?? 0,
         steeringAngleRad: save.player.vehicleState?.steeringAngleRad ?? 0,
-        damagePercent: save.player.vehicleState?.damagePercent ?? 0,
+        damagePercent,
+        tirePressurePercent: save.player.vehicleState?.tirePressurePercent ?? 100,
+        isPunctured: puncturedFlag,
       },
       reputations: {
         transportReputation: save.player.reputation,
@@ -155,7 +202,10 @@ export class GameCoreEngine {
   public updateVehicleState(speedMps?: number, steeringAngleRad?: number, damagePercent?: number): void {
     if (speedMps !== undefined) this._player.vehicleState.speedMps = speedMps;
     if (steeringAngleRad !== undefined) this._player.vehicleState.steeringAngleRad = steeringAngleRad;
-    if (damagePercent !== undefined) this._player.vehicleState.damagePercent = damagePercent;
+    if (damagePercent !== undefined) {
+      this._player.vehicleState.damagePercent = damagePercent;
+      this._player.vehicleState.conditionPercent = 100 - damagePercent;
+    }
   }
 
   public setWorldFlag(key: string, value: boolean | number | string): void {
@@ -164,6 +214,202 @@ export class GameCoreEngine {
 
   public getWorldFlag<T extends boolean | number | string>(key: string): T | undefined {
     return this._worldFlags.get(key) as T | undefined;
+  }
+
+  public get staminaPercent(): number {
+    return this._player.staminaPercent;
+  }
+
+  public get tirePressurePercent(): number {
+    return this._player.vehicleState.tirePressurePercent;
+  }
+
+  public get isPunctured(): boolean {
+    return this._player.vehicleState.isPunctured;
+  }
+
+  public get isTeaBuffActive(): boolean {
+    const expires = (this.getWorldFlag<number>('teaBuffExpiresAtMs') as number) ?? 0;
+    return Date.now() < expires;
+  }
+
+  public canSprint(): boolean {
+    return canSprint(this._player.staminaPercent);
+  }
+
+  public getSpeedModifiers(): SpeedModifiers {
+    return computeSpeedModifiers({
+      damagePercent: this._player.vehicleState.damagePercent,
+      tirePressurePercent: this._player.vehicleState.tirePressurePercent,
+      isPunctured: this._player.vehicleState.isPunctured,
+    });
+  }
+
+  /**
+   * Apply travel wear while mounted. Returns puncture event details.
+   */
+  public applyTravelWear(
+    distanceM: number,
+    sprinting: boolean,
+    rng01?: () => number
+  ): TravelWearResult {
+    const result = applyTravelWear(
+      {
+        damagePercent: this._player.vehicleState.damagePercent,
+        tirePressurePercent: this._player.vehicleState.tirePressurePercent,
+        isPunctured: this._player.vehicleState.isPunctured,
+      },
+      distanceM,
+      sprinting,
+      rng01
+    );
+
+    this._player.vehicleState.damagePercent = result.damagePercent;
+    this._player.vehicleState.conditionPercent = 100 - result.damagePercent;
+    this._player.vehicleState.tirePressurePercent = result.tirePressurePercent;
+    this._player.vehicleState.isPunctured = result.isPunctured;
+    this._worldFlags.set('vehiclePunctured', result.isPunctured);
+
+    return result;
+  }
+
+  /**
+   * Tick driver stamina. Returns whether sprint should be blocked for this frame.
+   */
+  public tickStamina(params: {
+    dtSec: number;
+    sprinting: boolean;
+    inVehicle: boolean;
+    moving: boolean;
+    nowMs?: number;
+  }): StaminaTickResult {
+    const now = params.nowMs ?? Date.now();
+    const buffExpires = (this.getWorldFlag<number>('teaBuffExpiresAtMs') as number) ?? 0;
+    const result = tickStamina({
+      staminaPercent: this._player.staminaPercent,
+      dtSec: params.dtSec,
+      sprinting: params.sprinting,
+      inVehicle: params.inVehicle,
+      moving: params.moving,
+      teaBuffActive: now < buffExpires,
+    });
+    this._player.staminaPercent = result.staminaPercent;
+    return result;
+  }
+
+  public spendStamina(amount: number): number {
+    this._player.staminaPercent = Math.max(0, Math.min(100, this._player.staminaPercent - amount));
+    return this._player.staminaPercent;
+  }
+
+  public recoverStamina(amount: number): number {
+    this._player.staminaPercent = recoverStamina(this._player.staminaPercent, amount);
+    return this._player.staminaPercent;
+  }
+
+  /**
+   * Purchase cha / biscuits at a tea stall. Debits CONSUMABLE_PURCHASE and restores stamina.
+   */
+  public purchaseConsumable(
+    itemId: ConsumableItemId,
+    timestampMs: number = Date.now(),
+    customId?: string
+  ): PurchaseResult {
+    const def = CONSUMABLES[itemId];
+    if (!def) {
+      return { success: false, reason: 'UNKNOWN_ITEM' };
+    }
+
+    if (!this._economy.hasSufficientFunds(def.priceMinorUnits)) {
+      return { success: false, reason: 'INSUFFICIENT_FUNDS' };
+    }
+
+    const tx = this._economy.debit(
+      def.priceMinorUnits,
+      'CONSUMABLE_PURCHASE',
+      `${def.nameEn} purchase (${def.nameBn})`,
+      timestampMs,
+      customId
+    );
+
+    this._player.staminaPercent = recoverStamina(this._player.staminaPercent, def.staminaRestore);
+
+    if (def.grantsTeaBuff) {
+      this._worldFlags.set('teaBuffExpiresAtMs', timestampMs + TEA_BUFF_DURATION_MS);
+    }
+
+    // Optional inventory stack for cha/biscuits receipt
+    const invItem: InventoryItem = {
+      id: def.id,
+      nameBn: def.nameBn,
+      nameEn: def.nameEn,
+      category: 'CONSUMABLE',
+      quantity: 1,
+      isStackable: true,
+      maxStackSize: 20,
+      descriptionBn: def.descriptionBn,
+      descriptionEn: def.descriptionEn,
+    };
+    try {
+      this._inventory.addItem(invItem);
+    } catch {
+      // Inventory full — purchase still succeeds (consumed immediately)
+    }
+
+    return {
+      success: true,
+      transaction: tx,
+      staminaPercent: this._player.staminaPercent,
+    };
+  }
+
+  /**
+   * Purchase a repair service. Debits MAINTENANCE_COST and mutates vehicle stats.
+   */
+  public purchaseRepair(
+    serviceId: RepairServiceId,
+    timestampMs: number = Date.now(),
+    customId?: string
+  ): PurchaseResult {
+    const def = REPAIR_SERVICES[serviceId];
+    if (!def) {
+      return { success: false, reason: 'UNKNOWN_SERVICE' };
+    }
+
+    if (!this._economy.hasSufficientFunds(def.priceMinorUnits)) {
+      return { success: false, reason: 'INSUFFICIENT_FUNDS' };
+    }
+
+    const tx = this._economy.debit(
+      def.priceMinorUnits,
+      'MAINTENANCE_COST',
+      `${def.nameEn} (${def.nameBn})`,
+      timestampMs,
+      customId
+    );
+
+    const next = applyRepair(
+      {
+        damagePercent: this._player.vehicleState.damagePercent,
+        tirePressurePercent: this._player.vehicleState.tirePressurePercent,
+        isPunctured: this._player.vehicleState.isPunctured,
+      },
+      serviceId
+    );
+
+    this._player.vehicleState.damagePercent = next.damagePercent;
+    this._player.vehicleState.conditionPercent = 100 - next.damagePercent;
+    this._player.vehicleState.tirePressurePercent = next.tirePressurePercent;
+    this._player.vehicleState.isPunctured = next.isPunctured;
+    this._worldFlags.set('vehiclePunctured', next.isPunctured);
+
+    return {
+      success: true,
+      transaction: tx,
+      damagePercent: next.damagePercent,
+      tirePressurePercent: next.tirePressurePercent,
+      isPunctured: next.isPunctured,
+    };
   }
 
   /**
@@ -221,16 +467,21 @@ export class GameCoreEngine {
       };
     }
 
+    // Ensure puncture flag is current before serialize
+    this._worldFlags.set('vehiclePunctured', this._player.vehicleState.isPunctured);
+
     const playerState: PlayerState = {
       roleId: 'rickshaw_driver',
       position: { ...this._player.position },
       headingRadians: this._player.headingRadians,
       isInVehicle: this._player.isInVehicle,
+      staminaPercent: this._player.staminaPercent,
       vehicleState: {
         id: this._player.vehicleState.id,
         speedMps: this._player.vehicleState.speedMps,
         steeringAngleRad: this._player.vehicleState.steeringAngleRad,
         damagePercent: this._player.vehicleState.damagePercent,
+        tirePressurePercent: this._player.vehicleState.tirePressurePercent,
       },
       cashMinorUnits: this._economy.balanceMinorUnits,
       currency: CURRENCY_CODE_BDT,

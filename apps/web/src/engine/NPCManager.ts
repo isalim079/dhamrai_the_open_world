@@ -61,6 +61,27 @@ export const STORY_NPCS: NPCEntityDefinition[] = [
     associatedMissionId: 'mission_3_artisan_order',
     isBoardablePassenger: false,
   },
+  // Milestone 13 — Tea vendor & mistri (fiction; not real-person claims)
+  {
+    id: 'npc_tea_vendor',
+    nameBn: 'চাওয়ালা (রথখোলা)',
+    nameEn: 'Tea Vendor (Rathkhola)',
+    role: 'VENDOR',
+    spawnPosition: { x: 3.2, y: 0.0, z: -2.4 },
+    spawnHeadingRadians: Math.PI,
+    dialogueTreeId: 'dialogue_tea_stall',
+    isBoardablePassenger: false,
+  },
+  {
+    id: 'npc_mistri_gautom',
+    nameBn: 'মিস্ত্রি গৌতম (রথখোলা)',
+    nameEn: 'Mistri Gautom (Rathkhola)',
+    role: 'MECHANIC',
+    spawnPosition: { x: -6.5, y: 0.0, z: 2.0 },
+    spawnHeadingRadians: Math.PI / 2,
+    dialogueTreeId: 'dialogue_mistri_gautom',
+    isBoardablePassenger: false,
+  },
 ];
 
 export class NPCManager {
@@ -247,6 +268,10 @@ export class NPCManager {
       bodyColor = 0xb7950b; // SI Rafiq: Khaki uniform
     } else if (role === 'ARTISAN') {
       bodyColor = 0x7d6608; // Gouranga: Traditional brass-worker brown
+    } else if (role === 'VENDOR') {
+      bodyColor = 0xc0392b; // Tea vendor: deep red shirt
+    } else if (role === 'MECHANIC') {
+      bodyColor = 0x5d6d7e; // Mistri: grease-grey work clothes
     }
 
     // Body capsule (1.7m total height)

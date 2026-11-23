@@ -1,9 +1,17 @@
 # Dhamrai Life — Progress Tracker
 
-**Last updated:** 3 November 2026
-**Overall status:** Milestone 4 REMEDIATION VERIFICATION BLOCKED; not approved. Yarn Classic 1.22.22 and browser-first architecture preserved. Final local run: 153 TypeScript tests passed, four real PostgreSQL tests skipped; 13 Python tests passed; typecheck passed. PostgreSQL startup is denied and pg dependency installation/lockfile resolution is blocked by network/cache availability. Milestone 5 not started. No commit or push.
+**Last updated:** 23 November 2026  
+**Overall status:** Milestone 13 COMPLETE (verified). Canonical tracker: `guideFiles/PROGRESS.md`.
 
-## Current phase and evidence
+## Current milestone focus
+
+| Work item | Status | Evidence / limits |
+|---|---|---|
+| Milestone 12: Day–Night & Weather | COMPLETE | `guideFiles/milestone_12_implementation_report.md` |
+| Milestone 13: Maintenance & Tea Economy | COMPLETE | `guideFiles/milestone_13_implementation_report.md`; CDP 11/11; 60 FPS |
+| Next task | READY | Milestone 14 Discovery & Planning (await “next”) |
+
+## Historical phase and evidence (Sprints / earlier milestones)
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
@@ -78,7 +86,7 @@ The counts and completion claims below describe the earlier implementation repor
 
 ## Next task
 
-Resolve Milestone 4 blockers and rerun real database/integration verification. Await explicit Milestone 4 approval; do not start Milestone 5.
+Await authorization to implement **Milestone 13: Vehicle Maintenance, Driver Stamina & Tea Stall Economy** (`guideFiles/milestone_13_planning_report.md`).
 
 ## 2026-11-03 — Existing web development startup repair
 

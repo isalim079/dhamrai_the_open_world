@@ -12,21 +12,27 @@ export class SceneManager {
 
   public playerMesh: THREE.Group;
   public rickshawMesh: THREE.Group;
+  /** Milestone 11 street props attach under this group. */
+  public propsRoot: THREE.Group;
 
   constructor() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#87CEEB'); // Sky blue
-    this.scene.fog = new THREE.FogExp2('#b0d5ec', 0.0012);
+    this.scene.background = new THREE.Color('#7eb8d8'); // Soft South-Asian midday sky (driven by M12 atmosphere)
+    this.scene.fog = new THREE.FogExp2('#a8cfe0', 0.00105);
 
-    // 1. Lighting setup (Authentic South Asian daylight)
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // 1. Lighting setup — initial midday; Milestone 12 AtmosphereController drives these each tick
+    this.ambientLight = new THREE.AmbientLight(0xfff6e8, 0.45);
     this.scene.add(this.ambientLight);
 
-    this.hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x54432c, 0.6);
+    this.hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x5a4a32, 0.65);
     this.scene.add(this.hemiLight);
 
+    this.propsRoot = new THREE.Group();
+    this.propsRoot.name = 'PropsRootHost';
+    this.scene.add(this.propsRoot);
+
     this.sunLight = new THREE.DirectionalLight(0xfffaed, 1.5);
-    // Solar angle: 65° elevation, azimuth South-Southeast
+    // Solar angle: 65° elevation, azimuth South-Southeast (overridden by DayNightCycle)
     this.sunLight.position.set(120, 240, 140);
     this.sunLight.castShadow = true;
     this.sunLight.shadow.mapSize.width = 1024;
@@ -39,6 +45,7 @@ export class SceneManager {
     this.sunLight.shadow.camera.top = shadowD;
     this.sunLight.shadow.camera.bottom = -shadowD;
     this.scene.add(this.sunLight);
+    this.scene.add(this.sunLight.target);
 
     // 2. Build 3D Player Character Mesh (1.7m capsule)
     this.playerMesh = this.createPlayerMesh();

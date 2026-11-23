@@ -68,6 +68,7 @@ export function createInitialRickshawDriverState() {
         position: { ...PHASE_1_ANCHORS.RATHKHOLA_ORIGIN },
         headingRadians: 0,
         isInVehicle: false,
+        staminaPercent: 100,
         vehicleState: {
             id: 'rickshaw_rented_01',
             model: 'basic_pedal_rickshaw',
@@ -78,6 +79,8 @@ export function createInitialRickshawDriverState() {
             speedMps: 0,
             steeringAngleRad: 0,
             damagePercent: 0,
+            tirePressurePercent: 100,
+            isPunctured: false,
         },
         reputations: {
             transportReputation: 10,

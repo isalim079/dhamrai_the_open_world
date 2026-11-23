@@ -21,6 +21,7 @@ export const vehicleStateSchemaV2 = z.object({
   speedMps: z.number(),
   steeringAngleRad: z.number(),
   damagePercent: z.number().min(0).max(100),
+  tirePressurePercent: z.number().min(0).max(100).optional(),
 });
 
 export const playerStateSchemaV2 = z.object({
@@ -28,6 +29,7 @@ export const playerStateSchemaV2 = z.object({
   position: worldPositionSchemaV2,
   headingRadians: z.number(),
   isInVehicle: z.boolean(),
+  staminaPercent: z.number().min(0).max(100).optional(),
   vehicleState: vehicleStateSchemaV2.optional(),
   cashMinorUnits: z.number().int({
     message: 'Player cashMinorUnits must be an integer minor currency unit (Poisha)',
@@ -82,6 +84,7 @@ export const transactionCategorySchemaV2 = z.enum([
   'MAINTENANCE_COST',
   'FINE_PENALTY',
   'REPUTATION_BONUS',
+  'CONSUMABLE_PURCHASE',
 ]);
 
 export const economyTransactionSchemaV2 = z.object({

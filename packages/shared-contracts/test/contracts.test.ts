@@ -276,4 +276,32 @@ describe('Shared Contracts & Spatial Reference System', () => {
     expect(choice1.actionTrigger).toBe('PICKUP_CARGO');
     expect(choice2.actionTrigger).toBe('START_FARE');
   });
+
+  it('validates M13 actionTriggers and CONSUMABLE_PURCHASE category', () => {
+    const buy: import('../src/index.js').DialogueChoice = {
+      id: 'buy',
+      textBn: 'চা',
+      textEn: 'Cha',
+      actionTrigger: 'BUY_CHA',
+    };
+    const repair: import('../src/index.js').DialogueChoice = {
+      id: 'fix',
+      textBn: 'মেরামত',
+      textEn: 'Repair',
+      actionTrigger: 'REPAIR_FULL',
+    };
+    expect(buy.actionTrigger).toBe('BUY_CHA');
+    expect(repair.actionTrigger).toBe('REPAIR_FULL');
+
+    const tx: import('../src/index.js').EconomyTransaction = {
+      id: 'tx1',
+      timestampMs: 1,
+      category: 'CONSUMABLE_PURCHASE',
+      deltaMinorUnits: -500,
+      currency: 'BDT',
+      description: 'Cha',
+      runningBalanceMinorUnits: 24500,
+    };
+    expect(tx.category).toBe('CONSUMABLE_PURCHASE');
+  });
 });

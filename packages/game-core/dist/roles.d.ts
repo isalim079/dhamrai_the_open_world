@@ -26,6 +26,8 @@ export interface RickshawDriverArchetype {
     position: WorldPosition;
     headingRadians: number;
     isInVehicle: boolean;
+    /** Milestone 13 — driver stamina 0–100 */
+    staminaPercent: number;
     vehicleState: {
         id: string;
         model: string;
@@ -36,6 +38,10 @@ export interface RickshawDriverArchetype {
         speedMps: number;
         steeringAngleRad: number;
         damagePercent: number;
+        /** Milestone 13 — tire pressure 0–100 */
+        tirePressurePercent: number;
+        /** Ephemeral puncture flag (also mirrored in worldFlags for session) */
+        isPunctured: boolean;
     };
     reputations: PlayerReputationScores;
 }

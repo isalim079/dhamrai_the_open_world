@@ -47,6 +47,7 @@ class MockAudioContext {
     return {
       type: 'lowpass',
       frequency: { setValueAtTime: vi.fn() },
+      Q: { setValueAtTime: vi.fn() },
       connect: vi.fn(),
       disconnect: vi.fn(),
     };
@@ -113,8 +114,8 @@ describe('AmbientSoundscape', () => {
   it('initializes spatial panners for Rathkhola, Kayetpara, and Thana plus global bed', () => {
     // 3 spatial emitters created
     expect(mockCtx.createdPanners.length).toBe(3);
-    // 1 global town bed buffer source created
-    expect(mockCtx.createdBufferSources.length).toBe(1);
+    // Global day bed + night bed + rain bed (Milestone 12)
+    expect(mockCtx.createdBufferSources.length).toBe(3);
     expect(mockCtx.createdBufferSources[0]?.loop).toBe(true);
   });
 
@@ -122,7 +123,7 @@ describe('AmbientSoundscape', () => {
     // Call init again
     ambient.init(mockCtx as any, mockAmbienceBus);
     expect(mockCtx.createdPanners.length).toBe(3);
-    expect(mockCtx.createdBufferSources.length).toBe(1);
+    expect(mockCtx.createdBufferSources.length).toBe(3);
   });
 
   it('triggers anvil strikes when player is inside Kayetpara Workshop zone', () => {

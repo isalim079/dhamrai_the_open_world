@@ -7,6 +7,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import type { ChunkManifest } from '@dhamrai/shared-contracts';
 import type { PhysicsWorld } from './PhysicsWorld.js';
+import { isSharedWorldMaterial, type WorldMaterialBinder } from './materials/WorldMaterialBinder.js';
 
 export interface LoadedChunk {
   chunkId: string;
@@ -19,9 +20,15 @@ export interface LoadedChunk {
 export class ChunkLoader {
   private gltfLoader = new GLTFLoader();
   private assetBaseUrl = '/world/chunks';
+  private materialBinder: WorldMaterialBinder | null = null;
 
   constructor(private physics: PhysicsWorld, baseUrl = '/world/chunks') {
     this.assetBaseUrl = baseUrl;
+  }
+
+  /** Optional Milestone 11 atlas binder applied after each successful GLB load. */
+  public setMaterialBinder(binder: WorldMaterialBinder | null): void {
+    this.materialBinder = binder;
   }
 
   public setBaseUrl(url: string): void {
@@ -75,6 +82,11 @@ export class ChunkLoader {
               }
             }
           });
+
+          // Milestone 11: bind shared procedural atlas materials (idempotent)
+          if (this.materialBinder) {
+            this.materialBinder.bindChunkGroup(sceneGroup);
+          }
 
           resolve({
             chunkId: manifest.chunkId,
@@ -134,6 +146,11 @@ export class ChunkLoader {
   }
 
   private disposeMaterial(mat: THREE.Material): void {
+    // Shared atlas materials are owned by WorldMaterialBinder — never dispose per-chunk
+    if (isSharedWorldMaterial(mat)) {
+      return;
+    }
+
     // Dispose textures if present
     const standardMat = mat as THREE.MeshStandardMaterial;
     if (standardMat.map) standardMat.map.dispose();

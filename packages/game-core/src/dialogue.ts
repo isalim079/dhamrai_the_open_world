@@ -265,4 +265,158 @@ export const PHASE_1_DIALOGUE_TREES: Record<string, DialogueTree> = {
       },
     },
   },
+
+  /** Milestone 13 — Rathkhola tea stall vendor */
+  dialogue_tea_stall: {
+    id: 'dialogue_tea_stall',
+    initialNodeId: 'node_menu',
+    nodes: {
+      node_menu: {
+        id: 'node_menu',
+        speakerId: 'npc_tea_vendor',
+        speakerNameBn: 'চাওয়ালা (রথখোলা)',
+        speakerNameEn: 'Tea Vendor (Rathkhola)',
+        textBn: 'কী নেবেন ভাই? গরম চা না বিস্কুট?',
+        textEn: 'What will you take, brother? Hot cha or biscuits?',
+        choices: [
+          {
+            id: 'choice_buy_cha',
+            textBn: 'চা — ৳৫ (শক্তি +৩৫)',
+            textEn: 'Cha — ৳5 (+35 stamina)',
+            nextNodeId: 'node_thanks',
+            actionTrigger: 'BUY_CHA',
+          },
+          {
+            id: 'choice_buy_biscuits',
+            textBn: 'বিস্কুট — ৳৮ (শক্তি +২০)',
+            textEn: 'Biscuits — ৳8 (+20 stamina)',
+            nextNodeId: 'node_thanks',
+            actionTrigger: 'BUY_BISCUITS',
+          },
+          {
+            id: 'choice_leave_stall',
+            textBn: 'এখন না, পরে আসব।',
+            textEn: 'Not now, I will come later.',
+            actionTrigger: 'CLOSE_DIALOGUE',
+          },
+        ],
+      },
+      node_thanks: {
+        id: 'node_thanks',
+        speakerId: 'npc_tea_vendor',
+        speakerNameBn: 'চাওয়ালা (রথখোলা)',
+        speakerNameEn: 'Tea Vendor (Rathkhola)',
+        textBn: 'নিন ভাই, আস্তে খান। আবার আসবেন!',
+        textEn: 'Here you go brother — come again!',
+      },
+      node_no_funds: {
+        id: 'node_no_funds',
+        speakerId: 'npc_tea_vendor',
+        speakerNameBn: 'চাওয়ালা (রথখোলা)',
+        speakerNameEn: 'Tea Vendor (Rathkhola)',
+        textBn: 'ভাই, টাকা কম আছে মনে হয়। পরে আসুন।',
+        textEn: 'Brother, seems you are short on cash. Come later.',
+      },
+    },
+  },
+
+  /** Milestone 13 — Mistri Gautom (fictional) repair menu at Rathkhola */
+  dialogue_mistri_gautom: {
+    id: 'dialogue_mistri_gautom',
+    initialNodeId: 'node_menu',
+    nodes: {
+      node_menu: {
+        id: 'node_menu',
+        speakerId: 'npc_mistri_gautom',
+        speakerNameBn: 'মিস্ত্রি গৌতম (রথখোলা)',
+        speakerNameEn: 'Mistri Gautom (Rathkhola)',
+        textBn: 'রিকশা ঠিক করতে এসেছ? কী সমস্যা বলো।',
+        textEn: 'Came to fix the rickshaw? Tell me what is wrong.',
+        choices: [
+          {
+            id: 'choice_tire',
+            textBn: 'টায়ার পাম্প / পাংচার — ৳২০',
+            textEn: 'Tire pump / puncture — ৳20',
+            nextNodeId: 'node_done',
+            actionTrigger: 'REPAIR_TIRE',
+          },
+          {
+            id: 'choice_tune',
+            textBn: 'টিউন-আপ (−২৫ ক্ষতি) — ৳৪০',
+            textEn: 'Tune-up (−25 damage) — ৳40',
+            nextNodeId: 'node_done',
+            actionTrigger: 'REPAIR_TUNE_UP',
+          },
+          {
+            id: 'choice_full',
+            textBn: 'পূর্ণ সার্ভিস — ৳৭৫',
+            textEn: 'Full service — ৳75',
+            nextNodeId: 'node_done',
+            actionTrigger: 'REPAIR_FULL',
+          },
+          {
+            id: 'choice_leave_mistri',
+            textBn: 'এখন না।',
+            textEn: 'Not now.',
+            actionTrigger: 'CLOSE_DIALOGUE',
+          },
+        ],
+      },
+      node_done: {
+        id: 'node_done',
+        speakerId: 'npc_mistri_gautom',
+        speakerNameBn: 'মিস্ত্রি গৌতম (রথখোলা)',
+        speakerNameEn: 'Mistri Gautom (Rathkhola)',
+        textBn: 'হয়ে গেছে! সাবধানে চালাও।',
+        textEn: 'Done! Drive carefully.',
+      },
+      node_no_funds: {
+        id: 'node_no_funds',
+        speakerId: 'npc_mistri_gautom',
+        speakerNameBn: 'মিস্ত্রি গৌতম (রথখোলা)',
+        speakerNameEn: 'Mistri Gautom (Rathkhola)',
+        textBn: 'ভাই, টাকা যথেষ্ট নেই। পরে এসো।',
+        textEn: 'Brother, not enough cash. Come back later.',
+      },
+    },
+  },
+
+  /** Milestone 13 — Kayetpara chain oil (minor repair at artisan) */
+  dialogue_kayetpara_chain_oil: {
+    id: 'dialogue_kayetpara_chain_oil',
+    initialNodeId: 'node_offer',
+    nodes: {
+      node_offer: {
+        id: 'node_offer',
+        speakerId: 'npc_artisan_gouranga',
+        speakerNameBn: 'গৌরাঙ্গ কর্মকার',
+        speakerNameEn: 'Gouranga Karmakar',
+        textBn: 'চেইনে তেল লাগাতে চাও? মাত্র ১৫ টাকা।',
+        textEn: 'Want chain oil? Only ৳15.',
+        choices: [
+          {
+            id: 'choice_oil',
+            textBn: 'হ্যাঁ, তেল লাগান (−১০ ক্ষতি) — ৳১৫',
+            textEn: 'Yes, oil the chain (−10 damage) — ৳15',
+            nextNodeId: 'node_oiled',
+            actionTrigger: 'REPAIR_CHAIN_OIL',
+          },
+          {
+            id: 'choice_skip_oil',
+            textBn: 'ধন্যবাদ, এখন না।',
+            textEn: 'Thanks, not now.',
+            actionTrigger: 'CLOSE_DIALOGUE',
+          },
+        ],
+      },
+      node_oiled: {
+        id: 'node_oiled',
+        speakerId: 'npc_artisan_gouranga',
+        speakerNameBn: 'গৌরাঙ্গ কর্মকার',
+        speakerNameEn: 'Gouranga Karmakar',
+        textBn: 'চেইন মসৃণ হয়েছে। সাবধানে যাও।',
+        textEn: 'Chain is smooth. Go carefully.',
+      },
+    },
+  },
 };

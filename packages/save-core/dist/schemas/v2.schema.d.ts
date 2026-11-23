@@ -25,16 +25,19 @@ export declare const vehicleStateSchemaV2: z.ZodObject<{
     speedMps: z.ZodNumber;
     steeringAngleRad: z.ZodNumber;
     damagePercent: z.ZodNumber;
+    tirePressurePercent: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
     id: string;
     speedMps: number;
     steeringAngleRad: number;
     damagePercent: number;
+    tirePressurePercent?: number | undefined;
 }, {
     id: string;
     speedMps: number;
     steeringAngleRad: number;
     damagePercent: number;
+    tirePressurePercent?: number | undefined;
 }>;
 export declare const playerStateSchemaV2: z.ZodObject<{
     roleId: z.ZodLiteral<"rickshaw_driver">;
@@ -53,21 +56,25 @@ export declare const playerStateSchemaV2: z.ZodObject<{
     }>;
     headingRadians: z.ZodNumber;
     isInVehicle: z.ZodBoolean;
+    staminaPercent: z.ZodOptional<z.ZodNumber>;
     vehicleState: z.ZodOptional<z.ZodObject<{
         id: z.ZodString;
         speedMps: z.ZodNumber;
         steeringAngleRad: z.ZodNumber;
         damagePercent: z.ZodNumber;
+        tirePressurePercent: z.ZodOptional<z.ZodNumber>;
     }, "strip", z.ZodTypeAny, {
         id: string;
         speedMps: number;
         steeringAngleRad: number;
         damagePercent: number;
+        tirePressurePercent?: number | undefined;
     }, {
         id: string;
         speedMps: number;
         steeringAngleRad: number;
         damagePercent: number;
+        tirePressurePercent?: number | undefined;
     }>>;
     cashMinorUnits: z.ZodNumber;
     currency: z.ZodLiteral<"BDT">;
@@ -84,11 +91,13 @@ export declare const playerStateSchemaV2: z.ZodObject<{
     cashMinorUnits: number;
     currency: "BDT";
     reputation: number;
+    staminaPercent?: number | undefined;
     vehicleState?: {
         id: string;
         speedMps: number;
         steeringAngleRad: number;
         damagePercent: number;
+        tirePressurePercent?: number | undefined;
     } | undefined;
 }, {
     roleId: "rickshaw_driver";
@@ -102,11 +111,13 @@ export declare const playerStateSchemaV2: z.ZodObject<{
     cashMinorUnits: number;
     currency: "BDT";
     reputation: number;
+    staminaPercent?: number | undefined;
     vehicleState?: {
         id: string;
         speedMps: number;
         steeringAngleRad: number;
         damagePercent: number;
+        tirePressurePercent?: number | undefined;
     } | undefined;
 }>;
 export declare const itemCategorySchemaV2: z.ZodEnum<["DOCUMENT", "TOOL", "CARGO", "VALUABLE", "CONSUMABLE"]>;
@@ -161,11 +172,11 @@ export declare const missionInstanceSchemaV2: z.ZodObject<{
     startedAtMs?: number | undefined;
     completedAtMs?: number | undefined;
 }>;
-export declare const transactionCategorySchemaV2: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS"]>;
+export declare const transactionCategorySchemaV2: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE"]>;
 export declare const economyTransactionSchemaV2: z.ZodObject<{
     id: z.ZodString;
     timestampMs: z.ZodNumber;
-    category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS"]>;
+    category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE"]>;
     deltaMinorUnits: z.ZodNumber;
     currency: z.ZodLiteral<"BDT">;
     description: z.ZodString;
@@ -173,7 +184,7 @@ export declare const economyTransactionSchemaV2: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     currency: "BDT";
-    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS";
+    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
     timestampMs: number;
     deltaMinorUnits: number;
     description: string;
@@ -181,7 +192,7 @@ export declare const economyTransactionSchemaV2: z.ZodObject<{
 }, {
     id: string;
     currency: "BDT";
-    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS";
+    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
     timestampMs: number;
     deltaMinorUnits: number;
     description: string;
@@ -211,21 +222,25 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
         }>;
         headingRadians: z.ZodNumber;
         isInVehicle: z.ZodBoolean;
+        staminaPercent: z.ZodOptional<z.ZodNumber>;
         vehicleState: z.ZodOptional<z.ZodObject<{
             id: z.ZodString;
             speedMps: z.ZodNumber;
             steeringAngleRad: z.ZodNumber;
             damagePercent: z.ZodNumber;
+            tirePressurePercent: z.ZodOptional<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
             id: string;
             speedMps: number;
             steeringAngleRad: number;
             damagePercent: number;
+            tirePressurePercent?: number | undefined;
         }, {
             id: string;
             speedMps: number;
             steeringAngleRad: number;
             damagePercent: number;
+            tirePressurePercent?: number | undefined;
         }>>;
         cashMinorUnits: z.ZodNumber;
         currency: z.ZodLiteral<"BDT">;
@@ -242,11 +257,13 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
         cashMinorUnits: number;
         currency: "BDT";
         reputation: number;
+        staminaPercent?: number | undefined;
         vehicleState?: {
             id: string;
             speedMps: number;
             steeringAngleRad: number;
             damagePercent: number;
+            tirePressurePercent?: number | undefined;
         } | undefined;
     }, {
         roleId: "rickshaw_driver";
@@ -260,11 +277,13 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
         cashMinorUnits: number;
         currency: "BDT";
         reputation: number;
+        staminaPercent?: number | undefined;
         vehicleState?: {
             id: string;
             speedMps: number;
             steeringAngleRad: number;
             damagePercent: number;
+            tirePressurePercent?: number | undefined;
         } | undefined;
     }>;
     inventory: z.ZodArray<z.ZodObject<{
@@ -320,7 +339,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     ledger: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
         timestampMs: z.ZodNumber;
-        category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS"]>;
+        category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE"]>;
         deltaMinorUnits: z.ZodNumber;
         currency: z.ZodLiteral<"BDT">;
         description: z.ZodString;
@@ -328,7 +347,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;
@@ -336,7 +355,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     }, {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;
@@ -362,11 +381,13 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
         cashMinorUnits: number;
         currency: "BDT";
         reputation: number;
+        staminaPercent?: number | undefined;
         vehicleState?: {
             id: string;
             speedMps: number;
             steeringAngleRad: number;
             damagePercent: number;
+            tirePressurePercent?: number | undefined;
         } | undefined;
     };
     inventory: {
@@ -390,7 +411,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     ledger: {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;
@@ -416,11 +437,13 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
         cashMinorUnits: number;
         currency: "BDT";
         reputation: number;
+        staminaPercent?: number | undefined;
         vehicleState?: {
             id: string;
             speedMps: number;
             steeringAngleRad: number;
             damagePercent: number;
+            tirePressurePercent?: number | undefined;
         } | undefined;
     };
     inventory: {
@@ -444,7 +467,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     ledger: {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;

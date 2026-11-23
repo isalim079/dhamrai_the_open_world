@@ -17,6 +17,7 @@ export interface InputState {
   toggleInventory: boolean; // 'I' key pressed this frame
   toggleDebug: boolean;     // 'F3' key pressed this frame
   toggleMute: boolean;      // 'M' key pressed this frame
+  toggleWeather: boolean;   // 'N' key pressed this frame (Milestone 12)
   mouseDeltaX: number;
   mouseDeltaY: number;
 }
@@ -70,6 +71,7 @@ export class InputManager {
     if (k === 'i') return 'KeyI';
     if (k === 'v') return 'KeyV';
     if (k === 'm') return 'KeyM';
+    if (k === 'n') return 'KeyN';
     if (k === ' ') return 'Space';
     if (e.key === 'F3') return 'F3';
     return e.key;
@@ -131,6 +133,7 @@ export class InputManager {
     const toggleInventory = this.justPressed.has('KeyI');
     const toggleDebug = this.justPressed.has('F3');
     const toggleMute = this.justPressed.has('KeyM');
+    const toggleWeather = this.justPressed.has('KeyN');
 
     const state: InputState = {
       forward,
@@ -147,6 +150,7 @@ export class InputManager {
       toggleInventory,
       toggleDebug,
       toggleMute,
+      toggleWeather,
       mouseDeltaX: this.mouseDeltaX,
       mouseDeltaY: this.mouseDeltaY,
     };

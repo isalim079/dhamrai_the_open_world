@@ -10,4 +10,6 @@ export * from './missions.js';
 export * from './roles.js';
 export * from './engine.js';
 export * from './dialogue.js';
+export * from './vehicle-condition.js';
+export * from './stamina.js';
 
