@@ -230,12 +230,15 @@ export class AudioManager {
     const effectiveMaster = this.settings.isMuted ? 0.0 : this.settings.masterVolume;
 
     if (this.masterGain) {
+      this.masterGain.gain.value = effectiveMaster;
       this.masterGain.gain.setValueAtTime(effectiveMaster, now);
     }
     if (this.sfxGain) {
+      this.sfxGain.gain.value = this.settings.sfxVolume;
       this.sfxGain.gain.setValueAtTime(this.settings.sfxVolume, now);
     }
     if (this.ambienceGain) {
+      this.ambienceGain.gain.value = this.settings.ambienceVolume;
       this.ambienceGain.gain.setValueAtTime(this.settings.ambienceVolume, now);
     }
   }

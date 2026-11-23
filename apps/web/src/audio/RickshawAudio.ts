@@ -20,6 +20,10 @@ export class RickshawAudio {
   private rollingGain: GainNode | null = null;
   private isRollingActive = false;
 
+  public get isRolling(): boolean {
+    return this.isRollingActive;
+  }
+
   // Chain pedaling state
   private chainTimer = 0.0;
 

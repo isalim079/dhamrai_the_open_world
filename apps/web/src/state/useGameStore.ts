@@ -15,6 +15,7 @@ import type {
 } from '@dhamrai/shared-contracts';
 import { cloudSaveService } from '../services/CloudSaveService.js';
 import { getActiveGameEngine } from '../engine/GameEngine.js';
+import { getActiveAudioManager } from '../audio/index.js';
 
 export interface GameState {
   engine: GameCoreEngine | null;
@@ -295,6 +296,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       const res = engine.completeMission(missionId);
       get().syncFromEngine();
       if (res.payoutApplied || res.success) {
+        const audio = getActiveAudioManager();
+        if (missionId.startsWith('fare_trip_')) {
+          audio?.ui.playCoinPayout();
+        } else {
+          audio?.ui.playMissionComplete();
+          if (res.payoutApplied && (res.payoutMinorUnits ?? 0) > 0) {
+            setTimeout(() => audio?.ui.playCoinPayout(), 350);
+          }
+        }
+
         const taka = (res.payoutMinorUnits ?? 0) / 100;
         get().showToast(
           `🎉 মিশন সম্পন্ন! +৳${taka.toFixed(2)} | +${res.reputationDelta ?? 0} সুনাম`,

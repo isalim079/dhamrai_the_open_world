@@ -11,7 +11,7 @@
  * and zero emitter duplication across chunk streaming cycles.
  */
 
-import { clamp, createPinkNoiseBuffer } from './SynthesizerUtils.js';
+import { createPinkNoiseBuffer } from './SynthesizerUtils.js';
 
 export interface SpatialEmitterConfig {
   id: string;
@@ -26,6 +26,10 @@ export class AmbientSoundscape {
   private ambienceBus: GainNode | null = null;
 
   private isInitialized = false;
+
+  public get isActive(): boolean {
+    return this.isInitialized;
+  }
 
   // Global ambient wind/town bed
   private globalBedSource: AudioBufferSourceNode | null = null;

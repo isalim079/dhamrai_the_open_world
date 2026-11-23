@@ -8,6 +8,7 @@ import {
 } from '@dhamrai/game-core';
 import { PHASE_1_ANCHORS, type DialogueChoice } from '@dhamrai/shared-contracts';
 import { getActiveGameEngine } from '../engine/GameEngine.js';
+import { getActiveAudioManager } from '../audio/index.js';
 
 export const DialogueBox: React.FC = () => {
   const isDialogueOpen = useUIStore((s) => s.isDialogueOpen);
@@ -28,9 +29,14 @@ export const DialogueBox: React.FC = () => {
   const handleChoice = useCallback((choice: DialogueChoice) => {
     const engine = useGameStore.getState().engine;
     const gameEngine = getActiveGameEngine();
+    const audio = getActiveAudioManager();
+
+    // Tactile UI click feedback
+    audio?.ui.playDialogueClick();
 
     // 1. Mission 1: Board Student Farhana
     if (choice.actionTrigger === 'BOARD_PASSENGER') {
+      audio?.ui.playMissionAccept();
       activateMission('mission_1_first_fare');
       completeObjective('mission_1_first_fare', 'obj_m1_pickup');
       gameEngine?.boardPassengerFarhana();
@@ -66,6 +72,7 @@ export const DialogueBox: React.FC = () => {
 
     // 3. Mission 3: Pick up Brass Cargo from Gouranga
     if (choice.actionTrigger === 'PICKUP_CARGO') {
+      audio?.ui.playMissionAccept();
       try {
         const m3Inst = useGameStore.getState().allMissions['mission_3_artisan_order'];
         if (!m3Inst || m3Inst.state === 'AVAILABLE') {
@@ -84,6 +91,7 @@ export const DialogueBox: React.FC = () => {
 
     // 4. Repeatable Fares: Board Kamal or Sufia
     if (choice.actionTrigger === 'START_FARE') {
+      audio?.ui.playMissionAccept();
       const isKamal = currentTreeId === 'dialogue_fare_kamal';
       const passengerId = isKamal ? 'npc_passenger_kamal' : 'npc_passenger_sufia';
       const passengerNameBn = isKamal ? 'কামাল মিয়া' : 'সুফিয়া বেগম';

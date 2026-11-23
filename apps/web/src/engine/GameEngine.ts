@@ -17,9 +17,11 @@ import { RickshawVehicle } from './RickshawVehicle.js';
 import { CameraDirector } from './CameraDirector.js';
 import { InputManager } from './InputManager.js';
 import { ChunkLoader } from './ChunkLoader.js';
+import { Vector3 } from 'three';
 import { ChunkStreamer } from './ChunkStreamer.js';
 import { NPCManager } from './NPCManager.js';
 import { TrafficManager } from './TrafficManager.js';
+import { AudioManager } from '../audio/index.js';
 import { useSessionStore } from '../state/useSessionStore.js';
 import { useGameStore } from '../state/useGameStore.js';
 import { useUIStore } from '../state/useUIStore.js';
@@ -41,6 +43,7 @@ export class GameEngine {
   public chunkStreamer!: ChunkStreamer;
   public npcManager!: NPCManager;
   public trafficManager!: TrafficManager;
+  public audioManager!: AudioManager;
 
   private isRunning = false;
   private animFrameId: number | null = null;
@@ -111,7 +114,11 @@ export class GameEngine {
     const initialPos = this.isInVehicle ? this.rickshaw.getPosition() : this.character.getPosition();
     await this.chunkStreamer.updatePlayerPosition(initialPos);
 
-    // 14. Window resize listener
+    // 14. Initialize Web Audio Engine
+    this.audioManager = new AudioManager();
+    useSessionStore.getState().setIsAudioMuted(this.audioManager.settings.isMuted);
+
+    // 15. Window resize listener
     window.addEventListener('resize', this.onResize);
     this.onResize();
   }
@@ -278,6 +285,12 @@ export class GameEngine {
       ui.toggleDebugOverlay();
     }
 
+    // 1.5 Mute Audio Toggle ('M' key)
+    if (input.toggleMute) {
+      const isMuted = this.audioManager ? this.audioManager.toggleMute() : false;
+      useSessionStore.getState().setIsAudioMuted(isMuted);
+    }
+
     // 2. Camera Toggle ('V' key)
     if (input.cameraToggle && !isUIBlocking) {
       const newMode = this.cameraDirector.toggleMode();
@@ -287,6 +300,7 @@ export class GameEngine {
     // 3. Bell Ringing ('Space' key in vehicle)
     if (this.isInVehicle && input.bell && !isUIBlocking) {
       useSessionStore.getState().triggerBell();
+      this.audioManager?.rickshaw.triggerBell();
     }
 
     // 4. Talk / Dialogue Interaction ('E' key)
@@ -355,6 +369,7 @@ export class GameEngine {
           toggleJournal: false,
           toggleInventory: false,
           toggleDebug: false,
+          toggleMute: false,
           mouseDeltaX: 0,
           mouseDeltaY: 0,
         }
@@ -384,6 +399,7 @@ export class GameEngine {
           toggleJournal: false,
           toggleInventory: false,
           toggleDebug: false,
+          toggleMute: false,
           mouseDeltaX: 0,
           mouseDeltaY: 0,
         });
@@ -414,6 +430,36 @@ export class GameEngine {
     this.npcManager.update(dt);
     this.trafficManager.update(dt, curPos, this.rickshaw.getPosition());
     useSessionStore.getState().setNpcPositions(this.npcManager.getDynamicNPCPositions());
+
+    // 10.5 Update Web Audio Subsystems
+    if (this.audioManager) {
+      // 10.5.1 Rickshaw Vehicle Audio
+      this.audioManager.rickshaw.update(
+        dt,
+        this.rickshaw.speedMps,
+        this.isInVehicle,
+        effectiveInput.backward,
+        effectiveInput.forward
+      );
+
+      // 10.5.2 Character Locomotion Audio
+      const charSpeed = this.character.currentSpeed;
+      this.audioManager.locomotion.update(
+        dt,
+        charSpeed,
+        effectiveInput.sprint,
+        this.isInVehicle
+      );
+
+      // 10.5.3 Ambient 3D Soundscape Emitters
+      this.audioManager.ambience.update(dt, curPos);
+
+      // 10.5.4 3D Audio Listener (Camera Orientation & Position)
+      const cam = this.cameraDirector.camera;
+      const camForward = new Vector3();
+      cam.getWorldDirection(camForward);
+      this.audioManager.updateListener(cam.position, camForward, cam.up);
+    }
 
     // 11. Mission 1 Drop-off Detection (Hardinge High School Gate)
     const farhana = this.npcManager.npcs.get('npc_student_farhana');
@@ -582,5 +628,6 @@ export class GameEngine {
     if (this.physics) this.physics.dispose();
     if (this.sceneManager) this.sceneManager.dispose();
     if (this.rendererManager) this.rendererManager.dispose();
+    if (this.audioManager) this.audioManager.dispose();
   }
 }

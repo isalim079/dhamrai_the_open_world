@@ -8,8 +8,6 @@
  * 4. Zero node leaks or timer accumulations.
  */
 
-import { clamp } from './SynthesizerUtils.js';
-
 export class LocomotionAudio {
   private ctx: AudioContext | null = null;
   private sfxBus: GainNode | null = null;

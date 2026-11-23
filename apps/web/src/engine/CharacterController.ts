@@ -22,6 +22,7 @@ export class CharacterController {
 
   public heading = 0.0; // Radians yaw rotation
   public isGrounded = true;
+  public currentSpeed = 0.0;
 
   constructor(private physics: PhysicsWorld, initialPos: WorldPosition = { x: 0.0, y: 0.5, z: 0.0 }) {
     this.create(initialPos);
@@ -67,6 +68,7 @@ export class CharacterController {
 
     const len = Math.hypot(moveX, moveZ);
     const speed = input.sprint ? this.sprintSpeed : this.walkSpeed;
+    this.currentSpeed = len > 1e-4 ? speed : 0.0;
 
     let worldDx = 0;
     let worldDz = 0;

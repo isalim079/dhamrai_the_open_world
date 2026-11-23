@@ -4,6 +4,7 @@ import { useGameStore } from '../state/useGameStore.js';
 import { useUIStore } from '../state/useUIStore.js';
 import { useAuthStore } from '../state/useAuthStore.js';
 import { PHASE_1_MISSIONS } from '@dhamrai/game-core';
+import { getActiveAudioManager } from '../audio/index.js';
 
 export const HUD: React.FC = () => {
   const playerPosition = useSessionStore((s) => s.playerPosition);
@@ -11,6 +12,7 @@ export const HUD: React.FC = () => {
   const vehicleSpeedKph = useSessionStore((s) => s.vehicleSpeedKph);
   const statusMessage = useSessionStore((s) => s.statusMessage);
   const bellRinging = useSessionStore((s) => s.bellRinging);
+  const isAudioMuted = useSessionStore((s) => s.isAudioMuted);
 
   const cashFormatted = useGameStore((s) => s.cashFormattedBdt);
   const reputation = useGameStore((s) => s.reputation);
@@ -387,6 +389,36 @@ export const HUD: React.FC = () => {
         </div>
       )}
 
+      {/* Bottom Left: Audio Status & Mute Control */}
+      <button
+        onClick={() => {
+          const audio = getActiveAudioManager();
+          const nextMuted = audio ? audio.toggleMute() : !isAudioMuted;
+          useSessionStore.getState().setIsAudioMuted(nextMuted);
+        }}
+        title="শব্দ চালু/বন্ধ করুন [M]"
+        style={{
+          position: 'absolute',
+          bottom: 12,
+          left: 12,
+          padding: '6px 12px',
+          backgroundColor: 'rgba(13, 17, 23, 0.85)',
+          border: isAudioMuted ? '1px solid #f85149' : '1px solid rgba(88, 166, 255, 0.4)',
+          borderRadius: '6px',
+          fontSize: '11px',
+          color: isAudioMuted ? '#f85149' : '#7ee787',
+          fontFamily: 'monospace',
+          cursor: 'pointer',
+          zIndex: 15,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
+        <span>{isAudioMuted ? '🔇' : '🔊'}</span>
+        <span>{isAudioMuted ? 'নিঃশব্দ (Muted) [M]' : 'শব্দ সক্রিয় (Audio) [M]'}</span>
+      </button>
+
       {/* Bottom Right: Key Controls Helper */}
       <div
         style={{
@@ -403,7 +435,7 @@ export const HUD: React.FC = () => {
           pointerEvents: 'none',
         }}
       >
-        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে{import.meta.env.DEV ? ' · [F3] ডিবাগ' : ''}
+        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে · [M] শব্দ{import.meta.env.DEV ? ' · [F3] ডিবাগ' : ''}
       </div>
     </>
   );
