@@ -35,6 +35,16 @@ export declare function createRepeatableFareDefinition(tripId: string, passenger
     z: number;
 }, distanceM: number): MissionDefinition;
 export declare const PHASE_1_MISSIONS: Record<string, MissionDefinition>;
+/** Milestone 18 — factory for repeatable parcel / grocery delivery jobs */
+export declare function createRepeatableDeliveryDefinition(tripId: string, titleBn: string, titleEn: string, pickupPos: {
+    x: number;
+    y: number;
+    z: number;
+}, dropoffPos: {
+    x: number;
+    y: number;
+    z: number;
+}, rewardMinorUnits: number): MissionDefinition;
 export declare class MissionDomain {
     private readonly _definitions;
     private readonly _instances;

@@ -5,20 +5,23 @@ import {
   PHASE_1_MISSIONS,
   calculateFarePoisha,
   createRepeatableFareDefinition,
+  createRepeatableDeliveryDefinition,
 } from '../src/missions.js';
 
 describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () => {
-  it('initializes with all three Phase 1 missions in AVAILABLE state', () => {
+  it('initializes Phase 1 + M18 parcel mission in AVAILABLE state', () => {
     const missions = new MissionDomain();
     const all = missions.getAllInstances();
 
     expect(all['mission_1_first_fare']).toBeDefined();
     expect(all['mission_2_police_checkpoint']).toBeDefined();
     expect(all['mission_3_artisan_order']).toBeDefined();
+    expect(all['mission_4_market_parcel']).toBeDefined();
 
     expect(all['mission_1_first_fare']!.state).toBe('AVAILABLE');
     expect(all['mission_2_police_checkpoint']!.state).toBe('AVAILABLE');
     expect(all['mission_3_artisan_order']!.state).toBe('AVAILABLE');
+    expect(all['mission_4_market_parcel']!.state).toBe('AVAILABLE');
   });
 
   it('progresses Mission 1 from AVAILABLE -> ACTIVE -> COMPLETED and awards ৳30', () => {
@@ -256,5 +259,47 @@ describe('MissionDomain — Lifecycle State Machine & Idempotent Payouts', () =>
     const res2 = missions.completeMission('fare_trip_test_01', economy, (rep) => { repGained += rep; }, 3000);
     expect(res2.payoutApplied).toBe(false);
     expect(economy.balanceMinorUnits).toBe(27000);
+  });
+
+  it('M18 market parcel mission pays ৳45 on college delivery', () => {
+    const missions = new MissionDomain();
+    const economy = new EconomyDomain([], 25000);
+    expect(PHASE_1_MISSIONS.mission_4_market_parcel.rewardMinorUnits).toBe(4500);
+
+    // Satisfy M1 prerequisite
+    missions.activateMission('mission_1_first_fare', 500);
+    missions.completeObjective('mission_1_first_fare', 'obj_m1_pickup');
+    missions.completeObjective('mission_1_first_fare', 'obj_m1_dropoff');
+    missions.completeMission('mission_1_first_fare', economy, () => {}, 600);
+
+    missions.activateMission('mission_4_market_parcel', 1000);
+    missions.completeObjective('mission_4_market_parcel', 'obj_m4_collect_parcel');
+    missions.completeObjective('mission_4_market_parcel', 'obj_m4_deliver_parcel');
+
+    let rep = 0;
+    const res = missions.completeMission(
+      'mission_4_market_parcel',
+      economy,
+      (d) => {
+        rep += d;
+      },
+      2000
+    );
+    expect(res.success).toBe(true);
+    expect(res.payoutMinorUnits).toBe(4500);
+    // 25000 + M1 ৳30 + M4 ৳45
+    expect(economy.balanceMinorUnits).toBe(32500);
+    expect(rep).toBe(6);
+
+    const delivery = createRepeatableDeliveryDefinition(
+      'delivery_trip_01',
+      'মুদি পার্সেল',
+      'Grocery Parcel',
+      { x: 0, y: 0, z: 0 },
+      { x: 10, y: 0, z: 10 },
+      3000
+    );
+    expect(delivery.objectives).toHaveLength(2);
+    expect(delivery.repeatPolicy).toBe('repeatable');
   });
 });

@@ -163,10 +163,16 @@ export const useGameStore = create<GameState>((set, get) => ({
         curActive = 'mission_2_police_checkpoint';
       } else if (allM['mission_3_artisan_order']?.state === 'AVAILABLE') {
         curActive = 'mission_3_artisan_order';
+      } else if (allM['mission_4_market_parcel']?.state === 'AVAILABLE') {
+        curActive = 'mission_4_market_parcel';
+      } else if (allM['mission_5_vendor_day']?.state === 'AVAILABLE') {
+        curActive = 'mission_5_vendor_day';
       } else if (
         allM['mission_1_first_fare']?.state === 'COMPLETED' &&
         allM['mission_2_police_checkpoint']?.state === 'COMPLETED' &&
-        allM['mission_3_artisan_order']?.state === 'COMPLETED'
+        allM['mission_3_artisan_order']?.state === 'COMPLETED' &&
+        allM['mission_4_market_parcel']?.state === 'COMPLETED' &&
+        allM['mission_5_vendor_day']?.state === 'COMPLETED'
       ) {
         curActive = 'repeatable_fares';
       }

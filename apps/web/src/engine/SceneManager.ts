@@ -12,6 +12,10 @@ export class SceneManager {
 
   public playerMesh: THREE.Group;
   public rickshawMesh: THREE.Group;
+  /** Milestone 20 — parked driveable CNG mesh */
+  public cngMesh: THREE.Group;
+  /** Milestone 22 — parked driveable easy bike mesh */
+  public easyBikeMesh: THREE.Group;
   /** Milestone 11 street props attach under this group. */
   public propsRoot: THREE.Group;
 
@@ -54,6 +58,16 @@ export class SceneManager {
     // 3. Build 3D Rickshaw Vehicle Mesh (Authentic Dhaka/Dhamrai cycle rickshaw)
     this.rickshawMesh = this.createRickshawMesh();
     this.scene.add(this.rickshawMesh);
+
+    // 4. Milestone 20 — parked CNG auto-rickshaw near stand
+    this.cngMesh = this.createCngMesh();
+    this.cngMesh.position.set(8.0, 0.0, 3.0);
+    this.scene.add(this.cngMesh);
+
+    // 5. Milestone 22 — parked easy bike near stand
+    this.easyBikeMesh = this.createEasyBikeMesh();
+    this.easyBikeMesh.position.set(-4.0, 0.0, 2.5);
+    this.scene.add(this.easyBikeMesh);
   }
 
   private createPlayerMesh(): THREE.Group {
@@ -156,6 +170,90 @@ export class SceneManager {
     rearRightWheel.name = 'wheel_rear_right';
     rearRightWheel.castShadow = true;
     group.add(rearRightWheel);
+
+    return group;
+  }
+
+  /** Milestone 20 — green CNG cabin with gas cylinder silhouette */
+  private createCngMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'CngAutoRickshaw';
+
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e8449, roughness: 0.55, metalness: 0.25 });
+    const cabinMat = new THREE.MeshStandardMaterial({ color: 0xf4d03f, roughness: 0.7 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x1c2833, roughness: 0.95 });
+    const cylinderMat = new THREE.MeshStandardMaterial({ color: 0x85929e, metalness: 0.7, roughness: 0.35 });
+
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.22, 2.2), frameMat);
+    chassis.position.set(0, 0.42, 0.1);
+    chassis.castShadow = true;
+    group.add(chassis);
+
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.25, 1.05, 1.35), cabinMat);
+    cabin.position.set(0, 1.05, 0.15);
+    cabin.castShadow = true;
+    group.add(cabin);
+
+    const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.9, 12), cylinderMat);
+    cylinder.rotation.z = Math.PI / 2;
+    cylinder.position.set(0, 0.55, -0.95);
+    group.add(cylinder);
+
+    const wheelGeom = new THREE.CylinderGeometry(0.38, 0.38, 0.12, 16);
+    wheelGeom.rotateZ(Math.PI / 2);
+    const positions: [number, number, number][] = [
+      [0, 0.38, -1.05],
+      [-0.62, 0.38, 0.75],
+      [0.62, 0.38, 0.75],
+    ];
+    const names = ['wheel_front', 'wheel_rear_left', 'wheel_rear_right'];
+    for (let i = 0; i < 3; i++) {
+      const w = new THREE.Mesh(wheelGeom, tireMat);
+      w.position.set(...positions[i]!);
+      w.name = names[i]!;
+      w.castShadow = true;
+      group.add(w);
+    }
+
+    return group;
+  }
+
+  /** Milestone 22 — slim electric easy-bike silhouette */
+  private createEasyBikeMesh(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'EasyBike';
+
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x2874a6, roughness: 0.45, metalness: 0.35 });
+    const seatMat = new THREE.MeshStandardMaterial({ color: 0x1c2833, roughness: 0.85 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x212f3d, roughness: 0.95 });
+
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 1.5), frameMat);
+    deck.position.set(0, 0.45, 0);
+    deck.castShadow = true;
+    group.add(deck);
+
+    const stem = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.08), frameMat);
+    stem.position.set(0, 0.85, -0.55);
+    group.add(stem);
+
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.05, 0.05), frameMat);
+    handle.position.set(0, 1.2, -0.55);
+    group.add(handle);
+
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.35), seatMat);
+    seat.position.set(0, 0.72, 0.15);
+    group.add(seat);
+
+    const wheelGeom = new THREE.CylinderGeometry(0.32, 0.32, 0.08, 14);
+    wheelGeom.rotateZ(Math.PI / 2);
+    const front = new THREE.Mesh(wheelGeom, tireMat);
+    front.position.set(0, 0.32, -0.65);
+    front.name = 'wheel_front';
+    group.add(front);
+    const rear = new THREE.Mesh(wheelGeom, tireMat);
+    rear.position.set(0, 0.32, 0.55);
+    rear.name = 'wheel_rear';
+    group.add(rear);
 
     return group;
   }

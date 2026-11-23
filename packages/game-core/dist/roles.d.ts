@@ -13,6 +13,8 @@ export declare const RICKSHAW_DAILY_RENT_MINOR_UNITS = 5000;
 export declare const RICKSHAW_DAILY_RENT_POISHA = 5000;
 export declare const RICKSHAW_LICENSE_SLIP_ITEM: InventoryItem;
 export declare const BRASS_BELLS_CARGO_ITEM: InventoryItem;
+/** Milestone 18 — sealed market parcel for college delivery */
+export declare const MARKET_PARCEL_ITEM: InventoryItem;
 export declare const FARE_PASSENGER_KAMAL: NPCEntityDefinition;
 export declare const FARE_PASSENGER_SUFIA: NPCEntityDefinition;
 export interface PlayerReputationScores {

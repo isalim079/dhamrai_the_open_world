@@ -17,12 +17,14 @@ export interface CivicTickInput {
 export interface CivicTickResult {
   stopOpened: boolean;
   fled: boolean;
+  arrested?: boolean;
   stopId?: string;
   fineMinorUnits?: number;
   heat?: number;
   messageBn?: string;
   messageEn?: string;
   shouldOpenDialogue: boolean;
+  holdUntilMs?: number;
 }
 
 export class CivicEnforcementBridge {
@@ -31,6 +33,44 @@ export class CivicEnforcementBridge {
     const thana = PHASE_1_ANCHORS.THANA_JUNCTION_CHECKPOINT;
     const distanceToThanaM = Math.hypot(input.playerPos.x - thana.x, input.playerPos.z - thana.z);
     const isNightOrDusk = input.dayPhase === 'night' || input.dayPhase === 'dusk';
+
+    // Milestone 19 — soft arrest before new stops when heat is critical
+    if (engine.releaseSoftArrestIfDue(nowMs)) {
+      return {
+        stopOpened: false,
+        fled: false,
+        arrested: false,
+        messageBn: 'থানা হোল্ডিং শেষ — সাবধানে চালান',
+        messageEn: 'Thana hold ended — drive carefully',
+        shouldOpenDialogue: false,
+        heat: engine.policeHeat,
+      };
+    }
+    if (engine.isSoftArrestHolding(nowMs)) {
+      return {
+        stopOpened: false,
+        fled: false,
+        arrested: true,
+        shouldOpenDialogue: false,
+        heat: engine.policeHeat,
+        holdUntilMs: engine.activeSoftArrest?.holdUntilMs,
+      };
+    }
+    const arrest = engine.trySoftArrest(distanceToThanaM, nowMs);
+    if (arrest.success && arrest.arrest) {
+      return {
+        stopOpened: false,
+        fled: false,
+        arrested: true,
+        stopId: arrest.arrest.id,
+        fineMinorUnits: arrest.arrest.fineMinorUnits,
+        heat: arrest.policeHeat,
+        messageBn: 'গ্রেপ্তার! থানায় সাময়িক হোল্ডিং — জরিমানা কাটা হয়েছে',
+        messageEn: 'Soft arrest! Brief Thana hold — fine applied',
+        shouldOpenDialogue: false,
+        holdUntilMs: arrest.arrest.holdUntilMs,
+      };
+    }
 
     const active = engine.activePoliceStop;
     let playerDistanceFromStopM = 0;

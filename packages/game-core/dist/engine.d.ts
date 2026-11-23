@@ -11,7 +11,9 @@ import { MissionDomain, MissionCompletionResult } from './missions.js';
 import { RickshawDriverArchetype } from './roles.js';
 import { RepairServiceId, SpeedModifiers, TravelWearResult } from './vehicle-condition.js';
 import { ConsumableItemId, StaminaTickResult } from './stamina.js';
-import { Infraction, PoliceStopState, InfractionContext } from './civic-enforcement.js';
+import { Infraction, PoliceStopState, SoftArrestState, InfractionContext } from './civic-enforcement.js';
+import { LandmarkDefinition } from './landmarks.js';
+import { PlotDefinition, BuildingTemplateId } from './plots.js';
 export interface PurchaseResult {
     success: boolean;
     reason?: 'INSUFFICIENT_FUNDS' | 'UNKNOWN_ITEM' | 'UNKNOWN_SERVICE';
@@ -28,6 +30,21 @@ export interface FinePaymentResult {
     policeHeat?: number;
     fineMinorUnits?: number;
 }
+export interface SoftArrestResult {
+    success: boolean;
+    reason?: 'NOT_ELIGIBLE' | 'INSUFFICIENT_FUNDS' | 'ALREADY_HELD';
+    arrest?: SoftArrestState;
+    transaction?: EconomyTransaction;
+    policeHeat?: number;
+}
+export interface PropertyActionResult {
+    success: boolean;
+    reason?: 'UNKNOWN_PLOT' | 'ALREADY_OWNED' | 'NOT_OWNED' | 'INSUFFICIENT_FUNDS' | 'INVALID_BUILDING' | 'ALREADY_BUILT' | 'NO_BUILDING' | 'COOLDOWN' | 'DUPLICATE';
+    transaction?: EconomyTransaction;
+    plotId?: string;
+    buildingId?: BuildingTemplateId;
+    incomeMinorUnits?: number;
+}
 export declare class GameCoreEngine {
     private readonly _economy;
     private readonly _inventory;
@@ -35,6 +52,7 @@ export declare class GameCoreEngine {
     private _player;
     private readonly _worldFlags;
     private _activePoliceStop;
+    private _activeSoftArrest;
     constructor(economy: EconomyDomain, inventory: InventoryDomain, missions: MissionDomain, player: RickshawDriverArchetype, worldFlags?: Record<string, boolean | number | string>);
     /**
      * Initializes a brand new game session for the Rickshaw Driver role.
@@ -52,6 +70,40 @@ export declare class GameCoreEngine {
     updatePlayerPosition(newPos: WorldPosition, headingRad?: number): void;
     setInVehicle(inVehicle: boolean): void;
     updateVehicleState(speedMps?: number, steeringAngleRad?: number, damagePercent?: number): void;
+    /** Milestone 21 — discovered landmark ids from worldFlags CSV */
+    getDiscoveredLandmarkIds(): string[];
+    hasDiscoveredLandmark(id: string): boolean;
+    /**
+     * Try to discover a nearby landmark. Returns the definition if newly unlocked.
+     */
+    tryDiscoverLandmark(pos: WorldPosition): LandmarkDefinition | null;
+    get landmarkCatalog(): readonly LandmarkDefinition[];
+    /** Milestone 24 — plaque read at discovered landmark */
+    getNearestDiscoveredLandmark(pos: WorldPosition, readRadiusM?: number): LandmarkDefinition | null;
+    get plotCatalog(): readonly PlotDefinition[];
+    getOwnedPlotIds(): string[];
+    ownsPlot(plotId: string): boolean;
+    getPlotBuildings(): Record<string, BuildingTemplateId>;
+    getBuildingOnPlot(plotId: string): BuildingTemplateId;
+    getNearestPlot(pos: WorldPosition, radiusM?: number): PlotDefinition | null;
+    /** M27 — inspect marks plot as seen (journal hint); does not purchase. */
+    inspectPlot(plotId: string): boolean;
+    getInspectedPlotIds(): string[];
+    /**
+     * M28 — idempotent plot purchase (stable tx id per plot).
+     */
+    purchasePlot(plotId: string, timestampMs?: number): PropertyActionResult;
+    /**
+     * M29 — place an allowed building template on an owned plot (idempotent tx).
+     */
+    placeBuilding(plotId: string, buildingId: Exclude<BuildingTemplateId, 'none'>, timestampMs?: number): PropertyActionResult;
+    /**
+     * M30 — claim rental income if building present and cooldown elapsed.
+     */
+    claimRentalIncome(plotId: string, timestampMs?: number): PropertyActionResult;
+    /** M31 — garage owners get a soft repair discount flag (৳10 off next mistri bill via worldFlag). */
+    hasRepairGarage(): boolean;
+    getGarageRepairDiscountMinor(): number;
     setWorldFlag(key: string, value: boolean | number | string): void;
     getWorldFlag<T extends boolean | number | string>(key: string): T | undefined;
     get staminaPercent(): number;
@@ -60,7 +112,9 @@ export declare class GameCoreEngine {
     get policeHeat(): number;
     get civicTrust(): number;
     get activePoliceStop(): Readonly<PoliceStopState> | null;
+    get activeSoftArrest(): Readonly<SoftArrestState> | null;
     get unpaidFineMinorUnits(): number;
+    isSoftArrestHolding(nowMs?: number): boolean;
     /**
      * Evaluate traffic infractions (speeding / flee). Does not mutate state.
      */
@@ -80,6 +134,12 @@ export declare class GameCoreEngine {
      */
     applyFleePenalty(extraFineMinor: number, heatDelta: number, nowMs?: number): PoliceStopState | null;
     clearPoliceStop(): void;
+    /**
+     * Milestone 19 — soft arrest when heat is critical near Thana.
+     * Debits ARREST fine if funds allow; otherwise still holds and sets heatAfter.
+     */
+    trySoftArrest(distanceToThanaM: number, nowMs?: number): SoftArrestResult;
+    releaseSoftArrestIfDue(nowMs?: number): boolean;
     applyPoliceHeatDelta(delta: number): number;
     decayPoliceHeat(dtSec: number): number;
     get isTeaBuffActive(): boolean;

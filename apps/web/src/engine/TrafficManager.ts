@@ -132,11 +132,23 @@ export class TrafficManager {
   private initAgentPool(): void {
     const defaultCenter: WorldPosition = { x: 0, y: 0, z: 0 };
     for (let i = 0; i < this.poolSize; i++) {
-      const id = `traffic_rickshaw_${i + 1}`;
+      const kind: 'rickshaw' | 'cng' | 'easy_bike' =
+        i % 3 === 0 ? 'cng' : i % 3 === 1 ? 'easy_bike' : 'rickshaw';
+      const id =
+        kind === 'cng'
+          ? `traffic_cng_${i + 1}`
+          : kind === 'easy_bike'
+            ? `traffic_bike_${i + 1}`
+            : `traffic_rickshaw_${i + 1}`;
       const edge = this.findSpawnEdge(defaultCenter, i * 20);
       if (!edge) continue;
 
-      const mesh = this.createTrafficRickshawMesh(i);
+      const mesh =
+        kind === 'cng'
+          ? this.createTrafficCngMesh(i)
+          : kind === 'easy_bike'
+            ? this.createTrafficEasyBikeMesh(i)
+            : this.createTrafficRickshawMesh(i);
       this.scene.add(mesh);
 
       // Create Rapier kinematic body & cuboid collider
@@ -156,8 +168,9 @@ export class TrafficManager {
         collider = world.createCollider(colDesc, body);
       }
 
-      // Speeds: 8–12 km/h (2.22 to 3.33 m/s)
-      const speedMps = 2.4 + (i * 0.35); // 8.6 to 11.2 km/h
+      // Speeds: rickshaw 8–12; easy bike mid; CNG ambient cruise
+      const speedMps =
+        kind === 'cng' ? 3.2 + i * 0.15 : kind === 'easy_bike' ? 2.9 + i * 0.12 : 2.4 + i * 0.35;
 
       const initialPos = { ...edge.waypoints[0]! };
       const nextPos = edge.waypoints[1]!;
@@ -169,11 +182,12 @@ export class TrafficManager {
       const agent: TrafficVehicleAgent = {
         id,
         currentEdgeId: edge.id,
-        edgeProgressPercent: 0.05 + (i * 0.25),
+        edgeProgressPercent: 0.05 + i * 0.25,
         speedMps,
         position: initialPos,
         headingRadians: initialHeading,
         isHalted: false,
+        vehicleKind: kind,
       };
 
       this.agents.push({
@@ -388,6 +402,19 @@ export class TrafficManager {
   }
 
   /**
+   * Milestone 35 — hide traffic meshes beyond LOD distance (bodies stay for AI simplicity).
+   */
+  public updateLod(playerPos: WorldPosition, farM = 110): void {
+    for (const inst of this.agents) {
+      const d = Math.hypot(
+        inst.agent.position.x - playerPos.x,
+        inst.agent.position.z - playerPos.z
+      );
+      inst.mesh.visible = d <= farM;
+    }
+  }
+
+  /**
    * Selects next connected edge from the destination node to continue journey.
    */
   private selectNextConnectedEdge(currentEdge: NavGraphEdge): NavGraphEdge | null {
@@ -506,6 +533,57 @@ export class TrafficManager {
         true
       );
     }
+  }
+
+  /** Milestone 22 — ambient easy bike mesh */
+  private createTrafficEasyBikeMesh(index: number): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `TrafficEasyBike_${index}`;
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x2874a6, roughness: 0.5 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.9 });
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.1, 1.2), frameMat);
+    deck.position.set(0, 0.45, 0);
+    group.add(deck);
+    const stem = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.06), frameMat);
+    stem.position.set(0, 0.8, -0.4);
+    group.add(stem);
+    const wheelGeom = new THREE.CylinderGeometry(0.26, 0.26, 0.07, 10);
+    wheelGeom.rotateZ(Math.PI / 2);
+    for (const z of [-0.5, 0.45]) {
+      const w = new THREE.Mesh(wheelGeom, tireMat);
+      w.position.set(0, 0.28, z);
+      group.add(w);
+    }
+    return group;
+  }
+
+  /** Milestone 20 — lightweight ambient CNG cabin mesh */
+  private createTrafficCngMesh(index: number): THREE.Group {
+    const group = new THREE.Group();
+    group.name = `TrafficCng_${index}`;
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e8449, roughness: 0.65 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0xf4d03f, roughness: 0.7 });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.9 });
+
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.18, 1.9), bodyMat);
+    base.position.set(0, 0.5, 0);
+    group.add(base);
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.85, 1.2), roofMat);
+    cabin.position.set(0, 1.05, 0.1);
+    group.add(cabin);
+
+    const wheelGeom = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 10);
+    wheelGeom.rotateZ(Math.PI / 2);
+    for (const [x, z] of [
+      [0, -0.75],
+      [-0.45, 0.55],
+      [0.45, 0.55],
+    ] as [number, number][]) {
+      const w = new THREE.Mesh(wheelGeom, wheelMat);
+      w.position.set(x, 0.3, z);
+      group.add(w);
+    }
+    return group;
   }
 
   /**

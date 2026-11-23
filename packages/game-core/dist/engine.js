@@ -11,7 +11,9 @@ import { MissionDomain } from './missions.js';
 import { createInitialRickshawDriverState, RICKSHAW_LICENSE_SLIP_ITEM, RICKSHAW_STARTING_CASH_MINOR_UNITS, } from './roles.js';
 import { applyTravelWear, applyRepair, computeSpeedModifiers, REPAIR_SERVICES, } from './vehicle-condition.js';
 import { tickStamina, recoverStamina, canSprint, CONSUMABLES, TEA_BUFF_DURATION_MS, } from './stamina.js';
-import { evaluateInfraction, openPoliceStop, applyLicenseDiscount, markFleeing, markPaid, applyPoliceHeat, decayPoliceHeat, HEAT_ON_PAY, } from './civic-enforcement.js';
+import { evaluateInfraction, openPoliceStop, applyLicenseDiscount, markFleeing, markPaid, applyPoliceHeat, decayPoliceHeat, HEAT_ON_PAY, shouldSoftArrest, openSoftArrest, isArrestHoldActive, } from './civic-enforcement.js';
+import { findDiscoverableLandmark, findNearestDiscoveredLandmark, parseDiscoveredLandmarkIds, serializeDiscoveredLandmarkIds, LANDMARK_DEFINITIONS, } from './landmarks.js';
+import { PLOT_DEFINITIONS, BUILDING_TEMPLATES, parseCsvIds, serializeCsvIds, parsePlotBuildings, serializePlotBuildings, findNearestPlot, getPlotById, PLOT_INTERACT_RADIUS_M, RENTAL_COOLDOWN_MS, } from './plots.js';
 export class GameCoreEngine {
     _economy;
     _inventory;
@@ -19,6 +21,7 @@ export class GameCoreEngine {
     _player;
     _worldFlags = new Map();
     _activePoliceStop = null;
+    _activeSoftArrest = null;
     constructor(economy, inventory, missions, player, worldFlags = {}) {
         this._economy = economy;
         this._inventory = inventory;
@@ -150,6 +153,178 @@ export class GameCoreEngine {
             this._player.vehicleState.conditionPercent = 100 - damagePercent;
         }
     }
+    /** Milestone 21 — discovered landmark ids from worldFlags CSV */
+    getDiscoveredLandmarkIds() {
+        return parseDiscoveredLandmarkIds(this.getWorldFlag('discoveredLandmarks'));
+    }
+    hasDiscoveredLandmark(id) {
+        return this.getDiscoveredLandmarkIds().includes(id);
+    }
+    /**
+     * Try to discover a nearby landmark. Returns the definition if newly unlocked.
+     */
+    tryDiscoverLandmark(pos) {
+        const discovered = new Set(this.getDiscoveredLandmarkIds());
+        const lm = findDiscoverableLandmark(pos, discovered);
+        if (!lm)
+            return null;
+        discovered.add(lm.id);
+        this._worldFlags.set('discoveredLandmarks', serializeDiscoveredLandmarkIds([...discovered]));
+        return lm;
+    }
+    get landmarkCatalog() {
+        return LANDMARK_DEFINITIONS;
+    }
+    /** Milestone 24 — plaque read at discovered landmark */
+    getNearestDiscoveredLandmark(pos, readRadiusM = 8) {
+        return findNearestDiscoveredLandmark(pos, new Set(this.getDiscoveredLandmarkIds()), readRadiusM);
+    }
+    // ── Milestone 27–31 Property domain ──────────────────────────────────
+    get plotCatalog() {
+        return PLOT_DEFINITIONS;
+    }
+    getOwnedPlotIds() {
+        return parseCsvIds(this.getWorldFlag('ownedPlots'));
+    }
+    ownsPlot(plotId) {
+        return this.getOwnedPlotIds().includes(plotId);
+    }
+    getPlotBuildings() {
+        return parsePlotBuildings(this.getWorldFlag('plotBuildings'));
+    }
+    getBuildingOnPlot(plotId) {
+        return this.getPlotBuildings()[plotId] ?? 'none';
+    }
+    getNearestPlot(pos, radiusM = PLOT_INTERACT_RADIUS_M) {
+        return findNearestPlot(pos, radiusM);
+    }
+    /** M27 — inspect marks plot as seen (journal hint); does not purchase. */
+    inspectPlot(plotId) {
+        const plot = getPlotById(plotId);
+        if (!plot)
+            return false;
+        const seen = new Set(parseCsvIds(this.getWorldFlag('inspectedPlots')));
+        if (seen.has(plotId))
+            return false;
+        seen.add(plotId);
+        this._worldFlags.set('inspectedPlots', serializeCsvIds([...seen]));
+        return true;
+    }
+    getInspectedPlotIds() {
+        return parseCsvIds(this.getWorldFlag('inspectedPlots'));
+    }
+    /**
+     * M28 — idempotent plot purchase (stable tx id per plot).
+     */
+    purchasePlot(plotId, timestampMs = Date.now()) {
+        const plot = getPlotById(plotId);
+        if (!plot)
+            return { success: false, reason: 'UNKNOWN_PLOT' };
+        if (this.ownsPlot(plotId))
+            return { success: false, reason: 'ALREADY_OWNED', plotId };
+        const txId = `tx_property_${plotId}`;
+        if (!this._economy.hasSufficientFunds(plot.priceMinorUnits)) {
+            return { success: false, reason: 'INSUFFICIENT_FUNDS', plotId };
+        }
+        try {
+            const transaction = this._economy.debit(plot.priceMinorUnits, 'PROPERTY_PURCHASE', `Purchase plot ${plot.nameEn}`, timestampMs, txId);
+            const owned = new Set(this.getOwnedPlotIds());
+            owned.add(plotId);
+            this._worldFlags.set('ownedPlots', serializeCsvIds([...owned]));
+            this.inspectPlot(plotId);
+            return { success: true, transaction, plotId };
+        }
+        catch (err) {
+            if (err instanceof Error && err.message.includes('already exists')) {
+                // Idempotent replay — ensure ownership flag set
+                const owned = new Set(this.getOwnedPlotIds());
+                owned.add(plotId);
+                this._worldFlags.set('ownedPlots', serializeCsvIds([...owned]));
+                return { success: false, reason: 'DUPLICATE', plotId };
+            }
+            throw err;
+        }
+    }
+    /**
+     * M29 — place an allowed building template on an owned plot (idempotent tx).
+     */
+    placeBuilding(plotId, buildingId, timestampMs = Date.now()) {
+        const plot = getPlotById(plotId);
+        if (!plot)
+            return { success: false, reason: 'UNKNOWN_PLOT' };
+        if (!this.ownsPlot(plotId))
+            return { success: false, reason: 'NOT_OWNED', plotId };
+        if (!plot.allowedBuildings.includes(buildingId)) {
+            return { success: false, reason: 'INVALID_BUILDING', plotId, buildingId };
+        }
+        const existing = this.getBuildingOnPlot(plotId);
+        if (existing !== 'none')
+            return { success: false, reason: 'ALREADY_BUILT', plotId, buildingId: existing };
+        const template = BUILDING_TEMPLATES[buildingId];
+        if (!this._economy.hasSufficientFunds(template.buildCostMinorUnits)) {
+            return { success: false, reason: 'INSUFFICIENT_FUNDS', plotId, buildingId };
+        }
+        const txId = `tx_build_${plotId}_${buildingId}`;
+        try {
+            const transaction = this._economy.debit(template.buildCostMinorUnits, 'CONSTRUCTION_COST', `Build ${template.nameEn} on ${plot.nameEn}`, timestampMs, txId);
+            const buildings = this.getPlotBuildings();
+            buildings[plotId] = buildingId;
+            this._worldFlags.set('plotBuildings', serializePlotBuildings(buildings));
+            return { success: true, transaction, plotId, buildingId };
+        }
+        catch (err) {
+            if (err instanceof Error && err.message.includes('already exists')) {
+                return { success: false, reason: 'DUPLICATE', plotId, buildingId };
+            }
+            throw err;
+        }
+    }
+    /**
+     * M30 — claim rental income if building present and cooldown elapsed.
+     */
+    claimRentalIncome(plotId, timestampMs = Date.now()) {
+        const plot = getPlotById(plotId);
+        if (!plot)
+            return { success: false, reason: 'UNKNOWN_PLOT' };
+        if (!this.ownsPlot(plotId))
+            return { success: false, reason: 'NOT_OWNED', plotId };
+        const building = this.getBuildingOnPlot(plotId);
+        if (building === 'none')
+            return { success: false, reason: 'NO_BUILDING', plotId };
+        const flagKey = `rentClaimMs_${plotId}`;
+        const last = this.getWorldFlag(flagKey) ?? 0;
+        if (timestampMs - last < RENTAL_COOLDOWN_MS) {
+            return { success: false, reason: 'COOLDOWN', plotId };
+        }
+        // Bucket claim window so retries in same window are idempotent
+        const window = Math.floor(timestampMs / RENTAL_COOLDOWN_MS);
+        const txId = `tx_rent_${plotId}_${window}`;
+        try {
+            const transaction = this._economy.credit(plot.rentalIncomeMinorUnits, 'RENTAL_INCOME', `Rental income: ${plot.nameEn} (${building})`, timestampMs, txId);
+            this._worldFlags.set(flagKey, timestampMs);
+            return {
+                success: true,
+                transaction,
+                plotId,
+                buildingId: building,
+                incomeMinorUnits: plot.rentalIncomeMinorUnits,
+            };
+        }
+        catch (err) {
+            if (err instanceof Error && err.message.includes('already exists')) {
+                return { success: false, reason: 'DUPLICATE', plotId };
+            }
+            throw err;
+        }
+    }
+    /** M31 — garage owners get a soft repair discount flag (৳10 off next mistri bill via worldFlag). */
+    hasRepairGarage() {
+        const buildings = this.getPlotBuildings();
+        return Object.values(buildings).includes('repair_garage');
+    }
+    getGarageRepairDiscountMinor() {
+        return this.hasRepairGarage() ? 1000 : 0; // ৳10
+    }
     setWorldFlag(key, value) {
         this._worldFlags.set(key, value);
     }
@@ -174,8 +349,14 @@ export class GameCoreEngine {
     get activePoliceStop() {
         return this._activePoliceStop;
     }
+    get activeSoftArrest() {
+        return this._activeSoftArrest;
+    }
     get unpaidFineMinorUnits() {
         return this.getWorldFlag('unpaidFineMinorUnits') ?? 0;
+    }
+    isSoftArrestHolding(nowMs = Date.now()) {
+        return isArrestHoldActive(this._activeSoftArrest, nowMs);
     }
     /**
      * Evaluate traffic infractions (speeding / flee). Does not mutate state.
@@ -259,6 +440,55 @@ export class GameCoreEngine {
     clearPoliceStop() {
         this._activePoliceStop = null;
         this._worldFlags.set('activePoliceStopId', '');
+    }
+    /**
+     * Milestone 19 — soft arrest when heat is critical near Thana.
+     * Debits ARREST fine if funds allow; otherwise still holds and sets heatAfter.
+     */
+    trySoftArrest(distanceToThanaM, nowMs = Date.now()) {
+        const lastArrestMs = this.getWorldFlag('lastSoftArrestMs') ?? 0;
+        const eligible = shouldSoftArrest({
+            policeHeat: this._player.reputations.policeHeat,
+            distanceToThanaM,
+            nowMs,
+            lastArrestMs,
+            hasActiveStop: this._activePoliceStop !== null && !this._activePoliceStop.paid,
+            alreadyHeld: isArrestHoldActive(this._activeSoftArrest, nowMs),
+        });
+        if (!eligible)
+            return { success: false, reason: 'NOT_ELIGIBLE' };
+        const arrest = openSoftArrest(nowMs);
+        let transaction;
+        if (this._economy.hasSufficientFunds(arrest.fineMinorUnits)) {
+            transaction = this._economy.debit(arrest.fineMinorUnits, 'FINE_PENALTY', 'Soft arrest / Thana holding fine', nowMs, `tx_arrest_${arrest.id}`);
+        }
+        else if (this._economy.balanceMinorUnits > 0) {
+            // Seize remaining cash
+            const seize = this._economy.balanceMinorUnits;
+            transaction = this._economy.debit(seize, 'FINE_PENALTY', 'Soft arrest — partial seize', nowMs, `tx_arrest_partial_${arrest.id}`);
+        }
+        this._activeSoftArrest = arrest;
+        this._activePoliceStop = null;
+        this._player.reputations.policeHeat = arrest.heatAfter;
+        this._worldFlags.set('lastSoftArrestMs', nowMs);
+        this._worldFlags.set('activePoliceStopId', '');
+        this._worldFlags.set('unpaidFineMinorUnits', 0);
+        this._worldFlags.set('jailHoldUntilMs', arrest.holdUntilMs);
+        return {
+            success: true,
+            arrest,
+            transaction,
+            policeHeat: this._player.reputations.policeHeat,
+        };
+    }
+    releaseSoftArrestIfDue(nowMs = Date.now()) {
+        if (!this._activeSoftArrest || this._activeSoftArrest.released)
+            return false;
+        if (nowMs < this._activeSoftArrest.holdUntilMs)
+            return false;
+        this._activeSoftArrest = { ...this._activeSoftArrest, released: true };
+        this._worldFlags.set('jailHoldUntilMs', 0);
+        return true;
     }
     applyPoliceHeatDelta(delta) {
         this._player.reputations.policeHeat = applyPoliceHeat(this._player.reputations.policeHeat, delta);
@@ -372,10 +602,15 @@ export class GameCoreEngine {
         if (!def) {
             return { success: false, reason: 'UNKNOWN_SERVICE' };
         }
-        if (!this._economy.hasSufficientFunds(def.priceMinorUnits)) {
+        // Milestone 31 — owned repair garage soft discount
+        const discount = this.getGarageRepairDiscountMinor();
+        const price = Math.max(0, def.priceMinorUnits - discount);
+        if (!this._economy.hasSufficientFunds(price)) {
             return { success: false, reason: 'INSUFFICIENT_FUNDS' };
         }
-        const tx = this._economy.debit(def.priceMinorUnits, 'MAINTENANCE_COST', `${def.nameEn} (${def.nameBn})`, timestampMs, customId);
+        const tx = this._economy.debit(price, 'MAINTENANCE_COST', discount > 0
+            ? `${def.nameEn} (${def.nameBn}) — garage discount ৳${(discount / 100).toFixed(0)}`
+            : `${def.nameEn} (${def.nameBn})`, timestampMs, customId);
         const next = applyRepair({
             damagePercent: this._player.vehicleState.damagePercent,
             tirePressurePercent: this._player.vehicleState.tirePressurePercent,

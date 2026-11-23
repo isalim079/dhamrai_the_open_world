@@ -36,6 +36,7 @@ import { WeatherSystem } from './atmosphere/WeatherSystem.js';
 import { EconomyInteractables } from './EconomyInteractables.js';
 import { CivicEnforcementBridge } from './CivicEnforcementBridge.js';
 import { ObjectiveMarker, bearingToTargetDeg, distanceToTargetM } from './ObjectiveMarker.js';
+import { PlotMarkers } from './PlotMarkers.js';
 import { useSessionStore } from '../state/useSessionStore.js';
 import { useGameStore } from '../state/useGameStore.js';
 import { useUIStore } from '../state/useUIStore.js';
@@ -51,6 +52,11 @@ export class GameEngine {
   public physics!: PhysicsWorld;
   public character!: CharacterController;
   public rickshaw!: RickshawVehicle;
+  /** Milestone 20 — parked driveable CNG */
+  public cng!: RickshawVehicle;
+  /** Milestone 22 — parked driveable easy bike */
+  public easyBike!: RickshawVehicle;
+  public activeVehicleKind: 'rickshaw' | 'cng' | 'easy_bike' = 'rickshaw';
   public cameraDirector!: CameraDirector;
   public inputManager!: InputManager;
   public chunkLoader!: ChunkLoader;
@@ -68,11 +74,14 @@ export class GameEngine {
   public economyInteractables!: EconomyInteractables;
   public civicBridge!: CivicEnforcementBridge;
   public objectiveMarker!: ObjectiveMarker;
+  public plotMarkers!: PlotMarkers;
   private atmosphereHudAccum = 0;
+  private plotMarkerAccum = 0;
   private lastWearPos: WorldPosition | null = null;
   private conditionHudAccum = 0;
   private civicHudAccum = 0;
   private wayfindingAccum = 0;
+  private landmarkDiscoverAccum = 0;
 
   private isRunning = false;
   private animFrameId: number | null = null;
@@ -107,7 +116,11 @@ export class GameEngine {
     this.character = new CharacterController(this.physics, { x: 0.0, y: 0.5, z: 0.0 });
 
     // 5. Initialize Rickshaw Vehicle (parked near Stand: 2.5, 0.5, -1.0)
-    this.rickshaw = new RickshawVehicle(this.physics, { x: 2.5, y: 0.5, z: -1.0 });
+    this.rickshaw = new RickshawVehicle(this.physics, { x: 2.5, y: 0.5, z: -1.0 }, 'rickshaw');
+    // 5b. Milestone 20 — CNG parked near stand
+    this.cng = new RickshawVehicle(this.physics, { x: 8.0, y: 0.5, z: 3.0 }, 'cng');
+    // 5c. Milestone 22 — easy bike parked near stand
+    this.easyBike = new RickshawVehicle(this.physics, { x: -4.0, y: 0.5, z: 2.5 }, 'easy_bike');
 
     // 6. Initialize Input Manager
     this.inputManager = new InputManager();
@@ -125,6 +138,7 @@ export class GameEngine {
 
     // 7.7 Milestone 15 — mission objective beacon
     this.objectiveMarker = new ObjectiveMarker(this.sceneManager.scene);
+    this.plotMarkers = new PlotMarkers(this.sceneManager.scene);
 
     // 8. Initialize Autonomous Road Traffic AI
     this.trafficManager = new TrafficManager(this.sceneManager.scene, this.physics);
@@ -232,17 +246,28 @@ export class GameEngine {
    * Synchronizes actual 3D runtime transforms and vehicle state into the domain engine.
    * MUST be called before saving or creating save envelopes.
    */
+  private getActiveVehicle(): RickshawVehicle {
+    if (this.activeVehicleKind === 'cng') return this.cng;
+    if (this.activeVehicleKind === 'easy_bike') return this.easyBike;
+    return this.rickshaw;
+  }
+
+  private getAllVehicles(): RickshawVehicle[] {
+    return [this.rickshaw, this.cng, this.easyBike];
+  }
+
   public syncRuntimeToDomain(): void {
     const engine = useGameStore.getState().engine;
     if (!engine) return;
 
-    const curPos = this.isInVehicle ? this.rickshaw.getPosition() : this.character.getPosition();
-    const curHeading = this.isInVehicle ? this.rickshaw.heading : this.character.heading;
+    const vehicle = this.getActiveVehicle();
+    const curPos = this.isInVehicle ? vehicle.getPosition() : this.character.getPosition();
+    const curHeading = this.isInVehicle ? vehicle.heading : this.character.heading;
 
     engine.updatePlayerPosition(curPos, curHeading);
     engine.setInVehicle(this.isInVehicle);
     // Preserve domain-owned damagePercent (do not overwrite with 0)
-    engine.updateVehicleState(this.rickshaw.speedMps, this.rickshaw.steeringAngle);
+    engine.updateVehicleState(vehicle.speedMps, vehicle.steeringAngle);
   }
 
   /**
@@ -256,13 +281,15 @@ export class GameEngine {
     const p = engine.player;
     if (p.isInVehicle) {
       this.isInVehicle = true;
+      this.activeVehicleKind = 'rickshaw';
+      for (const v of this.getAllVehicles()) v.isOccupied = false;
       this.rickshaw.isOccupied = true;
       this.rickshaw.resetTransform(p.position, p.headingRadians);
       this.character.resetTransform(this.rickshaw.getDriverSeatPosition(), p.headingRadians);
       useSessionStore.getState().setIsInVehicle(true);
     } else {
       this.isInVehicle = false;
-      this.rickshaw.isOccupied = false;
+      for (const v of this.getAllVehicles()) v.isOccupied = false;
       this.character.resetTransform(p.position, p.headingRadians);
       useSessionStore.getState().setIsInVehicle(false);
     }
@@ -373,11 +400,20 @@ export class GameEngine {
     }
 
     // 4. Talk / Dialogue Interaction ('E' key)
-    // Priority: dialogue NPC > tea stall / mistri / chain-oil by distance
+    // Priority: dialogue NPC > tea/mistri > landmark plaque (M24)
     if (input.talkInteract && !isUIBlocking) {
       const nearbyNPC = this.npcManager.getNearbyInteractiveNPC(activePos, 2.5);
       if (nearbyNPC && !nearbyNPC.isBoarded) {
-        ui.openDialogue(nearbyNPC.definition.dialogueTreeId || 'dialogue_farhana_student');
+        const treeId = nearbyNPC.definition.dialogueTreeId || 'dialogue_farhana_student';
+        ui.openDialogue(treeId);
+        // Milestone 25 — reputation-gated tea greeting
+        if (treeId === 'dialogue_tea_stall') {
+          const eng = useGameStore.getState().engine;
+          const rep = eng?.player.reputations.transportReputation ?? 0;
+          if (rep >= 20) {
+            useUIStore.getState().setDialogueNode('node_tea_regular');
+          }
+        }
       } else {
         const phase = (this.dayNightCycle?.phase ?? 'day') as
           | 'dawn'
@@ -387,43 +423,126 @@ export class GameEngine {
         const econ = this.economyInteractables?.findNearest(activePos, 2.5, phase);
         if (econ) {
           ui.openDialogue(econ.item.dialogueTreeId);
+          if (econ.item.dialogueTreeId === 'dialogue_tea_stall') {
+            const eng = useGameStore.getState().engine;
+            const rep = eng?.player.reputations.transportReputation ?? 0;
+            if (rep >= 20) {
+              useUIStore.getState().setDialogueNode('node_tea_regular');
+            }
+          }
+        } else {
+          // Milestone 27–30 — plot inspect / buy / build / rent, else M24 plaque
+          const eng = useGameStore.getState().engine;
+          const plot = eng?.getNearestPlot(activePos, 8) ?? null;
+          if (eng && plot) {
+            eng.inspectPlot(plot.id);
+            if (!eng.ownsPlot(plot.id)) {
+              const buy = eng.purchasePlot(plot.id, Date.now());
+              if (buy.success) {
+                useGameStore.getState().syncFromEngine();
+                useGameStore
+                  .getState()
+                  .showToast(`প্লট কেনা হয়েছে: ${plot.nameBn} (৳${(plot.priceMinorUnits / 100).toFixed(0)})`, 4000);
+              } else if (buy.reason === 'INSUFFICIENT_FUNDS') {
+                useGameStore.getState().showToast('টাকা নেই — প্লট কেনা যায়নি', 3000);
+              } else {
+                useSessionStore
+                  .getState()
+                  .setStatusMessage(`${plot.nameBn}: ${plot.blurbBn}`);
+              }
+            } else if (eng.getBuildingOnPlot(plot.id) === 'none') {
+              const building = plot.allowedBuildings[0];
+              if (building && building !== 'none') {
+                const built = eng.placeBuilding(plot.id, building, Date.now());
+                if (built.success) {
+                  useGameStore.getState().syncFromEngine();
+                  useGameStore
+                    .getState()
+                    .showToast(`ভবন তৈরি: ${building} on ${plot.nameEn}`, 4000);
+                } else if (built.reason === 'INSUFFICIENT_FUNDS') {
+                  useGameStore.getState().showToast('নির্মাণের টাকা নেই', 3000);
+                }
+              }
+            } else {
+              const rent = eng.claimRentalIncome(plot.id, Date.now());
+              if (rent.success) {
+                useGameStore.getState().syncFromEngine();
+                useGameStore
+                  .getState()
+                  .showToast(
+                    `ভাড়া আয় ৳${((rent.incomeMinorUnits ?? 0) / 100).toFixed(0)} (${plot.nameEn})`,
+                    3500
+                  );
+              } else if (rent.reason === 'COOLDOWN') {
+                useSessionStore.getState().setStatusMessage('ভাড়া এখনো তৈরি হয়নি — একটু পর আবার চেষ্টা করুন');
+              }
+            }
+            useGameStore.getState().syncFromEngine();
+          } else {
+            const plaque = eng?.getNearestDiscoveredLandmark(activePos, 8) ?? null;
+            if (plaque) {
+              useGameStore
+                .getState()
+                .showToast(`${plaque.nameBn}: ${plaque.blurbBn}`, 5000);
+              useSessionStore
+                .getState()
+                .setStatusMessage(`📜 ${plaque.nameEn} — ${plaque.sourceNote}`);
+            }
+          }
         }
       }
     }
 
-    // 5. Vehicle Enter / Exit Interaction ('F' key)
+    // 5. Vehicle Enter / Exit Interaction ('F' key) — nearer of rickshaw / CNG
     if (input.interact && !isUIBlocking) {
       if (this.isInVehicle) {
-        // Attempt dismount: only if stationary / stopped
-        if (this.rickshaw.canExit()) {
+        const vehicle = this.getActiveVehicle();
+        if (vehicle.canExit()) {
           this.isInVehicle = false;
-          this.rickshaw.isOccupied = false;
-          const vPos = this.rickshaw.getPosition();
-          // Dismount player 1.2m to the left of the rickshaw
-          const sinH = Math.sin(this.rickshaw.heading);
-          const cosH = Math.cos(this.rickshaw.heading);
+          vehicle.isOccupied = false;
+          const vPos = vehicle.getPosition();
+          const sinH = Math.sin(vehicle.heading);
+          const cosH = Math.cos(vehicle.heading);
           const exitPos: WorldPosition = {
             x: vPos.x - 1.2 * cosH,
             y: vPos.y + 0.1,
             z: vPos.z - 1.2 * sinH,
           };
           this.character.resetPosition(exitPos);
-          this.character.heading = this.rickshaw.heading;
+          this.character.heading = vehicle.heading;
           useSessionStore.getState().setIsInVehicle(false);
-          useSessionStore.getState().setStatusMessage('Dismounted rickshaw');
+          const labels = { rickshaw: 'rickshaw', cng: 'CNG', easy_bike: 'easy bike' } as const;
+          useSessionStore.getState().setStatusMessage(`Dismounted ${labels[this.activeVehicleKind]}`);
         } else {
-          useSessionStore.getState().setStatusMessage('Stop rickshaw to dismount!');
+          useSessionStore.getState().setStatusMessage('Stop vehicle to dismount!');
         }
       } else {
-        // Attempt mount: check distance <= 2.5m
         const playerPos = this.character.getPosition();
-        if (this.rickshaw.canEnter(playerPos)) {
+        const candidates = this.getAllVehicles()
+          .filter((v) => v.canEnter(playerPos))
+          .map((v) => {
+            const vp = v.getPosition();
+            return {
+              v,
+              dist: Math.hypot(playerPos.x - vp.x, playerPos.z - vp.z),
+            };
+          })
+          .sort((a, b) => a.dist - b.dist);
+        const nearest = candidates[0];
+        if (nearest) {
+          for (const v of this.getAllVehicles()) v.isOccupied = false;
           this.isInVehicle = true;
-          this.rickshaw.isOccupied = true;
+          this.activeVehicleKind = nearest.v.archetype;
+          nearest.v.isOccupied = true;
           useSessionStore.getState().setIsInVehicle(true);
-          useSessionStore.getState().setStatusMessage('Riding rickshaw — [W] Pedal, [S] Brake, [A/D] Steer, [Space] Bell');
+          const msgs = {
+            rickshaw: 'Riding rickshaw — [W] Pedal, [S] Brake, [A/D] Steer, [Space] Bell',
+            cng: 'Riding CNG — [W] Drive, [S] Brake, [A/D] Steer',
+            easy_bike: 'Riding easy bike — [W] Drive, [S] Brake, [A/D] Steer',
+          } as const;
+          useSessionStore.getState().setStatusMessage(msgs[nearest.v.archetype]);
         } else {
-          useSessionStore.getState().setStatusMessage('Too far from rickshaw (walk closer to press F)');
+          useSessionStore.getState().setStatusMessage('Too far from vehicle (walk closer to press F)');
         }
       }
     }
@@ -463,68 +582,97 @@ export class GameEngine {
     };
 
     // 7.5 Milestone 13 — apply vehicle condition multipliers before physics
+    // Milestone 19 — soft arrest freezes controls
+    const arrestHolding = domainEngine?.isSoftArrestHolding() === true;
     if (domainEngine) {
       const mods = domainEngine.getSpeedModifiers();
       this.rickshaw.topSpeedMult = mods.topSpeedMult;
       this.rickshaw.steerMult = mods.steerMult;
       this.rickshaw.limpMode = mods.limpMode;
+      // CNG uses milder wear multipliers (motorized)
+      this.cng.topSpeedMult = Math.max(0.55, mods.topSpeedMult);
+      this.cng.steerMult = mods.steerMult;
+      this.cng.limpMode = mods.limpMode;
+      this.easyBike.topSpeedMult = Math.max(0.6, mods.topSpeedMult);
+      this.easyBike.steerMult = mods.steerMult;
+      this.easyBike.limpMode = mods.limpMode;
     }
+
+    const idleVehicleInput = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      sprint: false,
+      jump: false,
+      interact: false,
+      cameraToggle: false,
+      bell: false,
+      talkInteract: false,
+      toggleJournal: false,
+      toggleInventory: false,
+      toggleDebug: false,
+      toggleMute: false,
+      toggleWeather: false,
+      mouseDeltaX: 0,
+      mouseDeltaY: 0,
+    };
+    const driveInput = arrestHolding ? idleVehicleInput : effectiveInput;
 
     // 8. Fixed-Timestep Physics Simulation Step
     this.physics.step(dt, (physicsDt) => {
       if (this.isInVehicle) {
-        this.rickshaw.update(physicsDt, effectiveInput);
-        // Position character controller inside driver seat
-        const seatPos = this.rickshaw.getDriverSeatPosition();
+        const vehicle = this.getActiveVehicle();
+        vehicle.update(physicsDt, driveInput);
+        const seatPos = vehicle.getDriverSeatPosition();
         this.character.resetPosition(seatPos);
+        for (const other of this.getAllVehicles()) {
+          if (other !== vehicle) other.update(physicsDt, idleVehicleInput);
+        }
       } else {
-        this.character.update(physicsDt, effectiveInput);
-        // Unoccupied rickshaw still simulates suspension resting
-        this.rickshaw.update(physicsDt, {
-          forward: false,
-          backward: false,
-          left: false,
-          right: false,
-          sprint: false,
-          jump: false,
-          interact: false,
-          cameraToggle: false,
-          bell: false,
-          talkInteract: false,
-          toggleJournal: false,
-          toggleInventory: false,
-          toggleDebug: false,
-          toggleMute: false,
-          toggleWeather: false,
-          mouseDeltaX: 0,
-          mouseDeltaY: 0,
-        });
+        this.character.update(physicsDt, arrestHolding ? idleVehicleInput : effectiveInput);
+        for (const v of this.getAllVehicles()) v.update(physicsDt, idleVehicleInput);
       }
     });
 
     // 9. Update Visual Three.js Scene Entities
-    const curPos = this.isInVehicle ? this.rickshaw.getPosition() : this.character.getPosition();
-    const curHeading = this.isInVehicle ? this.rickshaw.heading : this.character.heading;
+    const activeVehicle = this.getActiveVehicle();
+    const curPos = this.isInVehicle ? activeVehicle.getPosition() : this.character.getPosition();
+    const curHeading = this.isInVehicle ? activeVehicle.heading : this.character.heading;
 
     // Synchronize Player Mesh
     const pPos = this.character.getPosition();
     this.sceneManager.playerMesh.position.set(pPos.x, pPos.y, pPos.z);
     this.sceneManager.playerMesh.rotation.y = this.character.heading;
 
-    // Synchronize Rickshaw Mesh
+    // Synchronize Rickshaw + CNG meshes
     const rPos = this.rickshaw.getPosition();
     this.sceneManager.rickshawMesh.position.set(rPos.x, rPos.y, rPos.z);
     this.sceneManager.rickshawMesh.rotation.y = this.rickshaw.heading;
+    const cPos = this.cng.getPosition();
+    this.sceneManager.cngMesh.position.set(cPos.x, cPos.y, cPos.z);
+    this.sceneManager.cngMesh.rotation.y = this.cng.heading;
+    const bPos = this.easyBike.getPosition();
+    this.sceneManager.easyBikeMesh.position.set(bPos.x, bPos.y, bPos.z);
+    this.sceneManager.easyBikeMesh.rotation.y = this.easyBike.heading;
 
-    // Steer front wheel mesh
+    // Steer front wheel meshes
     const frontWheelMesh = this.sceneManager.rickshawMesh.getObjectByName('wheel_front');
     if (frontWheelMesh) {
       frontWheelMesh.rotation.y = this.rickshaw.steeringAngle;
     }
+    const cngFront = this.sceneManager.cngMesh.getObjectByName('wheel_front');
+    if (cngFront) {
+      cngFront.rotation.y = this.cng.steeringAngle;
+    }
+    const bikeFront = this.sceneManager.easyBikeMesh.getObjectByName('wheel_front');
+    if (bikeFront) {
+      bikeFront.rotation.y = this.easyBike.steeringAngle;
+    }
 
     // 10. Update NPCs and Ambient Traffic AI
     this.npcManager.update(dt);
-    this.trafficManager.update(dt, curPos, this.rickshaw.getPosition());
+    this.trafficManager.update(dt, curPos, activeVehicle.getPosition());
     useSessionStore.getState().setNpcPositions(this.npcManager.getDynamicNPCPositions());
 
     // 10.5 Update Web Audio Subsystems
@@ -532,7 +680,7 @@ export class GameEngine {
       // 10.5.1 Rickshaw Vehicle Audio
       this.audioManager.rickshaw.update(
         dt,
-        this.rickshaw.speedMps,
+        activeVehicle.speedMps,
         this.isInVehicle,
         effectiveInput.backward,
         effectiveInput.forward
@@ -624,6 +772,58 @@ export class GameEngine {
       }
     }
 
+    // 13b. Milestone 18 — Mission 4 parcel delivery at college
+    const m4Inst = useGameStore.getState().allMissions['mission_4_market_parcel'];
+    if (
+      m4Inst &&
+      m4Inst.state === 'ACTIVE' &&
+      m4Inst.completedObjectiveIds.includes('obj_m4_collect_parcel') &&
+      !m4Inst.completedObjectiveIds.includes('obj_m4_deliver_parcel')
+    ) {
+      const distToCollege = Math.hypot(
+        curPos.x - PHASE_1_ANCHORS.DHAMRAI_GOVT_COLLEGE.x,
+        curPos.z - PHASE_1_ANCHORS.DHAMRAI_GOVT_COLLEGE.z
+      );
+      if (distToCollege <= 15.0) {
+        useGameStore.getState().completeObjective('mission_4_market_parcel', 'obj_m4_deliver_parcel');
+        useGameStore.getState().finishMission('mission_4_market_parcel');
+        const eng = useGameStore.getState().engine;
+        if (eng?.inventory.hasItem('market_parcel')) {
+          eng.inventory.removeItem('market_parcel', 1);
+        }
+        useGameStore.getState().syncFromEngine();
+        useSessionStore
+          .getState()
+          .setStatusMessage('🎉 পার্সেল ডেলিভারি সম্পন্ন! ৳৪৫ অর্জিত');
+      }
+    }
+
+    // 13c. Milestone 26 — vendor day job objectives
+    const m5Inst = useGameStore.getState().allMissions['mission_5_vendor_day'];
+    if (m5Inst && m5Inst.state === 'ACTIVE') {
+      if (!m5Inst.completedObjectiveIds.includes('obj_m5_fetch_stock')) {
+        const d = Math.hypot(
+          curPos.x - PHASE_1_ANCHORS.RATHKHOLA_MARKET_PICKUP.x,
+          curPos.z - PHASE_1_ANCHORS.RATHKHOLA_MARKET_PICKUP.z
+        );
+        if (d <= 12) {
+          useGameStore.getState().completeObjective('mission_5_vendor_day', 'obj_m5_fetch_stock');
+          useSessionStore.getState().setStatusMessage('বিস্কুট মজুদ তোলা হয়েছে — দোকানে ফিরুন');
+        }
+      } else if (!m5Inst.completedObjectiveIds.includes('obj_m5_return_stall')) {
+        const d = Math.hypot(
+          curPos.x - PHASE_1_ANCHORS.RATHKHOLA_ORIGIN.x,
+          curPos.z - PHASE_1_ANCHORS.RATHKHOLA_ORIGIN.z
+        );
+        if (d <= 12) {
+          useGameStore.getState().completeObjective('mission_5_vendor_day', 'obj_m5_return_stall');
+          useGameStore.getState().finishMission('mission_5_vendor_day');
+          useGameStore.getState().syncFromEngine();
+          useSessionStore.getState().setStatusMessage('🎉 দিনের কাজ সম্পন্ন! ৳৩৫ অর্জিত');
+        }
+      }
+    }
+
     // 14. Repeatable Fare Drop-off Detection (Kamal at Thana, Sufia at Kayetpara)
     const kamal = this.npcManager.npcs.get('npc_passenger_kamal');
     const sufia = this.npcManager.npcs.get('npc_passenger_sufia');
@@ -701,8 +901,29 @@ export class GameEngine {
             .getState()
             .setStatusMessage(`${econ.item.promptBn} / ${econ.item.promptEn}`);
           economyPrompt = econ.item.promptBn;
+        } else if (!this.isInVehicle && this.easyBike.canEnter(curPos)) {
+          useSessionStore.getState().setStatusMessage('[F] ইজি বাইকে উঠুন (Ride Easy Bike)');
+        } else if (!this.isInVehicle && this.cng.canEnter(curPos)) {
+          useSessionStore.getState().setStatusMessage('[F] সিএনজিতে উঠুন (Ride CNG)');
         } else if (!this.isInVehicle && this.rickshaw.canEnter(curPos)) {
           useSessionStore.getState().setStatusMessage('[F] রিকশায় উঠুন (Ride Rickshaw)');
+        } else if (domainEngine) {
+          const plot = domainEngine.getNearestPlot(curPos, 8);
+          if (plot) {
+            if (!domainEngine.ownsPlot(plot.id)) {
+              useSessionStore
+                .getState()
+                .setStatusMessage(
+                  `[E] প্লট কিনুন — ${plot.nameBn} ৳${(plot.priceMinorUnits / 100).toFixed(0)}`
+                );
+            } else if (domainEngine.getBuildingOnPlot(plot.id) === 'none') {
+              useSessionStore
+                .getState()
+                .setStatusMessage(`[E] ভবন তৈরি করুন (${plot.allowedBuildings[0]})`);
+            } else {
+              useSessionStore.getState().setStatusMessage(`[E] ভাড়া আয় নিন — ${plot.nameBn}`);
+            }
+          }
         }
       }
     }
@@ -755,7 +976,7 @@ export class GameEngine {
         });
       }
 
-      // Milestone 14 — civic enforcement tick + heat decay
+      // Milestone 14/19 — civic enforcement tick + heat decay + soft arrest
       domainEngine.decayPoliceHeat(dt);
       this.civicHudAccum += dt;
       if (this.civicHudAccum >= 0.35 && this.civicBridge && !isUIBlocking) {
@@ -763,11 +984,25 @@ export class GameEngine {
         const phase = this.dayNightCycle?.phase ?? 'day';
         const civic = this.civicBridge.tick(domainEngine, {
           playerPos: curPos,
-          speedKph: this.rickshaw.speedMps * 3.6,
+          speedKph: activeVehicle.speedMps * 3.6,
           inVehicle: this.isInVehicle,
           dayPhase: phase,
         });
-        if (civic.stopOpened || civic.fled) {
+        if (civic.arrested && civic.messageBn) {
+          // Teleport / hold at Thana on fresh arrest
+          const thana = PHASE_1_ANCHORS.THANA_JUNCTION_CHECKPOINT;
+          if (this.isInVehicle) {
+            const v = this.getActiveVehicle();
+            v.resetTransform({ x: thana.x + 2, y: 0.5, z: thana.z }, 0);
+            v.isOccupied = false;
+            this.isInVehicle = false;
+            useSessionStore.getState().setIsInVehicle(false);
+          }
+          this.character.resetTransform({ x: thana.x, y: 0.5, z: thana.z }, 0);
+          useSessionStore.getState().setStatusMessage(`${civic.messageBn} (${civic.messageEn})`);
+          useGameStore.getState().showToast(civic.messageBn, 4500);
+          useGameStore.getState().syncFromEngine();
+        } else if (civic.stopOpened || civic.fled) {
           if (civic.messageBn) {
             useSessionStore.getState().setStatusMessage(`${civic.messageBn} (${civic.messageEn})`);
           }
@@ -775,12 +1010,14 @@ export class GameEngine {
             useUIStore.getState().openDialogue('dialogue_police_stop');
           }
           useGameStore.getState().syncFromEngine();
+        } else if (civic.messageBn && !civic.arrested) {
+          useSessionStore.getState().setStatusMessage(`${civic.messageBn} (${civic.messageEn})`);
         }
         const stop = domainEngine.activePoliceStop;
         useSessionStore.getState().setCivicHud({
           policeHeat: domainEngine.policeHeat,
           activeFineMinorUnits: stop && !stop.paid ? stop.currentFineMinorUnits : 0,
-          policeStopActive: !!(stop && !stop.paid),
+          policeStopActive: !!(stop && !stop.paid) || domainEngine.isSoftArrestHolding(),
         });
       }
     }
@@ -805,8 +1042,10 @@ export class GameEngine {
     }
 
     // 13. Update Camera Director
-    const eyePos = this.isInVehicle ? this.rickshaw.getDriverSeatPosition() : this.character.getEyePosition();
-    const excludedBody = this.isInVehicle ? this.rickshaw.body : this.character.body;
+    const eyePos = this.isInVehicle
+      ? activeVehicle.getDriverSeatPosition()
+      : this.character.getEyePosition();
+    const excludedBody = this.isInVehicle ? activeVehicle.body : this.character.body;
     this.cameraDirector.update(dt, eyePos, curHeading, this.physics, excludedBody);
 
     // 14. Update Chunk Streaming (around current player coordinates)
@@ -815,7 +1054,7 @@ export class GameEngine {
     // 15. Sync Zustand State
     useSessionStore.getState().setPlayerPosition(curPos);
     useSessionStore.getState().setPlayerHeading(curHeading);
-    useSessionStore.getState().setVehicleSpeedKph(this.rickshaw.speedMps * 3.6);
+    useSessionStore.getState().setVehicleSpeedKph(activeVehicle.speedMps * 3.6);
 
     // 16. Milestone 15 — objective beacon + compass
     if (this.objectiveMarker) {
@@ -852,6 +1091,29 @@ export class GameEngine {
         }
       }
     }
+
+    // 17. Milestone 21 — landmark discovery
+    this.landmarkDiscoverAccum += dt;
+    if (this.landmarkDiscoverAccum >= 0.4 && domainEngine && !isUIBlocking) {
+      this.landmarkDiscoverAccum = 0;
+      const found = domainEngine.tryDiscoverLandmark(curPos);
+      if (found) {
+        useGameStore.getState().syncFromEngine();
+        useGameStore
+          .getState()
+          .showToast(`ল্যান্ডমার্ক আবিষ্কৃত: ${found.nameBn} (${found.nameEn})`, 4000);
+        useSessionStore
+          .getState()
+          .setStatusMessage(`📍 ${found.nameBn} — জার্নালে দেখুন [J]`);
+      }
+    }
+
+    // 18. Milestone 27/29 — plot marker colors from ownership/buildings
+    this.plotMarkerAccum += dt;
+    if (this.plotMarkerAccum >= 0.5 && domainEngine && this.plotMarkers) {
+      this.plotMarkerAccum = 0;
+      this.plotMarkers.sync(domainEngine.getOwnedPlotIds(), domainEngine.getPlotBuildings());
+    }
   }
 
   public render(): void {
@@ -874,6 +1136,7 @@ export class GameEngine {
     if (this.rickshawHeadlight) this.rickshawHeadlight.dispose();
     if (this.atmosphereController) this.atmosphereController.dispose();
     if (this.objectiveMarker) this.objectiveMarker.dispose();
+    if (this.plotMarkers) this.plotMarkers.dispose();
     if (this.propManager) this.propManager.dispose();
     if (this.materialBinder) this.materialBinder.dispose();
     if (this.npcManager) this.npcManager.dispose();

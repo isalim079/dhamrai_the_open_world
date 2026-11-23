@@ -178,11 +178,11 @@ export declare const missionInstanceSchemaV2: z.ZodObject<{
     startedAtMs?: number | undefined;
     completedAtMs?: number | undefined;
 }>;
-export declare const transactionCategorySchemaV2: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE"]>;
+export declare const transactionCategorySchemaV2: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE", "PROPERTY_PURCHASE", "CONSTRUCTION_COST", "RENTAL_INCOME"]>;
 export declare const economyTransactionSchemaV2: z.ZodObject<{
     id: z.ZodString;
     timestampMs: z.ZodNumber;
-    category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE"]>;
+    category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE", "PROPERTY_PURCHASE", "CONSTRUCTION_COST", "RENTAL_INCOME"]>;
     deltaMinorUnits: z.ZodNumber;
     currency: z.ZodLiteral<"BDT">;
     description: z.ZodString;
@@ -190,7 +190,7 @@ export declare const economyTransactionSchemaV2: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     id: string;
     currency: "BDT";
-    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
+    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE" | "PROPERTY_PURCHASE" | "CONSTRUCTION_COST" | "RENTAL_INCOME";
     timestampMs: number;
     deltaMinorUnits: number;
     description: string;
@@ -198,7 +198,7 @@ export declare const economyTransactionSchemaV2: z.ZodObject<{
 }, {
     id: string;
     currency: "BDT";
-    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
+    category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE" | "PROPERTY_PURCHASE" | "CONSTRUCTION_COST" | "RENTAL_INCOME";
     timestampMs: number;
     deltaMinorUnits: number;
     description: string;
@@ -351,7 +351,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     ledger: z.ZodArray<z.ZodObject<{
         id: z.ZodString;
         timestampMs: z.ZodNumber;
-        category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE"]>;
+        category: z.ZodEnum<["INITIAL_BALANCE", "FARE_PAYMENT", "DELIVERY_PAYMENT", "VEHICLE_RENTAL", "MAINTENANCE_COST", "FINE_PENALTY", "REPUTATION_BONUS", "CONSUMABLE_PURCHASE", "PROPERTY_PURCHASE", "CONSTRUCTION_COST", "RENTAL_INCOME"]>;
         deltaMinorUnits: z.ZodNumber;
         currency: z.ZodLiteral<"BDT">;
         description: z.ZodString;
@@ -359,7 +359,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     }, "strip", z.ZodTypeAny, {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE" | "PROPERTY_PURCHASE" | "CONSTRUCTION_COST" | "RENTAL_INCOME";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;
@@ -367,7 +367,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     }, {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE" | "PROPERTY_PURCHASE" | "CONSTRUCTION_COST" | "RENTAL_INCOME";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;
@@ -425,7 +425,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     ledger: {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE" | "PROPERTY_PURCHASE" | "CONSTRUCTION_COST" | "RENTAL_INCOME";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;
@@ -483,7 +483,7 @@ export declare const saveEnvelopeV2Schema: z.ZodObject<{
     ledger: {
         id: string;
         currency: "BDT";
-        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE";
+        category: "INITIAL_BALANCE" | "FARE_PAYMENT" | "DELIVERY_PAYMENT" | "VEHICLE_RENTAL" | "MAINTENANCE_COST" | "FINE_PENALTY" | "REPUTATION_BONUS" | "CONSUMABLE_PURCHASE" | "PROPERTY_PURCHASE" | "CONSTRUCTION_COST" | "RENTAL_INCOME";
         timestampMs: number;
         deltaMinorUnits: number;
         description: string;

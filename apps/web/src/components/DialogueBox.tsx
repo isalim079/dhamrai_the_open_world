@@ -5,6 +5,7 @@ import { useSessionStore } from '../state/useSessionStore.js';
 import {
   PHASE_1_DIALOGUE_TREES,
   BRASS_BELLS_CARGO_ITEM,
+  MARKET_PARCEL_ITEM,
   createRepeatableFareDefinition,
 } from '@dhamrai/game-core';
 import { PHASE_1_ANCHORS, type DialogueChoice } from '@dhamrai/shared-contracts';
@@ -87,6 +88,41 @@ export const DialogueBox: React.FC = () => {
         showToast('কাঁসার চালান তোলা হয়েছে! রথখোলায় নিয়ে যান (Cargo loaded)', 3500);
       } catch (err) {
         console.warn('Failed starting mission 3 cargo pickup:', err);
+      }
+    }
+
+    // 3c. Milestone 26 — vendor day job from tea stall
+    if (choice.actionTrigger === 'START_VENDOR_DAY') {
+      audio?.ui.playMissionAccept();
+      try {
+        const m5 = useGameStore.getState().allMissions['mission_5_vendor_day'];
+        if (!m5 || m5.state === 'AVAILABLE') {
+          activateMission('mission_5_vendor_day');
+        }
+        showToast('চা দোকানের দিনের কাজ শুরু — বাজার কোণে যান', 3500);
+        useGameStore.getState().syncFromEngine();
+      } catch (err) {
+        console.warn('Failed starting vendor day mission:', err);
+        showToast('মিশন শুরু করা যায়নি (complete Mission 1 first)', 3500);
+      }
+    }
+
+    // 3b. Milestone 18 — Market parcel pickup from Salma
+    if (choice.actionTrigger === 'PICKUP_PARCEL') {
+      audio?.ui.playMissionAccept();
+      try {
+        const m4Inst = useGameStore.getState().allMissions['mission_4_market_parcel'];
+        if (!m4Inst || m4Inst.state === 'AVAILABLE') {
+          activateMission('mission_4_market_parcel');
+        }
+        completeObjective('mission_4_market_parcel', 'obj_m4_collect_parcel');
+        if (engine && !engine.inventory.hasItem('market_parcel')) {
+          engine.inventory.addItem(MARKET_PARCEL_ITEM);
+          useGameStore.getState().syncFromEngine();
+        }
+        showToast('পার্সেল তোলা হয়েছে! কলেজ গেটে পৌঁছে দিন (Parcel loaded)', 3500);
+      } catch (err) {
+        console.warn('Failed starting mission 4 parcel pickup:', err);
       }
     }
 

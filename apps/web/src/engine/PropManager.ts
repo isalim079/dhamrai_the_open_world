@@ -85,6 +85,28 @@ export class PropManager {
     return this.disposed;
   }
 
+  /**
+   * Milestone 35 — distance LOD: hide unique props beyond far radius; thin instanced opacity.
+   */
+  public updateLod(playerPos: { x: number; z: number }, farM = 90, nearM = 55): void {
+    if (!this.initialized || this.disposed) return;
+    for (const obj of this.uniqueProps) {
+      const d = Math.hypot(obj.position.x - playerPos.x, obj.position.z - playerPos.z);
+      obj.visible = d <= farM;
+    }
+    for (const mesh of this.instanced) {
+      // Soft: keep instances but mark for future frustum work; scale group visibility by density
+      mesh.visible = true;
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (mat && 'opacity' in mat) {
+        // Near stand keep full; far chunks already streamed — mild opacity cue only
+        mat.transparent = true;
+        mat.opacity = 0.92;
+      }
+      void nearM;
+    }
+  }
+
   /** Idempotent world prop bootstrap. */
   public init(): void {
     if (this.initialized || this.disposed) return;

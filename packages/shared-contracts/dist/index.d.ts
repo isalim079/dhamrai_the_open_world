@@ -69,7 +69,13 @@ export type CurrencyCode = typeof CURRENCY_CODE_BDT;
 /**
  * Economy Transaction Event for Append-Only Ledger.
  */
-export type TransactionCategory = 'INITIAL_BALANCE' | 'FARE_PAYMENT' | 'DELIVERY_PAYMENT' | 'VEHICLE_RENTAL' | 'MAINTENANCE_COST' | 'FINE_PENALTY' | 'REPUTATION_BONUS' | 'CONSUMABLE_PURCHASE';
+export type TransactionCategory = 'INITIAL_BALANCE' | 'FARE_PAYMENT' | 'DELIVERY_PAYMENT' | 'VEHICLE_RENTAL' | 'MAINTENANCE_COST' | 'FINE_PENALTY' | 'REPUTATION_BONUS' | 'CONSUMABLE_PURCHASE'
+/** Milestone 28 — plot purchase debit */
+ | 'PROPERTY_PURCHASE'
+/** Milestone 29 — building construction debit */
+ | 'CONSTRUCTION_COST'
+/** Milestone 30 — rental / business income credit */
+ | 'RENTAL_INCOME';
 export interface EconomyTransaction {
     id: string;
     timestampMs: number;
@@ -305,7 +311,7 @@ export interface DialogueChoice {
     textBn: string;
     textEn: string;
     nextNodeId?: string;
-    actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'PICKUP_CARGO' | 'START_FARE' | 'CLOSE_DIALOGUE' | 'BUY_CHA' | 'BUY_BISCUITS' | 'REPAIR_TIRE' | 'REPAIR_TUNE_UP' | 'REPAIR_FULL' | 'REPAIR_CHAIN_OIL' | 'PAY_FINE' | 'SHOW_LICENSE_STOP' | 'REFUSE_STOP';
+    actionTrigger?: 'START_MISSION_1' | 'BOARD_PASSENGER' | 'INSPECT_DOCUMENTS' | 'PICKUP_CARGO' | 'START_FARE' | 'CLOSE_DIALOGUE' | 'BUY_CHA' | 'BUY_BISCUITS' | 'REPAIR_TIRE' | 'REPAIR_TUNE_UP' | 'REPAIR_FULL' | 'REPAIR_CHAIN_OIL' | 'PAY_FINE' | 'SHOW_LICENSE_STOP' | 'REFUSE_STOP' | 'PICKUP_PARCEL' | 'START_VENDOR_DAY' | 'BUY_PLOT' | 'PLACE_BUILDING' | 'CLAIM_RENT';
 }
 export interface DialogueNode {
     id: string;
@@ -349,6 +355,8 @@ export interface TrafficVehicleAgent {
     position: WorldPosition;
     headingRadians: number;
     isHalted: boolean;
+    /** Milestone 20/22 — ambient archetype */
+    vehicleKind?: 'rickshaw' | 'cng' | 'easy_bike';
 }
 /**
  * Milestone 8 — Authentication & Cloud Save Contracts

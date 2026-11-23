@@ -21,6 +21,8 @@ export interface WheelInfo {
   steeringAngle: number; // Radians (front wheel only)
 }
 
+export type VehicleArchetype = 'rickshaw' | 'cng' | 'easy_bike';
+
 export class RickshawVehicle {
   public body!: RAPIER.RigidBody;
   public collider!: RAPIER.Collider;
@@ -28,10 +30,11 @@ export class RickshawVehicle {
   public isOccupied = false;
   public speedMps = 0.0; // Current forward speed in meters/second
   public steeringAngle = 0.0; // Radians (-35° to +35°)
+  public readonly archetype: VehicleArchetype;
 
   public readonly maxSteerAngle = (35 * Math.PI) / 180; // ±35° max steering clamp
-  public readonly normalTargetSpeedMps = 12.0 / 3.6; // 12 km/h = 3.333 m/s
-  public readonly sprintTargetSpeedMps = 18.0 / 3.6; // 18 km/h = 5.0 m/s
+  public readonly normalTargetSpeedMps: number;
+  public readonly sprintTargetSpeedMps: number;
   public readonly maxInteractionRadius = 2.5; // m
   public readonly maxExitSpeedMps = 0.5; // m/s (~1.8 km/h)
 
@@ -76,14 +79,32 @@ export class RickshawVehicle {
 
   public heading = 0.0; // Yaw in radians
 
-  constructor(private physics: PhysicsWorld, initialPos: WorldPosition = { x: 2.0, y: 0.5, z: 0.0 }) {
+  constructor(
+    private physics: PhysicsWorld,
+    initialPos: WorldPosition = { x: 2.0, y: 0.5, z: 0.0 },
+    archetype: VehicleArchetype = 'rickshaw'
+  ) {
+    this.archetype = archetype;
+    // Milestone 20/22 — motorized CNG / easy bike vs pedal rickshaw
+    if (archetype === 'cng') {
+      this.normalTargetSpeedMps = 22.0 / 3.6;
+      this.sprintTargetSpeedMps = 32.0 / 3.6;
+    } else if (archetype === 'easy_bike') {
+      this.normalTargetSpeedMps = 18.0 / 3.6;
+      this.sprintTargetSpeedMps = 28.0 / 3.6;
+    } else {
+      this.normalTargetSpeedMps = 12.0 / 3.6;
+      this.sprintTargetSpeedMps = 18.0 / 3.6;
+    }
     this.create(initialPos);
   }
 
   private create(initialPos: WorldPosition): void {
     const { world, rapier } = this.physics;
 
-    // Dynamic rigid body for chassis (mass ~90 kg)
+    const isCng = this.archetype === 'cng';
+    const isBike = this.archetype === 'easy_bike';
+    // Dynamic rigid body for chassis (rickshaw ~90 kg, easy bike ~120, CNG ~280)
     const bodyDesc = rapier.RigidBodyDesc.dynamic()
       .setTranslation(initialPos.x, initialPos.y + 0.4, initialPos.z)
       .setLinearDamping(0.8)
@@ -91,11 +112,15 @@ export class RickshawVehicle {
 
     this.body = world.createRigidBody(bodyDesc);
 
-    // Chassis compound cuboid collider (1.2m width, 0.8m height, 2.2m length)
-    const colliderDesc = rapier.ColliderDesc.cuboid(0.6, 0.35, 1.1)
+    // Chassis compound cuboid collider
+    const colliderDesc = rapier.ColliderDesc.cuboid(
+      isCng ? 0.75 : isBike ? 0.45 : 0.6,
+      isCng ? 0.45 : isBike ? 0.4 : 0.35,
+      isCng ? 1.3 : isBike ? 1.0 : 1.1
+    )
       .setFriction(0.7)
       .setRestitution(0.1)
-      .setMass(90.0);
+      .setMass(isCng ? 280.0 : isBike ? 120.0 : 90.0);
 
     this.collider = world.createCollider(colliderDesc, this.body);
   }

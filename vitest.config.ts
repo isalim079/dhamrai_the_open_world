@@ -12,6 +12,8 @@ export default defineConfig({
       '@dhamrai/shared-contracts': path.resolve(__dirname, 'packages/shared-contracts/src'),
       '@dhamrai/game-core': path.resolve(__dirname, 'packages/game-core/src'),
       '@dhamrai/save-core': path.resolve(__dirname, 'packages/save-core/src'),
+      '@dhamrai/multiplayer-core': path.resolve(__dirname, 'packages/multiplayer-core/src'),
     },
   },
 });
+

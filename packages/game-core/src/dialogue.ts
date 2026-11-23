@@ -156,6 +156,54 @@ export const PHASE_1_DIALOGUE_TREES: Record<string, DialogueTree> = {
     },
   },
 
+  /** Milestone 18 — market parcel courier */
+  dialogue_courier_salma: {
+    id: 'dialogue_courier_salma',
+    initialNodeId: 'node_courier_greet',
+    nodes: {
+      node_courier_greet: {
+        id: 'node_courier_greet',
+        speakerId: 'npc_courier_salma',
+        speakerNameBn: 'সালমা (কুরিয়ার)',
+        speakerNameEn: 'Salma (Courier)',
+        textBn: 'ভাই, একটা সিল করা পার্সেল সরকারি কলেজ গেটে পৌঁছে দেবেন? ভাড়া ৪৫ টাকা।',
+        textEn: 'Brother, can you deliver this sealed parcel to the Government College gate? Fare ৳45.',
+        choices: [
+          {
+            id: 'choice_accept_parcel',
+            textBn: 'ঠিক আছে, পার্সেল দিন।',
+            textEn: 'Alright, hand me the parcel.',
+            nextNodeId: 'node_parcel_loaded',
+            actionTrigger: 'PICKUP_PARCEL',
+          },
+          {
+            id: 'choice_decline_parcel',
+            textBn: 'এখন অন্য কাজে ব্যস্ত।',
+            textEn: 'Busy with other work right now.',
+            nextNodeId: 'node_parcel_declined',
+            actionTrigger: 'CLOSE_DIALOGUE',
+          },
+        ],
+      },
+      node_parcel_loaded: {
+        id: 'node_parcel_loaded',
+        speakerId: 'npc_courier_salma',
+        speakerNameBn: 'সালমা (কুরিয়ার)',
+        speakerNameEn: 'Salma (Courier)',
+        textBn: 'ধন্যবাদ! কলেজ গেটের অফিসে খালাস করবেন। সাবধানে নিয়ে যান।',
+        textEn: 'Thanks! Drop it at the college gate office. Handle carefully.',
+      },
+      node_parcel_declined: {
+        id: 'node_parcel_declined',
+        speakerId: 'npc_courier_salma',
+        speakerNameBn: 'সালমা (কুরিয়ার)',
+        speakerNameEn: 'Salma (Courier)',
+        textBn: 'ঠিক আছে, অন্য রিকশা ডাকি।',
+        textEn: 'Alright, I will call another rickshaw.',
+      },
+    },
+  },
+
   dialogue_fare_kamal: {
     id: 'dialogue_fare_kamal',
     initialNodeId: 'node_intro',
@@ -294,9 +342,62 @@ export const PHASE_1_DIALOGUE_TREES: Record<string, DialogueTree> = {
             actionTrigger: 'BUY_BISCUITS',
           },
           {
+            id: 'choice_vendor_day',
+            textBn: 'দিনের কাজে সাহায্য করব? (Vendor day job)',
+            textEn: 'Need help with the day job?',
+            nextNodeId: 'node_vendor_day_started',
+            actionTrigger: 'START_VENDOR_DAY',
+          },
+          {
             id: 'choice_leave_stall',
             textBn: 'এখন না, পরে আসব।',
             textEn: 'Not now, I will come later.',
+            actionTrigger: 'CLOSE_DIALOGUE',
+          },
+        ],
+      },
+      node_vendor_day_started: {
+        id: 'node_vendor_day_started',
+        speakerId: 'npc_tea_vendor',
+        speakerNameBn: 'চাওয়ালা (রথখোলা)',
+        speakerNameEn: 'Tea Vendor (Rathkhola)',
+        textBn: 'ধন্যবাদ! বাজার কোণ থেকে বিস্কুট মজুদ এনে দোকানে ফেরত দিন।',
+        textEn: 'Thanks! Fetch biscuit stock from the market corner and bring it back.',
+      },
+      /** Milestone 25 — high transport reputation greeting */
+      node_tea_regular: {
+        id: 'node_tea_regular',
+        speakerId: 'npc_tea_vendor',
+        speakerNameBn: 'চাওয়ালা (রথখোলা)',
+        speakerNameEn: 'Tea Vendor (Rathkhola)',
+        textBn: 'আহা, পরিচিত চালক! আজকের চায়ের প্রথম কাপ আপনার জন্য অপেক্ষা করছিল। কী নেবেন?',
+        textEn: 'Ah, the familiar driver! Today’s first cup was waiting for you. What will you take?',
+        choices: [
+          {
+            id: 'choice_buy_cha_reg',
+            textBn: 'চা — ৳৫ (শক্তি +৩৫)',
+            textEn: 'Cha — ৳5 (+35 stamina)',
+            nextNodeId: 'node_thanks',
+            actionTrigger: 'BUY_CHA',
+          },
+          {
+            id: 'choice_buy_biscuits_reg',
+            textBn: 'বিস্কুট — ৳৮ (শক্তি +২০)',
+            textEn: 'Biscuits — ৳8 (+20 stamina)',
+            nextNodeId: 'node_thanks',
+            actionTrigger: 'BUY_BISCUITS',
+          },
+          {
+            id: 'choice_vendor_day_reg',
+            textBn: 'দিনের কাজে সাহায্য করব?',
+            textEn: 'Need help with the day job?',
+            nextNodeId: 'node_vendor_day_started',
+            actionTrigger: 'START_VENDOR_DAY',
+          },
+          {
+            id: 'choice_leave_reg',
+            textBn: 'শুধু সালাম — পরে আসব।',
+            textEn: 'Just saying hello — later.',
             actionTrigger: 'CLOSE_DIALOGUE',
           },
         ],

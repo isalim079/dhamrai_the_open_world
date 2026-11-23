@@ -91,7 +91,13 @@ export type TransactionCategory =
   | 'MAINTENANCE_COST'
   | 'FINE_PENALTY'
   | 'REPUTATION_BONUS'
-  | 'CONSUMABLE_PURCHASE';
+  | 'CONSUMABLE_PURCHASE'
+  /** Milestone 28 — plot purchase debit */
+  | 'PROPERTY_PURCHASE'
+  /** Milestone 29 — building construction debit */
+  | 'CONSTRUCTION_COST'
+  /** Milestone 30 — rental / business income credit */
+  | 'RENTAL_INCOME';
 
 export interface EconomyTransaction {
   id: string;
@@ -367,7 +373,12 @@ export interface DialogueChoice {
     | 'REPAIR_CHAIN_OIL'
     | 'PAY_FINE'
     | 'SHOW_LICENSE_STOP'
-    | 'REFUSE_STOP';
+    | 'REFUSE_STOP'
+    | 'PICKUP_PARCEL'
+    | 'START_VENDOR_DAY'
+    | 'BUY_PLOT'
+    | 'PLACE_BUILDING'
+    | 'CLAIM_RENT';
 }
 
 export interface DialogueNode {
@@ -422,6 +433,8 @@ export interface TrafficVehicleAgent {
   position: WorldPosition;
   headingRadians: number;
   isHalted: boolean;
+  /** Milestone 20/22 — ambient archetype */
+  vehicleKind?: 'rickshaw' | 'cng' | 'easy_bike';
 }
 
 /**

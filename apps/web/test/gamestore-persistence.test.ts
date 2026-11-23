@@ -102,7 +102,7 @@ describe('useGameStore & Persistence Bridge', () => {
     expect(useGameStore.getState().cashMinorUnits).toBe(3000);
   });
 
-  it('transitions currentActiveMissionId from M1 -> M2/M3 -> repeatable fares (AC-M9-08)', () => {
+  it('transitions currentActiveMissionId from M1 -> M2/M3/M4 -> repeatable fares (AC-M9-08)', () => {
     const store = useGameStore.getState();
     expect(store.currentActiveMissionId).toBe('mission_1_first_fare');
 
@@ -130,7 +130,21 @@ describe('useGameStore & Persistence Bridge', () => {
     store.completeObjective('mission_3_artisan_order', 'obj_m3_deliver_cargo');
     store.finishMission('mission_3_artisan_order');
 
-    // When all 3 core missions are complete, transitions to repeatable fares loop prompt!
+    // Milestone 18 — M4 parcel
+    expect(useGameStore.getState().currentActiveMissionId).toBe('mission_4_market_parcel');
+    store.activateMission('mission_4_market_parcel');
+    store.completeObjective('mission_4_market_parcel', 'obj_m4_collect_parcel');
+    store.completeObjective('mission_4_market_parcel', 'obj_m4_deliver_parcel');
+    store.finishMission('mission_4_market_parcel');
+
+    // Milestone 26 — M5 vendor day before repeatable fares
+    expect(useGameStore.getState().currentActiveMissionId).toBe('mission_5_vendor_day');
+    store.activateMission('mission_5_vendor_day');
+    store.completeObjective('mission_5_vendor_day', 'obj_m5_fetch_stock');
+    store.completeObjective('mission_5_vendor_day', 'obj_m5_return_stall');
+    store.finishMission('mission_5_vendor_day');
+
+    // When M1–M5 are complete, transitions to repeatable fares loop prompt
     expect(useGameStore.getState().currentActiveMissionId).toBe('repeatable_fares');
   });
 });

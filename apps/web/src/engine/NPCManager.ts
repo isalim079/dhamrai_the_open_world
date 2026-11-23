@@ -86,6 +86,18 @@ export const STORY_NPCS: NPCEntityDefinition[] = [
     dialogueTreeId: 'dialogue_mistri_gautom',
     isBoardablePassenger: false,
   },
+  // Milestone 18 — market parcel courier (fiction)
+  {
+    id: 'npc_courier_salma',
+    nameBn: 'সালমা (কুরিয়ার)',
+    nameEn: 'Salma (Courier)',
+    role: 'VENDOR',
+    spawnPosition: { x: 12.0, y: 0.0, z: -8.0 },
+    spawnHeadingRadians: -Math.PI / 2,
+    dialogueTreeId: 'dialogue_courier_salma',
+    associatedMissionId: 'mission_4_market_parcel',
+    isBoardablePassenger: false,
+  },
 ];
 
 export class NPCManager {
@@ -129,7 +141,7 @@ export class NPCManager {
       this.spawnNPC(def);
     }
 
-    // 2. Spawn 4 Ambient Pedestrians with local roadside patrol loops
+    // 2. Ambient pedestrians with roadside patrol loops (M23 expands to 4)
     this.spawnAmbientPedestrian(
       'ambient_ped_1',
       'পথচারী (Pedestrian)',
@@ -153,6 +165,44 @@ export class NPCManager {
         { x: -10.0, y: 0.0, z: -15.0 },
       ]
     );
+
+    // Milestone 23 — longer market / thana-side loops
+    this.spawnAmbientPedestrian(
+      'ambient_ped_3',
+      'পথচারী (Market Walker)',
+      { x: 18.0, y: 0.0, z: -12.0 },
+      0x8e44ad,
+      [
+        { x: 18.0, y: 0.0, z: -12.0 },
+        { x: 22.0, y: 0.0, z: -4.0 },
+        { x: 10.0, y: 0.0, z: -6.0 },
+        { x: 18.0, y: 0.0, z: -12.0 },
+      ]
+    );
+
+    this.spawnAmbientPedestrian(
+      'ambient_ped_4',
+      'পথচারী (Thana Road)',
+      { x: -40.0, y: 0.0, z: 40.0 },
+      0x16a085,
+      [
+        { x: -40.0, y: 0.0, z: 40.0 },
+        { x: -55.0, y: 0.0, z: 55.0 },
+        { x: -50.0, y: 0.0, z: 70.0 },
+        { x: -40.0, y: 0.0, z: 40.0 },
+      ]
+    );
+  }
+
+  /** Milestone 23 — count ambient walkers with waypoint paths */
+  public get ambientWalkerCount(): number {
+    let n = 0;
+    for (const npc of this.npcs.values()) {
+      if (npc.definition.role === 'AMBIENT_PEDESTRIAN' && npc.waypoints && npc.waypoints.length >= 2) {
+        n += 1;
+      }
+    }
+    return n;
   }
 
   public spawnFareNPC(def: NPCEntityDefinition): NPCInstance {

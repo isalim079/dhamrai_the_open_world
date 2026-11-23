@@ -87,6 +87,9 @@ export const transactionCategorySchemaV2 = z.enum([
   'FINE_PENALTY',
   'REPUTATION_BONUS',
   'CONSUMABLE_PURCHASE',
+  'PROPERTY_PURCHASE',
+  'CONSTRUCTION_COST',
+  'RENTAL_INCOME',
 ]);
 
 export const economyTransactionSchemaV2 = z.object({

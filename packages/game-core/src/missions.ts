@@ -159,7 +159,112 @@ export const PHASE_1_MISSIONS: Record<string, MissionDefinition> = {
       },
     ],
   },
+  /**
+   * Milestone 26 — second-role intro scaffold (vendor day job).
+   * Player remains rickshaw_driver; this unlocks vendor-flavoured content without schema role switch.
+   */
+  mission_5_vendor_day: {
+    id: 'mission_5_vendor_day',
+    bengaliTitle: 'চা দোকানের দিনের কাজ',
+    englishTitle: 'Tea Stall Day Job',
+    description: 'Help the Rathkhola tea vendor by fetching biscuits stock from the market corner and returning to the stall.',
+    rewardMinorUnits: 3500, // ৳35
+    currency: CURRENCY_CODE_BDT,
+    reputationDelta: 4,
+    prerequisites: ['mission_1_first_fare'],
+    repeatPolicy: 'once',
+    reputationCategory: 'transport',
+    objectives: [
+      {
+        id: 'obj_m5_fetch_stock',
+        bengaliTitle: 'বাজার কোণ থেকে বিস্কুট মজুদ আনুন',
+        description: 'Collect biscuit stock note from market pickup corner.',
+        targetPosition: PHASE_1_ANCHORS.RATHKHOLA_MARKET_PICKUP,
+        completionRadiusM: 12.0,
+        isCompleted: false,
+      },
+      {
+        id: 'obj_m5_return_stall',
+        bengaliTitle: 'চা দোকানে মজুদ ফেরত দিন',
+        description: 'Return stock to the tea stall near Rathkhola origin.',
+        targetPosition: PHASE_1_ANCHORS.RATHKHOLA_ORIGIN,
+        completionRadiusM: 12.0,
+        isCompleted: false,
+      },
+    ],
+  },
+  /** Milestone 18 — market parcel delivery (college drop-off) */
+  mission_4_market_parcel: {
+    id: 'mission_4_market_parcel',
+    bengaliTitle: 'বাজারের পার্সেল ডেলিভারি',
+    englishTitle: 'Market Parcel Delivery',
+    description: 'Pick up a sealed parcel at Rathkhola Market and deliver it to Dhamrai Govt. College gate.',
+    rewardMinorUnits: 4500, // ৳45.00 BDT
+    currency: CURRENCY_CODE_BDT,
+    reputationDelta: 6,
+    prerequisites: ['mission_1_first_fare'],
+    repeatPolicy: 'once',
+    reputationCategory: 'transport',
+    objectives: [
+      {
+        id: 'obj_m4_collect_parcel',
+        bengaliTitle: 'রথখোলা বাজার থেকে পার্সেল নিন',
+        description: 'Collect the sealed market parcel from courier Salma.',
+        targetPosition: PHASE_1_ANCHORS.RATHKHOLA_MARKET_PICKUP,
+        completionRadiusM: 12.0,
+        isCompleted: false,
+      },
+      {
+        id: 'obj_m4_deliver_parcel',
+        bengaliTitle: 'সরকারি কলেজ গেটে পার্সেল পৌঁছে দিন',
+        description: 'Deliver the parcel to Dhamrai Government College gate.',
+        targetPosition: PHASE_1_ANCHORS.DHAMRAI_GOVT_COLLEGE,
+        completionRadiusM: 15.0,
+        isCompleted: false,
+      },
+    ],
+  },
 };
+
+/** Milestone 18 — factory for repeatable parcel / grocery delivery jobs */
+export function createRepeatableDeliveryDefinition(
+  tripId: string,
+  titleBn: string,
+  titleEn: string,
+  pickupPos: { x: number; y: number; z: number },
+  dropoffPos: { x: number; y: number; z: number },
+  rewardMinorUnits: number
+): MissionDefinition {
+  return {
+    id: tripId,
+    bengaliTitle: titleBn,
+    englishTitle: titleEn,
+    description: `Deliver parcel: ${titleEn}`,
+    rewardMinorUnits,
+    currency: CURRENCY_CODE_BDT,
+    reputationDelta: 3,
+    repeatPolicy: 'repeatable',
+    reputationCategory: 'transport',
+    objectives: [
+      {
+        id: 'obj_delivery_pickup',
+        bengaliTitle: 'পার্সেল তুলুন',
+        description: 'Collect the delivery parcel.',
+        targetPosition: pickupPos,
+        completionRadiusM: 12.0,
+        isCompleted: false,
+      },
+      {
+        id: 'obj_delivery_dropoff',
+        bengaliTitle: 'পার্সেল খালাস করুন',
+        description: 'Deliver the parcel to the destination.',
+        targetPosition: dropoffPos,
+        completionRadiusM: 15.0,
+        isCompleted: false,
+      },
+    ],
+  };
+}
 
 export class MissionDomain {
   private readonly _definitions: Record<string, MissionDefinition>;

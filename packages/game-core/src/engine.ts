@@ -43,6 +43,7 @@ import {
 import {
   Infraction,
   PoliceStopState,
+  SoftArrestState,
   evaluateInfraction,
   openPoliceStop,
   applyLicenseDiscount,
@@ -52,7 +53,40 @@ import {
   decayPoliceHeat,
   InfractionContext,
   HEAT_ON_PAY,
+  shouldSoftArrest,
+  openSoftArrest,
+  isArrestHoldActive,
 } from './civic-enforcement.js';
+import {
+  LandmarkDefinition,
+  findDiscoverableLandmark,
+  findNearestDiscoveredLandmark,
+  parseDiscoveredLandmarkIds,
+  serializeDiscoveredLandmarkIds,
+  LANDMARK_DEFINITIONS,
+} from './landmarks.js';
+import {
+  PLOT_DEFINITIONS,
+  BUILDING_TEMPLATES,
+  PlotDefinition,
+  BuildingTemplateId,
+  parseCsvIds,
+  serializeCsvIds,
+  parsePlotBuildings,
+  serializePlotBuildings,
+  findNearestPlot,
+  getPlotById,
+  PLOT_INTERACT_RADIUS_M,
+  RENTAL_COOLDOWN_MS,
+} from './plots.js';
+import {
+  createDailyErrandDefinition,
+  dayBucket,
+  pickEmergentEvent,
+  isEventActive,
+  EMERGENT_EVENT_CATALOG,
+  type EmergentEvent,
+} from './daily-events.js';
 
 export interface PurchaseResult {
   success: boolean;
@@ -72,6 +106,32 @@ export interface FinePaymentResult {
   fineMinorUnits?: number;
 }
 
+export interface SoftArrestResult {
+  success: boolean;
+  reason?: 'NOT_ELIGIBLE' | 'INSUFFICIENT_FUNDS' | 'ALREADY_HELD';
+  arrest?: SoftArrestState;
+  transaction?: EconomyTransaction;
+  policeHeat?: number;
+}
+
+export interface PropertyActionResult {
+  success: boolean;
+  reason?:
+    | 'UNKNOWN_PLOT'
+    | 'ALREADY_OWNED'
+    | 'NOT_OWNED'
+    | 'INSUFFICIENT_FUNDS'
+    | 'INVALID_BUILDING'
+    | 'ALREADY_BUILT'
+    | 'NO_BUILDING'
+    | 'COOLDOWN'
+    | 'DUPLICATE';
+  transaction?: EconomyTransaction;
+  plotId?: string;
+  buildingId?: BuildingTemplateId;
+  incomeMinorUnits?: number;
+}
+
 export class GameCoreEngine {
   private readonly _economy: EconomyDomain;
   private readonly _inventory: InventoryDomain;
@@ -79,6 +139,7 @@ export class GameCoreEngine {
   private _player: RickshawDriverArchetype;
   private readonly _worldFlags: Map<string, boolean | number | string> = new Map();
   private _activePoliceStop: PoliceStopState | null = null;
+  private _activeSoftArrest: SoftArrestState | null = null;
 
   constructor(
     economy: EconomyDomain,
@@ -234,6 +295,249 @@ export class GameCoreEngine {
     }
   }
 
+  /** Milestone 21 — discovered landmark ids from worldFlags CSV */
+  public getDiscoveredLandmarkIds(): string[] {
+    return parseDiscoveredLandmarkIds(
+      this.getWorldFlag<string>('discoveredLandmarks') as string | undefined
+    );
+  }
+
+  public hasDiscoveredLandmark(id: string): boolean {
+    return this.getDiscoveredLandmarkIds().includes(id);
+  }
+
+  /**
+   * Try to discover a nearby landmark. Returns the definition if newly unlocked.
+   */
+  public tryDiscoverLandmark(pos: WorldPosition): LandmarkDefinition | null {
+    const discovered = new Set(this.getDiscoveredLandmarkIds());
+    const lm = findDiscoverableLandmark(pos, discovered);
+    if (!lm) return null;
+    discovered.add(lm.id);
+    this._worldFlags.set('discoveredLandmarks', serializeDiscoveredLandmarkIds([...discovered]));
+    return lm;
+  }
+
+  public get landmarkCatalog(): readonly LandmarkDefinition[] {
+    return LANDMARK_DEFINITIONS;
+  }
+
+  /** Milestone 24 — plaque read at discovered landmark */
+  public getNearestDiscoveredLandmark(pos: WorldPosition, readRadiusM = 8): LandmarkDefinition | null {
+    return findNearestDiscoveredLandmark(pos, new Set(this.getDiscoveredLandmarkIds()), readRadiusM);
+  }
+
+  // ── Milestone 27–31 Property domain ──────────────────────────────────
+
+  public get plotCatalog(): readonly PlotDefinition[] {
+    return PLOT_DEFINITIONS;
+  }
+
+  public getOwnedPlotIds(): string[] {
+    return parseCsvIds(this.getWorldFlag<string>('ownedPlots') as string | undefined);
+  }
+
+  public ownsPlot(plotId: string): boolean {
+    return this.getOwnedPlotIds().includes(plotId);
+  }
+
+  public getPlotBuildings(): Record<string, BuildingTemplateId> {
+    return parsePlotBuildings(this.getWorldFlag<string>('plotBuildings') as string | undefined);
+  }
+
+  public getBuildingOnPlot(plotId: string): BuildingTemplateId {
+    return this.getPlotBuildings()[plotId] ?? 'none';
+  }
+
+  public getNearestPlot(pos: WorldPosition, radiusM = PLOT_INTERACT_RADIUS_M): PlotDefinition | null {
+    return findNearestPlot(pos, radiusM);
+  }
+
+  /** M27 — inspect marks plot as seen (journal hint); does not purchase. */
+  public inspectPlot(plotId: string): boolean {
+    const plot = getPlotById(plotId);
+    if (!plot) return false;
+    const seen = new Set(parseCsvIds(this.getWorldFlag<string>('inspectedPlots') as string | undefined));
+    if (seen.has(plotId)) return false;
+    seen.add(plotId);
+    this._worldFlags.set('inspectedPlots', serializeCsvIds([...seen]));
+    return true;
+  }
+
+  public getInspectedPlotIds(): string[] {
+    return parseCsvIds(this.getWorldFlag<string>('inspectedPlots') as string | undefined);
+  }
+
+  /**
+   * M28 — idempotent plot purchase (stable tx id per plot).
+   */
+  public purchasePlot(plotId: string, timestampMs: number = Date.now()): PropertyActionResult {
+    const plot = getPlotById(plotId);
+    if (!plot) return { success: false, reason: 'UNKNOWN_PLOT' };
+    if (this.ownsPlot(plotId)) return { success: false, reason: 'ALREADY_OWNED', plotId };
+
+    const txId = `tx_property_${plotId}`;
+    if (!this._economy.hasSufficientFunds(plot.priceMinorUnits)) {
+      return { success: false, reason: 'INSUFFICIENT_FUNDS', plotId };
+    }
+
+    try {
+      const transaction = this._economy.debit(
+        plot.priceMinorUnits,
+        'PROPERTY_PURCHASE',
+        `Purchase plot ${plot.nameEn}`,
+        timestampMs,
+        txId
+      );
+      const owned = new Set(this.getOwnedPlotIds());
+      owned.add(plotId);
+      this._worldFlags.set('ownedPlots', serializeCsvIds([...owned]));
+      this.inspectPlot(plotId);
+      return { success: true, transaction, plotId };
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('already exists')) {
+        // Idempotent replay — ensure ownership flag set
+        const owned = new Set(this.getOwnedPlotIds());
+        owned.add(plotId);
+        this._worldFlags.set('ownedPlots', serializeCsvIds([...owned]));
+        return { success: false, reason: 'DUPLICATE', plotId };
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * M29 — place an allowed building template on an owned plot (idempotent tx).
+   */
+  public placeBuilding(
+    plotId: string,
+    buildingId: Exclude<BuildingTemplateId, 'none'>,
+    timestampMs: number = Date.now()
+  ): PropertyActionResult {
+    const plot = getPlotById(plotId);
+    if (!plot) return { success: false, reason: 'UNKNOWN_PLOT' };
+    if (!this.ownsPlot(plotId)) return { success: false, reason: 'NOT_OWNED', plotId };
+    if (!plot.allowedBuildings.includes(buildingId)) {
+      return { success: false, reason: 'INVALID_BUILDING', plotId, buildingId };
+    }
+    const existing = this.getBuildingOnPlot(plotId);
+    if (existing !== 'none') return { success: false, reason: 'ALREADY_BUILT', plotId, buildingId: existing };
+
+    const template = BUILDING_TEMPLATES[buildingId];
+    if (!this._economy.hasSufficientFunds(template.buildCostMinorUnits)) {
+      return { success: false, reason: 'INSUFFICIENT_FUNDS', plotId, buildingId };
+    }
+
+    const txId = `tx_build_${plotId}_${buildingId}`;
+    try {
+      const transaction = this._economy.debit(
+        template.buildCostMinorUnits,
+        'CONSTRUCTION_COST',
+        `Build ${template.nameEn} on ${plot.nameEn}`,
+        timestampMs,
+        txId
+      );
+      const buildings = this.getPlotBuildings();
+      buildings[plotId] = buildingId;
+      this._worldFlags.set('plotBuildings', serializePlotBuildings(buildings));
+      return { success: true, transaction, plotId, buildingId };
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('already exists')) {
+        return { success: false, reason: 'DUPLICATE', plotId, buildingId };
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * M30 — claim rental income if building present and cooldown elapsed.
+   */
+  public claimRentalIncome(plotId: string, timestampMs: number = Date.now()): PropertyActionResult {
+    const plot = getPlotById(plotId);
+    if (!plot) return { success: false, reason: 'UNKNOWN_PLOT' };
+    if (!this.ownsPlot(plotId)) return { success: false, reason: 'NOT_OWNED', plotId };
+    const building = this.getBuildingOnPlot(plotId);
+    if (building === 'none') return { success: false, reason: 'NO_BUILDING', plotId };
+
+    const flagKey = `rentClaimMs_${plotId}`;
+    const last = (this.getWorldFlag<number>(flagKey) as number) ?? 0;
+    // last === 0 means never claimed
+    if (last > 0 && timestampMs - last < RENTAL_COOLDOWN_MS) {
+      return { success: false, reason: 'COOLDOWN', plotId };
+    }
+
+    // Bucket claim window so retries in same window are idempotent
+    const window = Math.floor(timestampMs / RENTAL_COOLDOWN_MS);
+    const txId = `tx_rent_${plotId}_${window}`;
+    try {
+      const transaction = this._economy.credit(
+        plot.rentalIncomeMinorUnits,
+        'RENTAL_INCOME',
+        `Rental income: ${plot.nameEn} (${building})`,
+        timestampMs,
+        txId
+      );
+      this._worldFlags.set(flagKey, timestampMs);
+      return {
+        success: true,
+        transaction,
+        plotId,
+        buildingId: building,
+        incomeMinorUnits: plot.rentalIncomeMinorUnits,
+      };
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('already exists')) {
+        return { success: false, reason: 'DUPLICATE', plotId };
+      }
+      throw err;
+    }
+  }
+
+  /** M31 — garage owners get a soft repair discount flag (৳10 off next mistri bill via worldFlag). */
+  public hasRepairGarage(): boolean {
+    const buildings = this.getPlotBuildings();
+    return Object.values(buildings).includes('repair_garage');
+  }
+
+  public getGarageRepairDiscountMinor(): number {
+    return this.hasRepairGarage() ? 1000 : 0; // ৳10
+  }
+
+  // ── Milestone 33 — daily errand + emergent events ────────────────────
+
+  /** Ensure today's daily errand definition is registered (idempotent). */
+  public ensureDailyErrand(timestampMs: number = Date.now()): string {
+    const day = dayBucket(timestampMs);
+    const id = `daily_errand_${day}`;
+    if (!this._missions.getDefinition(id)) {
+      this._missions.registerDefinition(createDailyErrandDefinition(day));
+    }
+    const flag = `dailyErrandOffered_${day}`;
+    if (!this.getWorldFlag(flag)) {
+      this._worldFlags.set(flag, 1);
+    }
+    return id;
+  }
+
+  public startOrRefreshEmergentEvent(timestampMs: number = Date.now(), seed = 0): EmergentEvent {
+    const currentId = (this.getWorldFlag<string>('activeEmergentEventId') as string) ?? '';
+    const started = (this.getWorldFlag<number>('activeEmergentEventStartedMs') as number) ?? 0;
+    if (currentId && isEventActive(currentId, started, timestampMs)) {
+      return EMERGENT_EVENT_CATALOG.find((e) => e.id === currentId) ?? pickEmergentEvent(timestampMs, seed);
+    }
+    const next = pickEmergentEvent(timestampMs, seed);
+    this._worldFlags.set('activeEmergentEventId', next.id);
+    this._worldFlags.set('activeEmergentEventStartedMs', timestampMs);
+    return next;
+  }
+
+  public getActiveEmergentEvent(nowMs: number = Date.now()): EmergentEvent | null {
+    const id = (this.getWorldFlag<string>('activeEmergentEventId') as string) ?? '';
+    const started = (this.getWorldFlag<number>('activeEmergentEventStartedMs') as number) ?? 0;
+    if (!id || !isEventActive(id, started, nowMs)) return null;
+    return EMERGENT_EVENT_CATALOG.find((e) => e.id === id) ?? null;
+  }
+
   public setWorldFlag(key: string, value: boolean | number | string): void {
     this._worldFlags.set(key, value);
   }
@@ -266,8 +570,16 @@ export class GameCoreEngine {
     return this._activePoliceStop;
   }
 
+  public get activeSoftArrest(): Readonly<SoftArrestState> | null {
+    return this._activeSoftArrest;
+  }
+
   public get unpaidFineMinorUnits(): number {
     return (this.getWorldFlag<number>('unpaidFineMinorUnits') as number) ?? 0;
+  }
+
+  public isSoftArrestHolding(nowMs: number = Date.now()): boolean {
+    return isArrestHoldActive(this._activeSoftArrest, nowMs);
   }
 
   /**
@@ -377,6 +689,72 @@ export class GameCoreEngine {
   public clearPoliceStop(): void {
     this._activePoliceStop = null;
     this._worldFlags.set('activePoliceStopId', '');
+  }
+
+  /**
+   * Milestone 19 — soft arrest when heat is critical near Thana.
+   * Debits ARREST fine if funds allow; otherwise still holds and sets heatAfter.
+   */
+  public trySoftArrest(
+    distanceToThanaM: number,
+    nowMs: number = Date.now()
+  ): SoftArrestResult {
+    const lastArrestMs = (this.getWorldFlag<number>('lastSoftArrestMs') as number) ?? 0;
+    const eligible = shouldSoftArrest({
+      policeHeat: this._player.reputations.policeHeat,
+      distanceToThanaM,
+      nowMs,
+      lastArrestMs,
+      hasActiveStop: this._activePoliceStop !== null && !this._activePoliceStop.paid,
+      alreadyHeld: isArrestHoldActive(this._activeSoftArrest, nowMs),
+    });
+    if (!eligible) return { success: false, reason: 'NOT_ELIGIBLE' };
+
+    const arrest = openSoftArrest(nowMs);
+    let transaction: EconomyTransaction | undefined;
+
+    if (this._economy.hasSufficientFunds(arrest.fineMinorUnits)) {
+      transaction = this._economy.debit(
+        arrest.fineMinorUnits,
+        'FINE_PENALTY',
+        'Soft arrest / Thana holding fine',
+        nowMs,
+        `tx_arrest_${arrest.id}`
+      );
+    } else if (this._economy.balanceMinorUnits > 0) {
+      // Seize remaining cash
+      const seize = this._economy.balanceMinorUnits;
+      transaction = this._economy.debit(
+        seize,
+        'FINE_PENALTY',
+        'Soft arrest — partial seize',
+        nowMs,
+        `tx_arrest_partial_${arrest.id}`
+      );
+    }
+
+    this._activeSoftArrest = arrest;
+    this._activePoliceStop = null;
+    this._player.reputations.policeHeat = arrest.heatAfter;
+    this._worldFlags.set('lastSoftArrestMs', nowMs);
+    this._worldFlags.set('activePoliceStopId', '');
+    this._worldFlags.set('unpaidFineMinorUnits', 0);
+    this._worldFlags.set('jailHoldUntilMs', arrest.holdUntilMs);
+
+    return {
+      success: true,
+      arrest,
+      transaction,
+      policeHeat: this._player.reputations.policeHeat,
+    };
+  }
+
+  public releaseSoftArrestIfDue(nowMs: number = Date.now()): boolean {
+    if (!this._activeSoftArrest || this._activeSoftArrest.released) return false;
+    if (nowMs < this._activeSoftArrest.holdUntilMs) return false;
+    this._activeSoftArrest = { ...this._activeSoftArrest, released: true };
+    this._worldFlags.set('jailHoldUntilMs', 0);
+    return true;
   }
 
   public applyPoliceHeatDelta(delta: number): number {
@@ -545,14 +923,20 @@ export class GameCoreEngine {
       return { success: false, reason: 'UNKNOWN_SERVICE' };
     }
 
-    if (!this._economy.hasSufficientFunds(def.priceMinorUnits)) {
+    // Milestone 31 — owned repair garage soft discount
+    const discount = this.getGarageRepairDiscountMinor();
+    const price = Math.max(0, def.priceMinorUnits - discount);
+
+    if (!this._economy.hasSufficientFunds(price)) {
       return { success: false, reason: 'INSUFFICIENT_FUNDS' };
     }
 
     const tx = this._economy.debit(
-      def.priceMinorUnits,
+      price,
       'MAINTENANCE_COST',
-      `${def.nameEn} (${def.nameBn})`,
+      discount > 0
+        ? `${def.nameEn} (${def.nameBn}) — garage discount ৳${(discount / 100).toFixed(0)}`
+        : `${def.nameEn} (${def.nameBn})`,
       timestampMs,
       customId
     );

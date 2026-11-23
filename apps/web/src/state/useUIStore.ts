@@ -7,6 +7,7 @@ export interface UIState {
   isJournalOpen: boolean;
   isInventoryOpen: boolean;
   isSaveManagerOpen: boolean;
+  isSettingsOpen: boolean;
   isDebugOverlayVisible: boolean;
 
   openDialogue: (treeId: string, nodeId?: string) => void;
@@ -18,6 +19,8 @@ export interface UIState {
   setInventoryOpen: (open: boolean) => void;
   toggleSaveManager: () => void;
   setSaveManagerOpen: (open: boolean) => void;
+  toggleSettings: () => void;
+  setSettingsOpen: (open: boolean) => void;
   toggleDebugOverlay: () => void;
 }
 
@@ -28,6 +31,7 @@ export const useUIStore = create<UIState>((set) => ({
   isJournalOpen: false,
   isInventoryOpen: false,
   isSaveManagerOpen: false,
+  isSettingsOpen: false,
   isDebugOverlayVisible: false, // F3 toggles performance debug overlay
 
   openDialogue: (treeId, nodeId) =>
@@ -37,6 +41,7 @@ export const useUIStore = create<UIState>((set) => ({
       currentDialogueNodeId: nodeId ?? null,
       isJournalOpen: false,
       isInventoryOpen: false,
+      isSettingsOpen: false,
     }),
 
   closeDialogue: () =>
@@ -53,6 +58,7 @@ export const useUIStore = create<UIState>((set) => ({
       isJournalOpen: !s.isJournalOpen,
       isInventoryOpen: false,
       isSaveManagerOpen: false,
+      isSettingsOpen: false,
     })),
 
   setJournalOpen: (open) => set({ isJournalOpen: open }),
@@ -62,6 +68,7 @@ export const useUIStore = create<UIState>((set) => ({
       isInventoryOpen: !s.isInventoryOpen,
       isJournalOpen: false,
       isSaveManagerOpen: false,
+      isSettingsOpen: false,
     })),
 
   setInventoryOpen: (open) => set({ isInventoryOpen: open }),
@@ -71,9 +78,20 @@ export const useUIStore = create<UIState>((set) => ({
       isSaveManagerOpen: !s.isSaveManagerOpen,
       isJournalOpen: false,
       isInventoryOpen: false,
+      isSettingsOpen: false,
     })),
 
   setSaveManagerOpen: (open) => set({ isSaveManagerOpen: open }),
+
+  toggleSettings: () =>
+    set((s) => ({
+      isSettingsOpen: !s.isSettingsOpen,
+      isJournalOpen: false,
+      isInventoryOpen: false,
+      isSaveManagerOpen: false,
+    })),
+
+  setSettingsOpen: (open) => set({ isSettingsOpen: open }),
 
   toggleDebugOverlay: () =>
     set((s) => ({ isDebugOverlayVisible: !s.isDebugOverlayVisible })),

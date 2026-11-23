@@ -48,6 +48,24 @@ export const BRASS_BELLS_CARGO_ITEM: InventoryItem = {
   },
 };
 
+/** Milestone 18 — sealed market parcel for college delivery */
+export const MARKET_PARCEL_ITEM: InventoryItem = {
+  id: 'market_parcel',
+  nameBn: 'বাজারের সিল করা পার্সেল',
+  nameEn: 'Sealed Market Parcel',
+  category: 'CARGO',
+  quantity: 1,
+  isStackable: false,
+  maxStackSize: 1,
+  descriptionBn: 'রথখোলা বাজার থেকে সরকারি কলেজে পৌঁছে দেওয়ার সিল করা পার্সেল।',
+  descriptionEn: 'Sealed parcel from Rathkhola Market bound for Dhamrai Government College.',
+  metadata: {
+    origin: 'Rathkhola Market',
+    destination: 'Dhamrai Govt College',
+    weightKg: 3,
+  },
+};
+
 export const FARE_PASSENGER_KAMAL: NPCEntityDefinition = {
   id: 'npc_passenger_kamal',
   nameBn: 'কামাল মিয়া (যাত্রী)',

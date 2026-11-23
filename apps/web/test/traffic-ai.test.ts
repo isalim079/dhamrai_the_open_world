@@ -86,14 +86,21 @@ describe('TrafficManager — Autonomous Road Traffic AI', () => {
     physics.dispose();
   });
 
-  it('should initialize a pool of 3 ambient traffic vehicles on eligible road edges', () => {
-    expect(trafficManager.agents.length).toBe(3);
+  it('should initialize a pool of 5 ambient traffic vehicles on eligible road edges', () => {
+    expect(trafficManager.agents.length).toBe(5);
+    expect(trafficManager.poolSize).toBe(5);
+    expect(trafficManager.activeAgentCount).toBe(5);
     const agentData = trafficManager.getAgents();
-    expect(agentData.length).toBe(3);
+    expect(agentData.length).toBe(5);
+
+    const kinds = new Set(agentData.map((a) => a.vehicleKind ?? 'rickshaw'));
+    expect(kinds.has('cng')).toBe(true);
+    expect(kinds.has('easy_bike')).toBe(true);
+    expect(kinds.has('rickshaw')).toBe(true);
 
     for (const a of agentData) {
       expect(a.speedMps).toBeGreaterThanOrEqual(2.2); // >= 8 km/h
-      expect(a.speedMps).toBeLessThanOrEqual(3.5); // <= 12.6 km/h
+      expect(a.speedMps).toBeLessThanOrEqual(4.2); // CNG ambient may cruise slightly faster
       expect(a.currentEdgeId).toBeDefined();
       expect(a.isHalted).toBe(false);
     }
@@ -177,5 +184,27 @@ describe('TrafficManager — Autonomous Road Traffic AI', () => {
       agentInst.agent.position.z - playerPos.z
     );
     expect(newDist).toBeLessThanOrEqual(140);
+  });
+
+  it('should slow near junctions and yield when another agent crowds the same node', () => {
+    expect(trafficManager.junctionSpeedMult).toBeLessThan(1);
+
+    const a = trafficManager.agents[0]!;
+    const b = trafficManager.agents[1]!;
+    a.agent.currentEdgeId = 'edge_1'; // to node_B (junction)
+    a.agent.edgeProgressPercent = 0.8;
+    a.agent.position = { x: 30, y: 0, z: 48 };
+    a.agent.headingRadians = 0;
+    a.agent.isHalted = false;
+
+    b.agent.currentEdgeId = 'edge_1';
+    b.agent.edgeProgressPercent = 0.75;
+    b.agent.position = { x: 30, y: 0, z: 45 };
+    b.agent.headingRadians = 0;
+
+    const before = a.agent.edgeProgressPercent;
+    trafficManager.update(0.2, { x: -80, y: 0, z: -80 });
+    // Crowded junction → a should halt (or at least not advance freely at full speed)
+    expect(a.agent.isHalted || a.agent.edgeProgressPercent <= before + 0.02).toBe(true);
   });
 });

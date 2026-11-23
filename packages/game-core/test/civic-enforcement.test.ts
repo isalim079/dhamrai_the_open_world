@@ -6,6 +6,9 @@ import {
   applyPoliceHeat,
   decayPoliceHeat,
   computeFineForCodes,
+  shouldSoftArrest,
+  openSoftArrest,
+  isArrestHoldActive,
   SPEEDING_THRESHOLD_KPH,
   THANA_ENFORCE_RADIUS_M,
   STOP_COOLDOWN_MS,
@@ -14,6 +17,8 @@ import {
   FINE_FLEE_MINOR,
   LICENSE_DISCOUNT_MINOR,
   HEAT_ON_PAY,
+  HEAT_ARREST_THRESHOLD,
+  ARREST_FINE_MINOR,
 } from '../src/civic-enforcement.js';
 import { GameCoreEngine } from '../src/engine.js';
 import { PHASE_1_ANCHORS } from '@dhamrai/shared-contracts';
@@ -203,5 +208,31 @@ describe('GameCoreEngine — M14 police stop integration', () => {
     const loaded = GameCoreEngine.fromSaveEnvelope(save);
     expect(loaded.policeHeat).toBe(0);
     expect(loaded.civicTrust).toBe(10);
+  });
+
+  it('M19 soft-arrests when heat is critical near Thana', () => {
+    expect(
+      shouldSoftArrest({
+        policeHeat: HEAT_ARREST_THRESHOLD,
+        distanceToThanaM: THANA_ENFORCE_RADIUS_M - 1,
+        nowMs: 200_000,
+        lastArrestMs: 0,
+        hasActiveStop: false,
+        alreadyHeld: false,
+      })
+    ).toBe(true);
+
+    const engine = GameCoreEngine.createNewGame(1000);
+    engine.applyPoliceHeatDelta(HEAT_ARREST_THRESHOLD);
+    const thana = PHASE_1_ANCHORS.THANA_JUNCTION_CHECKPOINT;
+    const dist = 5;
+    const res = engine.trySoftArrest(dist, 200_000);
+    expect(res.success).toBe(true);
+    expect(res.arrest?.fineMinorUnits).toBe(ARREST_FINE_MINOR);
+    expect(engine.policeHeat).toBe(25);
+    expect(engine.isSoftArrestHolding(200_100)).toBe(true);
+    expect(engine.releaseSoftArrestIfDue(200_100)).toBe(false);
+    expect(engine.releaseSoftArrestIfDue(res.arrest!.holdUntilMs + 1)).toBe(true);
+    expect(isArrestHoldActive(openSoftArrest(0), 999_999)).toBe(false);
   });
 });

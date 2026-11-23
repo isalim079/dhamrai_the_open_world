@@ -1,17 +1,20 @@
 # Dhamrai Life — Progress Tracker
 
 **Last updated:** 23 November 2026  
-**Overall status:** Milestone 14 COMPLETE (verified). Yarn Classic 1.22.22 preserved. Save schema remains `SaveEnvelopeV2`. Zero new npm dependencies through M14.
+**Overall status:** Phase 4 track **M27–M32 COMPLETE**. Yarn Classic 1.22.22 · SaveEnvelopeV2 · zero new npm deps.
 
 ## Current milestone focus
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
-| Milestone 13: Vehicle Maintenance, Driver Stamina & Tea Stall Economy | COMPLETE | `guideFiles/milestone_13_implementation_report.md` |
-| Milestone 14: Police Fine, Wanted Heat & Checkpoint Enforcement | COMPLETE | `guideFiles/milestone_14_implementation_report.md`; CDP 10/10; 60 FPS; schema v2 |
-| Baseline regression (23 Nov 2026 post-M14) | MOSTLY GREEN | typecheck 0; Python 23/23; Vitest 319 passed / 4 skipped; Neon PG offline |
+| Milestone 13–26 | COMPLETE | Phase 1–3 tracks |
+| Milestone 27–32 | COMPLETE | Plots · buy · build · rent · garage · property journal |
+| Phase 2 closeout (M15–M20) | COMPLETE | `guideFiles/PHASE2_MILESTONE_TRACK.md` |
+| Phase 3 track (M21–M26) | COMPLETE | `guideFiles/PHASE3_MILESTONE_TRACK.md` |
+| Phase 4 track (M27–M32) | **COMPLETE** | `guideFiles/PHASE4_MILESTONE_TRACK.md`; CDP PASS |
+| Baseline regression (23 Nov 2026 post-M32) | MOSTLY GREEN | typecheck 0; plots 5/5; Neon PG offline |
 | Dependency lockfile | CLEAN | `yarn.lock` unchanged |
-| Next task | READY | Milestone 15 Discovery & Planning (await “next”) |
+| Next task | FUTURE | Phases 5–6 roadmap |
 
 ## Historical phase and evidence (Sprints / earlier milestones)
 

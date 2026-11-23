@@ -27,6 +27,13 @@ export const HEAT_FLEE = 20;
 export const HEAT_NO_LICENSE = 15;
 export const HEAT_NIGHT = 5;
 
+/** Milestone 19 — soft arrest when heat is critical near Thana */
+export const HEAT_ARREST_THRESHOLD = 85;
+export const ARREST_FINE_MINOR = 8000; // ৳80
+export const ARREST_HOLD_MS = 8_000;
+export const ARREST_HEAT_AFTER = 25;
+export const ARREST_COOLDOWN_MS = 180_000;
+
 export interface Infraction {
   code: InfractionCode;
   fineMinorUnits: number;
@@ -247,4 +254,43 @@ export function markFleeing(stop: PoliceStopState): PoliceStopState {
 
 export function markPaid(stop: PoliceStopState): PoliceStopState {
   return { ...stop, paid: true, fleeing: false };
+}
+
+export interface SoftArrestState {
+  id: string;
+  openedAtMs: number;
+  holdUntilMs: number;
+  fineMinorUnits: number;
+  heatAfter: number;
+  released: boolean;
+}
+
+export function shouldSoftArrest(ctx: {
+  policeHeat: number;
+  distanceToThanaM: number;
+  nowMs: number;
+  lastArrestMs: number;
+  hasActiveStop: boolean;
+  alreadyHeld: boolean;
+}): boolean {
+  if (ctx.alreadyHeld || ctx.hasActiveStop) return false;
+  if (ctx.nowMs - ctx.lastArrestMs < ARREST_COOLDOWN_MS) return false;
+  if (ctx.policeHeat < HEAT_ARREST_THRESHOLD) return false;
+  return ctx.distanceToThanaM <= THANA_ENFORCE_RADIUS_M;
+}
+
+export function openSoftArrest(nowMs: number, idSuffix = ''): SoftArrestState {
+  return {
+    id: `arrest_${nowMs}${idSuffix}`,
+    openedAtMs: nowMs,
+    holdUntilMs: nowMs + ARREST_HOLD_MS,
+    fineMinorUnits: ARREST_FINE_MINOR,
+    heatAfter: ARREST_HEAT_AFTER,
+    released: false,
+  };
+}
+
+export function isArrestHoldActive(arrest: SoftArrestState | null, nowMs: number): boolean {
+  if (!arrest || arrest.released) return false;
+  return nowMs < arrest.holdUntilMs;
 }

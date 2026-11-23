@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { useUIStore } from '../state/useUIStore.js';
 import { useGameStore } from '../state/useGameStore.js';
-import { PHASE_1_MISSIONS } from '@dhamrai/game-core';
+import {
+  PHASE_1_MISSIONS,
+  LANDMARK_DEFINITIONS,
+  PLOT_DEFINITIONS,
+  BUILDING_TEMPLATES,
+} from '@dhamrai/game-core';
 
 export const JournalModal: React.FC = () => {
   const isJournalOpen = useUIStore((s) => s.isJournalOpen);
@@ -9,7 +14,14 @@ export const JournalModal: React.FC = () => {
   const allMissions = useGameStore((s) => s.allMissions);
   const engine = useGameStore((s) => s.engine);
 
-  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'COMPLETED' | 'LANDMARKS'>('ACTIVE');
+  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'COMPLETED' | 'LANDMARKS' | 'PROPERTY'>(
+    'ACTIVE'
+  );
+  const discoveredIds = new Set(engine?.getDiscoveredLandmarkIds() ?? []);
+  const discoveredCount = discoveredIds.size;
+  const ownedPlotIds = new Set(engine?.getOwnedPlotIds() ?? []);
+  const inspectedPlotIds = new Set(engine?.getInspectedPlotIds() ?? []);
+  const plotBuildings = engine?.getPlotBuildings() ?? {};
 
   if (!isJournalOpen) return null;
 
@@ -148,7 +160,23 @@ export const JournalModal: React.FC = () => {
               cursor: 'pointer',
             }}
           >
-            ধামরাই পরিচিতি
+            ধামরাই পরিচিতি ({discoveredCount}/{LANDMARK_DEFINITIONS.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('PROPERTY')}
+            style={{
+              flex: 1,
+              padding: '10px 14px',
+              backgroundColor: activeTab === 'PROPERTY' ? '#161b22' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'PROPERTY' ? '2px solid #58a6ff' : 'none',
+              color: activeTab === 'PROPERTY' ? '#58a6ff' : '#8b949e',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
+          >
+            সম্পত্তি ({ownedPlotIds.size}/{PLOT_DEFINITIONS.length})
           </button>
         </div>
 
@@ -248,26 +276,102 @@ export const JournalModal: React.FC = () => {
             </>
           )}
 
+          {activeTab === 'PROPERTY' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: '12px', color: '#8b949e', marginBottom: 4 }}>
+                কাল্পনিক প্লট স্তর — আসল খতিয়ান নয়। রথখোলার কাছে [E] দিয়ে পরিদর্শন / ক্রয় / নির্মাণ / ভাড়া।
+                {engine?.hasRepairGarage() ? ' · গ্যারেজ মালিকানা: মেরামতে ছাড় সক্রিয়।' : ''}
+              </div>
+              {PLOT_DEFINITIONS.map((plot) => {
+                const owned = ownedPlotIds.has(plot.id);
+                const seen = inspectedPlotIds.has(plot.id) || owned;
+                const building = plotBuildings[plot.id] ?? 'none';
+                const buildingLabel =
+                  building !== 'none' && BUILDING_TEMPLATES[building]
+                    ? `${BUILDING_TEMPLATES[building].nameBn} / ${BUILDING_TEMPLATES[building].nameEn}`
+                    : 'কোনো ভবন নেই';
+                return (
+                  <div
+                    key={plot.id}
+                    style={{
+                      backgroundColor: '#161b22',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: `1px solid ${owned ? '#238636' : '#30363d'}`,
+                      opacity: seen ? 1 : 0.55,
+                    }}
+                  >
+                    <strong style={{ color: owned ? '#3fb950' : seen ? '#58a6ff' : '#8b949e' }}>
+                      {owned ? '✓ মালিকানা · ' : seen ? '○ পরিদর্শিত · ' : '○ '}
+                      {seen ? `${plot.nameBn} (${plot.nameEn})` : '??? — অদেখা প্লট'}
+                    </strong>
+                    {seen && (
+                      <>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#c9d1d9' }}>
+                          {plot.blurbBn}
+                        </p>
+                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#8b949e' }}>
+                          দাম ৳{(plot.priceMinorUnits / 100).toFixed(0)} · জোনিং {plot.zoning} · ভাড়া ৳
+                          {(plot.rentalIncomeMinorUnits / 100).toFixed(0)}
+                        </p>
+                        {owned && (
+                          <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#7ee787' }}>
+                            ভবন: {buildingLabel}
+                          </p>
+                        )}
+                        <p style={{ margin: '6px 0 0', fontSize: '10px', color: '#6e7681' }}>
+                          {plot.sourceNote}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {activeTab === 'LANDMARKS' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ backgroundColor: '#161b22', padding: '12px 14px', borderRadius: '8px', border: '1px solid #30363d' }}>
-                <strong style={{ color: '#58a6ff' }}>রথখোলা মোড় (Rathkhola Stand):</strong>
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8b949e' }}>
-                  ধামরাইয়ের ঐতিহাসিক রথযাত্রার মূল চত্বর। এখানে প্রতিদিন শত শত রিকশা ও যাত্রী সমবেত হন।
-                </p>
+              <div style={{ fontSize: '12px', color: '#8b949e', marginBottom: 4 }}>
+                কাছাকাছি গেলে ল্যান্ডমার্ক আবিষ্কৃত হয়। উৎস নোটগুলি প্রকল্পের পরিচিতি — সার্টিফাইড ইতিহাস নয়।
               </div>
-              <div style={{ backgroundColor: '#161b22', padding: '12px 14px', borderRadius: '8px', border: '1px solid #30363d' }}>
-                <strong style={{ color: '#58a6ff' }}>হার্ডিঞ্জ উচ্চ বিদ্যালয় (Hardinge High School):</strong>
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8b949e' }}>
-                  ১৯১৪ সালে প্রতিষ্ঠিত শতবর্ষী বিদ্যাপীঠ। রথখোলা থেকে সোজা উত্তরমুখী পাকা সড়ক বরাবর অবস্থিত।
-                </p>
-              </div>
-              <div style={{ backgroundColor: '#161b22', padding: '12px 14px', borderRadius: '8px', border: '1px solid #30363d' }}>
-                <strong style={{ color: '#58a6ff' }}>কায়েতপাড়া কাঁসা পল্লী (Kayetpara Metal Craft):</strong>
-                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8b949e' }}>
-                  শতবর্ষের ঐতিহ্যবাহী কাঁসা-পিতল কারিগরদের কর্মশালা। এখানে নিখুঁত হাতের কাজে ঘণ্টা ও তৈজসপত্র তৈরি হয়।
-                </p>
-              </div>
+              {LANDMARK_DEFINITIONS.map((lm) => {
+                const unlocked = discoveredIds.has(lm.id);
+                return (
+                  <div
+                    key={lm.id}
+                    style={{
+                      backgroundColor: '#161b22',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      border: `1px solid ${unlocked ? '#238636' : '#30363d'}`,
+                      opacity: unlocked ? 1 : 0.55,
+                    }}
+                  >
+                    <strong style={{ color: unlocked ? '#58a6ff' : '#8b949e' }}>
+                      {unlocked ? '✓ ' : '○ '}
+                      {unlocked ? `${lm.nameBn} (${lm.nameEn})` : '??? — অনাবিষ্কৃত'}
+                    </strong>
+                    {unlocked ? (
+                      <>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#c9d1d9' }}>
+                          {lm.blurbBn}
+                        </p>
+                        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#8b949e' }}>
+                          {lm.blurbEn}
+                        </p>
+                        <p style={{ margin: '6px 0 0', fontSize: '10px', color: '#6e7681' }}>
+                          Source: {lm.sourceNote}
+                        </p>
+                      </>
+                    ) : (
+                      <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#8b949e' }}>
+                        এই স্থানে পৌঁছালে আবিষ্কার হবে।
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

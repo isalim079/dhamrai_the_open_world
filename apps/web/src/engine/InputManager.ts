@@ -18,6 +18,7 @@ export interface InputState {
   toggleDebug: boolean;     // 'F3' key pressed this frame
   toggleMute: boolean;      // 'M' key pressed this frame
   toggleWeather: boolean;   // 'N' key pressed this frame (Milestone 12)
+  toggleSettings: boolean;  // 'O' key — Milestone 36 settings
   mouseDeltaX: number;
   mouseDeltaY: number;
 }
