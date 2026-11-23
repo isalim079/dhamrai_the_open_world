@@ -14,6 +14,7 @@ import { tickStamina, recoverStamina, canSprint, CONSUMABLES, TEA_BUFF_DURATION_
 import { evaluateInfraction, openPoliceStop, applyLicenseDiscount, markFleeing, markPaid, applyPoliceHeat, decayPoliceHeat, HEAT_ON_PAY, shouldSoftArrest, openSoftArrest, isArrestHoldActive, } from './civic-enforcement.js';
 import { findDiscoverableLandmark, findNearestDiscoveredLandmark, parseDiscoveredLandmarkIds, serializeDiscoveredLandmarkIds, LANDMARK_DEFINITIONS, } from './landmarks.js';
 import { PLOT_DEFINITIONS, BUILDING_TEMPLATES, parseCsvIds, serializeCsvIds, parsePlotBuildings, serializePlotBuildings, findNearestPlot, getPlotById, PLOT_INTERACT_RADIUS_M, RENTAL_COOLDOWN_MS, } from './plots.js';
+import { createDailyErrandDefinition, dayBucket, pickEmergentEvent, isEventActive, EMERGENT_EVENT_CATALOG, } from './daily-events.js';
 export class GameCoreEngine {
     _economy;
     _inventory;
@@ -293,7 +294,8 @@ export class GameCoreEngine {
             return { success: false, reason: 'NO_BUILDING', plotId };
         const flagKey = `rentClaimMs_${plotId}`;
         const last = this.getWorldFlag(flagKey) ?? 0;
-        if (timestampMs - last < RENTAL_COOLDOWN_MS) {
+        // last === 0 means never claimed
+        if (last > 0 && timestampMs - last < RENTAL_COOLDOWN_MS) {
             return { success: false, reason: 'COOLDOWN', plotId };
         }
         // Bucket claim window so retries in same window are idempotent
@@ -324,6 +326,38 @@ export class GameCoreEngine {
     }
     getGarageRepairDiscountMinor() {
         return this.hasRepairGarage() ? 1000 : 0; // ৳10
+    }
+    // ── Milestone 33 — daily errand + emergent events ────────────────────
+    /** Ensure today's daily errand definition is registered (idempotent). */
+    ensureDailyErrand(timestampMs = Date.now()) {
+        const day = dayBucket(timestampMs);
+        const id = `daily_errand_${day}`;
+        if (!this._missions.getDefinition(id)) {
+            this._missions.registerDefinition(createDailyErrandDefinition(day));
+        }
+        const flag = `dailyErrandOffered_${day}`;
+        if (!this.getWorldFlag(flag)) {
+            this._worldFlags.set(flag, 1);
+        }
+        return id;
+    }
+    startOrRefreshEmergentEvent(timestampMs = Date.now(), seed = 0) {
+        const currentId = this.getWorldFlag('activeEmergentEventId') ?? '';
+        const started = this.getWorldFlag('activeEmergentEventStartedMs') ?? 0;
+        if (currentId && isEventActive(currentId, started, timestampMs)) {
+            return EMERGENT_EVENT_CATALOG.find((e) => e.id === currentId) ?? pickEmergentEvent(timestampMs, seed);
+        }
+        const next = pickEmergentEvent(timestampMs, seed);
+        this._worldFlags.set('activeEmergentEventId', next.id);
+        this._worldFlags.set('activeEmergentEventStartedMs', timestampMs);
+        return next;
+    }
+    getActiveEmergentEvent(nowMs = Date.now()) {
+        const id = this.getWorldFlag('activeEmergentEventId') ?? '';
+        const started = this.getWorldFlag('activeEmergentEventStartedMs') ?? 0;
+        if (!id || !isEventActive(id, started, nowMs))
+            return null;
+        return EMERGENT_EVENT_CATALOG.find((e) => e.id === id) ?? null;
     }
     setWorldFlag(key, value) {
         this._worldFlags.set(key, value);

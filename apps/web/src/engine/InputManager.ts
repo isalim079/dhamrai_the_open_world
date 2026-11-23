@@ -135,6 +135,7 @@ export class InputManager {
     const toggleDebug = this.justPressed.has('F3');
     const toggleMute = this.justPressed.has('KeyM');
     const toggleWeather = this.justPressed.has('KeyN');
+    const toggleSettings = this.justPressed.has('KeyO');
 
     const state: InputState = {
       forward,
@@ -152,6 +153,7 @@ export class InputManager {
       toggleDebug,
       toggleMute,
       toggleWeather,
+      toggleSettings,
       mouseDeltaX: this.mouseDeltaX,
       mouseDeltaY: this.mouseDeltaY,
     };

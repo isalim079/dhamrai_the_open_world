@@ -1,20 +1,18 @@
 # Dhamrai Life — Progress Tracker
 
 **Last updated:** 23 November 2026  
-**Overall status:** Phase 4 track **M27–M32 COMPLETE**. Yarn Classic 1.22.22 · SaveEnvelopeV2 · zero new npm deps.
+**Overall status:** **PROJECT CLOSEOUT (carefully re-verified)** — M15–M42. See `PROJECT_COMPLETE.md`.
 
 ## Current milestone focus
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
-| Milestone 13–26 | COMPLETE | Phase 1–3 tracks |
-| Milestone 27–32 | COMPLETE | Plots · buy · build · rent · garage · property journal |
-| Phase 2 closeout (M15–M20) | COMPLETE | `guideFiles/PHASE2_MILESTONE_TRACK.md` |
-| Phase 3 track (M21–M26) | COMPLETE | `guideFiles/PHASE3_MILESTONE_TRACK.md` |
-| Phase 4 track (M27–M32) | **COMPLETE** | `guideFiles/PHASE4_MILESTONE_TRACK.md`; CDP PASS |
-| Baseline regression (23 Nov 2026 post-M32) | MOSTLY GREEN | typecheck 0; plots 5/5; Neon PG offline |
-| Dependency lockfile | CLEAN | `yarn.lock` unchanged |
-| Next task | FUTURE | Phases 5–6 roadmap |
+| Milestone 13–32 | COMPLETE | Phases 1–4 (prior CDP) |
+| Milestone 33–38 | **PASS** | unit + CDP `scratch/m33_m38_live_verification.cjs` 8/8; wiring fixes applied |
+| Milestone 39–42 | **PASS** | unit `authoritative-room` 6/6 + ADR |
+| Phase 2–6 tracks | **COMPLETE** | tracks now list PASS evidence (not thin COMPLETE) |
+| Baseline | MOSTLY GREEN | web tsc clean; Neon PG still offline |
+| Next task | NONE | Closeout re-verified |
 
 ## Historical phase and evidence (Sprints / earlier milestones)
 

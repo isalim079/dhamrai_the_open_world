@@ -1,16 +1,14 @@
 # Dhamrai Life — Progress Tracker
 
 **Last updated:** 23 November 2026  
-**Overall status:** Phase 4 track **M27–M32 COMPLETE**. Canonical tracker: `guideFiles/PROGRESS.md`.
+**Overall status:** **PROJECT CLOSEOUT (carefully re-verified)**. Canonical: `guideFiles/PROGRESS.md` · `PROJECT_COMPLETE.md`.
 
 ## Current milestone focus
 
 | Work item | Status | Evidence / limits |
 |---|---|---|
-| Milestone 13–26 | COMPLETE | Phases 1–3 |
-| Milestone 27–32 | COMPLETE | Property plots · buy · build · rent · garage · journal |
-| Phase 2–4 tracks | **COMPLETE** | `PHASE2` / `PHASE3` / `PHASE4` milestone track docs |
-| Next task | FUTURE | Phases 5–6 |
+| Phase 2–6 tracks | **COMPLETE** | M33–M38 CDP 8/8 · M39–M42 unit 6/6 · wiring gaps fixed |
+| Next task | NONE | Closeout re-verified |
 
 ## Historical phase and evidence (Sprints / earlier milestones)
 

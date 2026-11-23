@@ -7,6 +7,7 @@
  */
 
 import RAPIER from '@dimforge/rapier3d-compat';
+import { getVehicleProfile } from '@dhamrai/game-core';
 import type { WorldPosition } from '@dhamrai/shared-contracts';
 import type { PhysicsWorld } from './PhysicsWorld.js';
 import type { InputState } from './InputManager.js';
@@ -32,9 +33,11 @@ export class RickshawVehicle {
   public steeringAngle = 0.0; // Radians (-35° to +35°)
   public readonly archetype: VehicleArchetype;
 
-  public readonly maxSteerAngle = (35 * Math.PI) / 180; // ±35° max steering clamp
+  /** Milestone 34 — from vehicle-profiles registry */
+  public readonly maxSteerAngle: number;
   public readonly normalTargetSpeedMps: number;
   public readonly sprintTargetSpeedMps: number;
+  public readonly massKg: number;
   public readonly maxInteractionRadius = 2.5; // m
   public readonly maxExitSpeedMps = 0.5; // m/s (~1.8 km/h)
 
@@ -85,17 +88,12 @@ export class RickshawVehicle {
     archetype: VehicleArchetype = 'rickshaw'
   ) {
     this.archetype = archetype;
-    // Milestone 20/22 — motorized CNG / easy bike vs pedal rickshaw
-    if (archetype === 'cng') {
-      this.normalTargetSpeedMps = 22.0 / 3.6;
-      this.sprintTargetSpeedMps = 32.0 / 3.6;
-    } else if (archetype === 'easy_bike') {
-      this.normalTargetSpeedMps = 18.0 / 3.6;
-      this.sprintTargetSpeedMps = 28.0 / 3.6;
-    } else {
-      this.normalTargetSpeedMps = 12.0 / 3.6;
-      this.sprintTargetSpeedMps = 18.0 / 3.6;
-    }
+    // Milestone 34 — apply handling profile (single source of truth)
+    const profile = getVehicleProfile(archetype);
+    this.normalTargetSpeedMps = profile.normalTargetSpeedMps;
+    this.sprintTargetSpeedMps = profile.sprintTargetSpeedMps;
+    this.maxSteerAngle = profile.maxSteerAngleRad;
+    this.massKg = profile.massKg;
     this.create(initialPos);
   }
 
@@ -104,7 +102,6 @@ export class RickshawVehicle {
 
     const isCng = this.archetype === 'cng';
     const isBike = this.archetype === 'easy_bike';
-    // Dynamic rigid body for chassis (rickshaw ~90 kg, easy bike ~120, CNG ~280)
     const bodyDesc = rapier.RigidBodyDesc.dynamic()
       .setTranslation(initialPos.x, initialPos.y + 0.4, initialPos.z)
       .setLinearDamping(0.8)
@@ -120,7 +117,7 @@ export class RickshawVehicle {
     )
       .setFriction(0.7)
       .setRestitution(0.1)
-      .setMass(isCng ? 280.0 : isBike ? 120.0 : 90.0);
+      .setMass(this.massKg);
 
     this.collider = world.createCollider(colliderDesc, this.body);
   }

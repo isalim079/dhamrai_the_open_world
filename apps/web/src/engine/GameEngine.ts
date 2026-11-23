@@ -40,6 +40,7 @@ import { PlotMarkers } from './PlotMarkers.js';
 import { useSessionStore } from '../state/useSessionStore.js';
 import { useGameStore } from '../state/useGameStore.js';
 import { useUIStore } from '../state/useUIStore.js';
+import { useSettingsStore } from '../state/useSettingsStore.js';
 
 let activeGameEngineInstance: GameEngine | null = null;
 export function getActiveGameEngine(): GameEngine | null {
@@ -77,6 +78,8 @@ export class GameEngine {
   public plotMarkers!: PlotMarkers;
   private atmosphereHudAccum = 0;
   private plotMarkerAccum = 0;
+  /** Milestone 33 — last announced emergent event id (avoid toast spam) */
+  private lastAnnouncedEmergentId: string | null = null;
   private lastWearPos: WorldPosition | null = null;
   private conditionHudAccum = 0;
   private civicHudAccum = 0;
@@ -101,6 +104,9 @@ export class GameEngine {
       (window as any).__dhamrai_useUIStore = useUIStore;
       (window as any).__dhamrai_useGameStore = useGameStore;
       (window as any).__dhamrai_useSessionStore = useSessionStore;
+      // Milestone 36/38 — expose for CDP acceptance (same pattern as other stores)
+      (window as any).__dhamrai_useSettingsStore = useSettingsStore;
+      useSettingsStore.getState().hydrate();
     }
 
     // 2. Initialize Renderer & Scene
@@ -353,7 +359,8 @@ export class GameEngine {
   public update(dt: number): void {
     const input = this.inputManager.getInput();
     const ui = useUIStore.getState();
-    const isUIBlocking = ui.isDialogueOpen || ui.isJournalOpen || ui.isInventoryOpen;
+    const isUIBlocking =
+      ui.isDialogueOpen || ui.isJournalOpen || ui.isInventoryOpen || ui.isSettingsOpen;
 
     const activePos = this.isInVehicle ? this.rickshaw.getPosition() : this.character.getPosition();
 
@@ -366,6 +373,9 @@ export class GameEngine {
     }
     if (input.toggleDebug) {
       ui.toggleDebugOverlay();
+    }
+    if (input.toggleSettings) {
+      ui.toggleSettings();
     }
 
     // 1.5 Mute Audio Toggle ('M' key)
@@ -572,6 +582,7 @@ export class GameEngine {
           toggleDebug: false,
           toggleMute: false,
           toggleWeather: false,
+          toggleSettings: false,
           mouseDeltaX: 0,
           mouseDeltaY: 0,
         }
@@ -614,6 +625,7 @@ export class GameEngine {
       toggleDebug: false,
       toggleMute: false,
       toggleWeather: false,
+      toggleSettings: false,
       mouseDeltaX: 0,
       mouseDeltaY: 0,
     };
@@ -673,6 +685,9 @@ export class GameEngine {
     // 10. Update NPCs and Ambient Traffic AI
     this.npcManager.update(dt);
     this.trafficManager.update(dt, curPos, activeVehicle.getPosition());
+    // Milestone 35 — distance LOD
+    this.propManager?.updateLod(curPos);
+    this.trafficManager.updateLod(curPos);
     useSessionStore.getState().setNpcPositions(this.npcManager.getDynamicNPCPositions());
 
     // 10.5 Update Web Audio Subsystems
@@ -1113,6 +1128,25 @@ export class GameEngine {
     if (this.plotMarkerAccum >= 0.5 && domainEngine && this.plotMarkers) {
       this.plotMarkerAccum = 0;
       this.plotMarkers.sync(domainEngine.getOwnedPlotIds(), domainEngine.getPlotBuildings());
+    }
+
+    // 19. Milestone 33 — daily errand + emergent event refresh (throttled via plotMarkerAccum edge)
+    if (domainEngine && this.plotMarkerAccum === 0) {
+      const dailyId = domainEngine.ensureDailyErrand(Date.now());
+      const dailyFlag = `dailyErrandAnnounced_${dailyId}`;
+      if (!domainEngine.getWorldFlag(dailyFlag) && !isUIBlocking) {
+        domainEngine.setWorldFlag(dailyFlag, 1);
+        useGameStore.getState().showToast(`দৈনিক দৌড় উপলব্ধ: ${dailyId}`, 3500);
+      }
+      const ev = domainEngine.startOrRefreshEmergentEvent(Date.now());
+      const active = domainEngine.getActiveEmergentEvent(Date.now());
+      if (active && active.id !== this.lastAnnouncedEmergentId && !isUIBlocking) {
+        this.lastAnnouncedEmergentId = active.id;
+        useSessionStore
+          .getState()
+          .setStatusMessage(`ঘটনা: ${active.nameBn} (${active.nameEn})`);
+        useGameStore.getState().showToast(`ঘটনা: ${ev.nameBn}`, 4000);
+      }
     }
   }
 

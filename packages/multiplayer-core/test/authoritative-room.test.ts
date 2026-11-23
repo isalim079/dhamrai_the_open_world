@@ -95,18 +95,21 @@ describe('AuthoritativeRoom spike (M39–M42)', () => {
     expect(buy.ok).toBe(true);
     expect(buy.cashMinorUnits).toBe(25000 - TEA_COST_MINOR);
 
-    room.applyCommand({
-      type: 'MOVE',
-      clientId: 'a',
-      sequence: 3,
-      timestampMs: 10_002,
-      position: { x: 0, y: 0.5, z: 40 },
-    });
+    // Walk away in small steps (server rejects large teleports)
+    for (let i = 0; i < 8; i++) {
+      room.applyCommand({
+        type: 'MOVE',
+        clientId: 'a',
+        sequence: 10 + i,
+        timestampMs: 20_000 + i,
+        position: { x: 3.2, y: 0.5, z: -2.4 + (i + 1) * 5 },
+      });
+    }
     const far = room.applyCommand({
       type: 'INTERACT_TEA',
       clientId: 'a',
-      sequence: 4,
-      timestampMs: 10_003,
+      sequence: 99,
+      timestampMs: 30_000,
     });
     expect(far.ok).toBe(false);
   });

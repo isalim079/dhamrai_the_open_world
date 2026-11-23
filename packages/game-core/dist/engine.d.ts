@@ -14,6 +14,7 @@ import { ConsumableItemId, StaminaTickResult } from './stamina.js';
 import { Infraction, PoliceStopState, SoftArrestState, InfractionContext } from './civic-enforcement.js';
 import { LandmarkDefinition } from './landmarks.js';
 import { PlotDefinition, BuildingTemplateId } from './plots.js';
+import { type EmergentEvent } from './daily-events.js';
 export interface PurchaseResult {
     success: boolean;
     reason?: 'INSUFFICIENT_FUNDS' | 'UNKNOWN_ITEM' | 'UNKNOWN_SERVICE';
@@ -104,6 +105,10 @@ export declare class GameCoreEngine {
     /** M31 — garage owners get a soft repair discount flag (৳10 off next mistri bill via worldFlag). */
     hasRepairGarage(): boolean;
     getGarageRepairDiscountMinor(): number;
+    /** Ensure today's daily errand definition is registered (idempotent). */
+    ensureDailyErrand(timestampMs?: number): string;
+    startOrRefreshEmergentEvent(timestampMs?: number, seed?: number): EmergentEvent;
+    getActiveEmergentEvent(nowMs?: number): EmergentEvent | null;
     setWorldFlag(key: string, value: boolean | number | string): void;
     getWorldFlag<T extends boolean | number | string>(key: string): T | undefined;
     get staminaPercent(): number;

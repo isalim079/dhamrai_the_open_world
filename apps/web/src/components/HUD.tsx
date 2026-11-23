@@ -5,6 +5,7 @@ import { useUIStore } from '../state/useUIStore.js';
 import { useAuthStore } from '../state/useAuthStore.js';
 import { PHASE_1_MISSIONS } from '@dhamrai/game-core';
 import { getActiveAudioManager } from '../audio/index.js';
+import { useSettingsStore } from '../state/useSettingsStore.js';
 
 const MeterRow: React.FC<{
   label: string;
@@ -75,6 +76,7 @@ export const HUD: React.FC = () => {
   const isDialogueOpen = useUIStore((s) => s.isDialogueOpen);
   const isJournalOpen = useUIStore((s) => s.isJournalOpen);
   const isInventoryOpen = useUIStore((s) => s.isInventoryOpen);
+  const showKeyHints = useSettingsStore((s) => s.showKeyHints);
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const user = useAuthStore((s) => s.user);
@@ -609,7 +611,8 @@ export const HUD: React.FC = () => {
         <span>{isAudioMuted ? 'নিঃশব্দ (Muted) [M]' : 'শব্দ সক্রিয় (Audio) [M]'}</span>
       </button>
 
-      {/* Bottom Right: Key Controls Helper */}
+      {/* Bottom Right: Key Controls Helper — M36 gated by showKeyHints */}
+      {showKeyHints && (
       <div
         style={{
           position: 'absolute',
@@ -625,9 +628,10 @@ export const HUD: React.FC = () => {
           pointerEvents: 'none',
         }}
       >
-        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে · [M] শব্দ · [N] আবহাওয়া
+        [E] কথা বলুন · [F] রিকশা · [J] ডায়েরি · [I] থলে · [O] সেটিংস · [M] শব্দ · [N] আবহাওয়া
         {import.meta.env.DEV ? ' · [F3] ডিবাগ' : ''}
       </div>
+      )}
     </>
   );
 };
